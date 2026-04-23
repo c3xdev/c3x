@@ -1,0 +1,37 @@
+package aws
+
+import (
+	"strings"
+
+	"github.com/c3xdev/c3x/internal/catalog/aws"
+	"github.com/c3xdev/c3x/internal/engine"
+)
+
+func getGlueJobRegistryItem() *engine.CatalogEntry {
+	return &engine.CatalogEntry{
+		Name:      "aws_glue_job",
+		CoreRFunc: newGlueJob,
+	}
+}
+
+func newGlueJob(d *engine.ResourceSpec) engine.CatalogItem {
+	region := d.Get("region").String()
+	dpus := d.GetFloat64OrDefault("max_capacity", 1)
+
+	if !d.IsEmpty("number_of_workers") {
+		var dpuPerWorker float64 = 1
+		if strings.ToLower(d.Get("worker_type").String()) == "g.2x" {
+			dpuPerWorker = 2
+		}
+
+		dpus = d.Get("number_of_workers").Float() * dpuPerWorker
+	}
+
+	r := &aws.GlueJob{
+		Address: d.Address,
+		Region:  region,
+		DPUs:    dpus,
+	}
+
+	return r
+}

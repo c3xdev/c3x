@@ -1,0 +1,27 @@
+
+ Name                                                 Monthly Qty  Unit         Monthly Cost   
+                                                                                               
+ azurerm_express_route_gateway.express_route                                                   
+ └─ ER scale units (2 Gbps)                                     1  scale units       $306.60   
+                                                                                               
+ azurerm_express_route_connection.express_route_conn                                           
+ └─ ER Connections                                            730  hours              $36.50   
+                                                                                               
+ OVERALL TOTAL                                                                      $343.10 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+8 cloud resources were detected:
+∙ 2 were estimated
+∙ 3 were free
+∙ 3 are not supported yet, see https://c3x.dev/requested-resources:
+  ∙ 1 x azurerm_express_route_circuit
+  ∙ 1 x azurerm_express_route_circuit_peering
+  ∙ 1 x azurerm_express_route_port
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃          $343 ┃           - ┃       $343 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

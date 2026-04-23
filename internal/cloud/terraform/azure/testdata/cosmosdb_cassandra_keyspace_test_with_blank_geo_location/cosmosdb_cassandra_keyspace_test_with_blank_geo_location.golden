@@ -1,0 +1,23 @@
+
+ Name                                                              Monthly Qty  Unit                  Monthly Cost   
+                                                                                                                     
+ azurerm_cosmosdb_cassandra_keyspace.with_blank_geo_location                                                         
+ ├─ Provisioned throughput (autoscale, East US)               Monthly cost depends on usage: $5.84 per RU/s x 100    
+ ├─ Transactional storage (East US)                           Monthly cost depends on usage: $0.25 per GB            
+ ├─ Periodic backup (East US)                                 Monthly cost depends on usage: $0.12 per GB            
+ └─ Restored data                                             Monthly cost depends on usage: $0.15 per GB            
+                                                                                                                     
+ OVERALL TOTAL                                                                                              $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+3 cloud resources were detected:
+∙ 1 was estimated
+∙ 2 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

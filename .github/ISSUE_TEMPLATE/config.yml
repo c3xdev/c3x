@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://www.c3x.dev/docs/
+    about: Check the docs before opening an issue
+  - name: Community Slack
+    url: https://www.c3x.dev/community-chat
+    about: Ask questions and get help from the community

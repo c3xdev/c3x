@@ -1,0 +1,134 @@
+
+<h4>💰 c3x report</h4>
+<h4>Monthly estimate increased by $41 📈</h4>
+<table>
+  <thead>
+    <td>Changed project</td>
+    <td><span title="Baseline costs are consistent charges for provisioned resources, like the hourly cost for a virtual machine, which stays constant no matter how much it is used. c3x estimates these resources assuming they are used for the whole month (730 hours).">Baseline cost</span></td>
+    <td><span title="Usage costs are charges based on actual usage, like the storage cost for an object storage bucket. c3x estimates these resources using the monthly usage values in the usage-file.">Usage cost</span>*</td>
+    <td>Total change</td>
+    <td>New monthly cost</td>
+  </thead>
+  <tbody>
+    <tr>
+      <td>c3x/c3x/cmd/infraco...data/terraform_v0.14_plan.json</td>
+      <td align="right">+$41</td>
+      <td align="right">-</td>
+      <td align="right">+$41 (+100%)</td>
+      <td align="right">$81</td>
+    </tr>
+  </tbody>
+</table>
+
+
+*Usage costs can be estimated by updating [c3x Cloud settings](https://www.c3x.dev/docs/features/usage_based_resources), see [docs](https://www.c3x.dev/docs/features/usage_based_resources/#c3x-usageyml) for other options.
+<details>
+
+<summary>Estimate details </summary>
+
+```
+Key: * usage cost, ~ changed, + added, - removed
+
+──────────────────────────────────
+Project: REPLACED_PROJECT_PATH/testdata/terraform_v0.14_plan.json
+
++ module.db.module.db_2.module.db_instance.aws_db_instance.this[0]
+  +$13
+
+    + Database instance (on-demand, Single-AZ, db.t3.micro)
+      +$12
+
+    + Storage (general purpose SSD, gp2)
+      +$0.58
+
++ aws_instance.instance_2
+  +$5
+
+    + Instance usage (Linux/UNIX, on-demand, t3.nano)
+      +$4
+
+    + root_block_device
+    
+        + Storage (general purpose SSD, gp2)
+          +$0.80
+
++ aws_instance.instance_counted[1]
+  +$5
+
+    + Instance usage (Linux/UNIX, on-demand, t3.nano)
+      +$4
+
+    + root_block_device
+    
+        + Storage (general purpose SSD, gp2)
+          +$0.80
+
++ aws_instance.instance_named["test.2"]
+  +$5
+
+    + Instance usage (Linux/UNIX, on-demand, t3.nano)
+      +$4
+
+    + root_block_device
+    
+        + Storage (general purpose SSD, gp2)
+          +$0.80
+
++ module.instances.aws_instance.module_instance_2
+  +$5
+
+    + Instance usage (Linux/UNIX, on-demand, t3.nano)
+      +$4
+
+    + root_block_device
+    
+        + Storage (general purpose SSD, gp2)
+          +$0.80
+
++ module.instances.aws_instance.module_instance_counted[1]
+  +$5
+
+    + Instance usage (Linux/UNIX, on-demand, t3.nano)
+      +$4
+
+    + root_block_device
+    
+        + Storage (general purpose SSD, gp2)
+          +$0.80
+
++ module.instances.aws_instance.module_instance_named["test.2"]
+  +$5
+
+    + Instance usage (Linux/UNIX, on-demand, t3.nano)
+      +$4
+
+    + root_block_device
+    
+        + Storage (general purpose SSD, gp2)
+          +$0.80
+
+Monthly cost change for REPLACED_PROJECT_PATH/testdata/terraform_v0.14_plan.json
+Amount:  +$41 ($41 → $81)
+Percent: +100%
+
+──────────────────────────────────
+Key: * usage cost, ~ changed, + added, - removed
+
+*Usage costs can be estimated by updating c3x Cloud settings, see docs for other options.
+
+26 cloud resources were detected:
+∙ 14 were estimated
+∙ 12 were free
+
+c3x estimate: Monthly estimate increased by $41 ↑
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ Changed project                                                  ┃ Baseline cost ┃ Usage cost* ┃ Total change ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━━━┫
+┃ c3x/c3x/cmd/infraco...data/terraform_v0.14_plan.json ┃          +$41 ┃           - ┃ +$41 (+100%) ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━━━┛
+```
+</details>
+<sub>This comment will be updated when code changes.
+</sub>
+
+Comment not posted to GitLab (--dry-run was specified)

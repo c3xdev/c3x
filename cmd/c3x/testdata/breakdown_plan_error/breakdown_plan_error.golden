@@ -1,0 +1,34 @@
+Project: REPLACED_PROJECT_PATH/terraform
+Module path: .
+
+Errors:
+  terraform plan failed:
+    exit status 1
+
+  Terraform command failed with:
+    Error:
+      Failed to read variables file
+    Given variables file invalid does not exist.
+
+You have two options:
+1. Ensure the variable file is passed relative to your Terraform directory,
+     e.g. --path=path/to/code --terraform-plan-flags="-var-file=my.tfvars"
+
+2. Set --path to a Terraform plan JSON file. See https://c3x.dev/troubleshoot for how to generate this.
+
+ OVERALL TOTAL       $0.00 
+
+*Usage costs can be estimated by updating c3x Cloud settings, see docs for other options.
+
+──────────────────────────────────
+No cloud resources were detected
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ c3x/c3x/examples/terraform             ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+
+Err:
+
+

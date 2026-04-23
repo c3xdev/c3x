@@ -1,0 +1,2 @@
+/.github/workflows/*.yml @c3xdev/engineering
+/tools/release/*.go @c3xdev/engineering

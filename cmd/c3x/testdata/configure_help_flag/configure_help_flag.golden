@@ -1,0 +1,26 @@
+Display or change global configuration.
+
+Supported settings:
+  - api_key: c3x API key
+  - pricing_api_endpoint: endpoint of the Cloud Pricing API
+  - currency: convert output from USD to your preferred currency
+  - tls_insecure_skip_verify: skip TLS certificate checks for a self-hosted Cloud Pricing API
+  - tls_ca_cert_file: verify certificate of a self-hosted Cloud Pricing API using this CA certificate
+
+USAGE
+  c3x configure [flags]
+  c3x configure [command]
+
+AVAILABLE COMMANDS
+  get         Get global configuration
+  set         Set global configuration
+
+FLAGS
+  -h, --help   help for configure
+
+GLOBAL FLAGS
+      --debug-report       Generate a debug report file which can be sent to c3x team
+      --log-level string   Log level (trace, debug, info, warn, error, fatal)
+      --no-color           Turn off colored output
+
+Use "c3x configure [command] --help" for more information about a command.

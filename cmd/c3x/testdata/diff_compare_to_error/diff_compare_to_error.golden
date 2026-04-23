@@ -1,0 +1,47 @@
+
+Err:
+Show diff of monthly costs between current and planned state
+
+USAGE
+  c3x diff [flags]
+
+EXAMPLES
+  Use Terraform directory:
+
+      c3x breakdown --path /code --format json --out-file c3x-base.json
+      # Make Terraform code changes
+      c3x diff --path /code --compare-to c3x-base.json
+
+  Use Terraform plan JSON:
+
+      terraform plan -out tfplan.binary
+      terraform show -json tfplan.binary > plan.json
+      c3x diff --path plan.json
+
+FLAGS
+      --compare-to string            Path to c3x JSON file to compare against
+      --config-file string           Path to c3x config file. Cannot be used with path, terraform* or usage-file flags
+      --exclude-path strings         Paths of directories to exclude, glob patterns need quotes
+      --format string                Output format: json, diff (default "diff")
+  -h, --help                         help for diff
+      --include-all-paths            Set project auto-detection to use all subdirectories in given path
+      --no-cache                     Don't attempt to cache Terraform plans
+      --out-file string              Save output to a file
+  -p, --path string                  Path to the Terraform directory or JSON/plan file
+      --project-name string          Name of project in the output. Defaults to path or git repo name
+      --show-skipped                 List unsupported resources
+      --sync-usage-file              Sync usage-file with missing resources, needs usage-file too (experimental)
+      --terraform-var stringArray    Set value for an input variable, similar to Terraform's -var flag
+      --terraform-var-file strings   Load variable files, similar to Terraform's -var-file flag. Provided files must be relative to the --path flag
+      --terraform-workspace string   Terraform workspace to use. Applicable when path is a Terraform directory
+      --usage-file string            Path to c3x usage file that specifies values for usage-based resources
+
+GLOBAL FLAGS
+      --debug-report       Generate a debug report file which can be sent to c3x team
+      --log-level string   Log level (trace, debug, info, warn, error, fatal)
+      --no-color           Turn off colored output
+
+Error: To show a diff:
+  1. Generate a cost estimate baseline: `c3x breakdown --path ../../examples/terraform --format json --out-file c3x-base.json`
+  2. Make a Terraform code change
+  3. Generate a cost estimate diff: `c3x diff --path ../../examples/terraform --compare-to c3x-base.json`

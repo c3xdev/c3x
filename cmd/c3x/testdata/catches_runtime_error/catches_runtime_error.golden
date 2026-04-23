@@ -1,0 +1,10 @@
+
+Logs:
+ERROR An unexpected error occurred
+
+runtime error: REPLACED ERROR
+Environment:
+c3x vREPLACED_VERSION
+
+An unexpected error occurred. We've been notified of it and will investigate it soon. If you would like to follow-up, please copy the above output and create an issue at: https://github.com/c3xdev/c3x/issues/new
+

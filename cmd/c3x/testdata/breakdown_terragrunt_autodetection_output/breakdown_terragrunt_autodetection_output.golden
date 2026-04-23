@@ -1,0 +1,63 @@
+Project: terragrunt-dev
+Module path: terragrunt/dev
+
+ Name                                                         Monthly Qty  Unit                        Monthly Cost   
+                                                                                                                      
+ aws_instance.app_server                                                                                                 
+ ├─ Instance usage (Linux/UNIX, on-demand, t2.micro)                  730  hours                              $8.47   
+ ├─ root_block_device                                                                                                 
+ │  └─ Storage (general purpose SSD, gp2)                              50  GB                                 $5.00   
+ └─ ebs_block_device[0]                                                                                               
+    ├─ Storage (provisioned IOPS SSD, io1)                            100  GB                                $12.50   
+    └─ Provisioned IOPS                                               400  IOPS                              $26.00   
+                                                                                                                      
+ aws_lambda_function.event_handler                                                                                      
+ ├─ Requests                                          Monthly cost depends on usage: $0.20 per 1M requests            
+ ├─ Ephemeral storage                                 Monthly cost depends on usage: $0.0000000309 per GB-seconds     
+ └─ Duration (first 6B)                               Monthly cost depends on usage: $0.0000166667 per GB-seconds     
+                                                                                                                      
+ Project total                                                                                               $51.97   
+
+──────────────────────────────────
+Project: terragrunt-prod
+Module path: terragrunt/prod
+
+ Name                                                           Monthly Qty  Unit                        Monthly Cost   
+                                                                                                                        
+ aws_instance.app_server                                                                                                   
+ ├─ Instance usage (Linux/UNIX, on-demand, m5.4xlarge)                  730  hours                            $560.64   
+ ├─ root_block_device                                                                                                   
+ │  └─ Storage (general purpose SSD, gp2)                               100  GB                                $10.00   
+ └─ ebs_block_device[0]                                                                                                 
+    ├─ Storage (provisioned IOPS SSD, io1)                            1,000  GB                               $125.00   
+    └─ Provisioned IOPS                                                 800  IOPS                              $52.00   
+                                                                                                                        
+ aws_lambda_function.event_handler                                                                                        
+ ├─ Requests                                            Monthly cost depends on usage: $0.20 per 1M requests            
+ ├─ Ephemeral storage                                   Monthly cost depends on usage: $0.0000000309 per GB-seconds     
+ └─ Duration (first 6B)                                 Monthly cost depends on usage: $0.0000166667 per GB-seconds     
+                                                                                                                        
+ Project total                                                                                                $747.64   
+
+ OVERALL TOTAL                                                                                               $799.61 
+
+*Usage costs can be estimated by updating c3x Cloud settings, see docs for other options.
+
+──────────────────────────────────
+4 cloud resources were detected:
+∙ 4 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ terragrunt-dev                                     ┃           $52 ┃           - ┃        $52 ┃
+┃ terragrunt-prod                                    ┃          $748 ┃           - ┃       $748 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+
+Err:
+
+
+Logs:
+INFO Autodetected 2 Terragrunt projects across 2 root modules
+INFO Found Terragrunt project terragrunt-dev at directory terragrunt/dev
+INFO Found Terragrunt project terragrunt-prod at directory terragrunt/prod

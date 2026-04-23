@@ -1,0 +1,22 @@
+
+ Name                                       Monthly Qty  Unit                  Monthly Cost    
+                                                                                               
+ google_dns_record_set.frontend_usage                                                          
+ └─ Queries                                         0.1  1M queries                   $0.04  * 
+                                                                                               
+ google_dns_record_set.frontend                                                                
+ └─ Queries                            Monthly cost depends on usage: $0.40 per 1M queries     
+                                                                                               
+ OVERALL TOTAL                                                                        $0.04 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+2 cloud resources were detected:
+∙ 2 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃       $0.04 ┃      $0.04 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

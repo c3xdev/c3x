@@ -1,0 +1,48 @@
+Combine and output c3x JSON files in different formats
+
+USAGE
+  c3x output [flags]
+
+EXAMPLES
+  Show a breakdown from multiple c3x JSON files:
+
+      c3x output --path out1.json --path out2.json --path out3.json
+
+  Create HTML report from multiple c3x JSON files:
+
+      c3x output --format html --path "out*.json" --out-file output.html # glob needs quotes
+
+  Merge multiple c3x JSON files:
+
+      c3x output --format json --path "out*.json" # glob needs quotes
+
+  Create markdown report to post in a GitHub comment:
+
+      c3x output --format github-comment --path "out*.json" # glob needs quotes
+
+  Create markdown report to post in a GitLab comment:
+
+      c3x output --format gitlab-comment --path "out*.json" # glob needs quotes
+
+  Create markdown report to post in a Azure DevOps Repos comment:
+
+      c3x output --format azure-repos-comment --path "out*.json" # glob needs quotes
+
+  Create markdown report to post in a Bitbucket comment:
+
+      c3x output --format bitbucket-comment --path "out*.json" # glob needs quotes
+
+FLAGS
+      --fields strings      Comma separated list of output fields: all,price,monthlyQuantity,unit,hourlyCost,monthlyCost.
+                            Supported by table and html output formats (default [monthlyQuantity,unit,monthlyCost])
+      --format string       Output format: json, diff, table, html, github-comment, gitlab-comment, azure-repos-comment, bitbucket-comment, bitbucket-comment-summary, slack-message (default "table")
+  -h, --help                help for output
+  -o, --out-file string     Save output to a file, helpful with format flag
+  -p, --path stringArray    Path to c3x JSON files, glob patterns need quotes
+      --show-all-projects   Show all projects in the table of the comment output
+      --show-skipped        List unsupported resources
+
+GLOBAL FLAGS
+      --debug-report       Generate a debug report file which can be sent to c3x team
+      --log-level string   Log level (trace, debug, info, warn, error, fatal)
+      --no-color           Turn off colored output

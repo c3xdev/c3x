@@ -1,0 +1,38 @@
+
+ Name                                                                   Monthly Qty  Unit                Monthly Cost   
+                                                                                                                        
+ google_redis_cluster.no_aof_and_backups["REDIS_HIGHMEM_XLARGE"]                                                        
+ └─ Cluster node (highmem xlarge)                                             6,570  hours                  $5,637.72   
+                                                                                                                        
+ google_redis_cluster.no_aof_and_backups["REDIS_HIGHMEM_MEDIUM"]                                                        
+ └─ Cluster node (highmem medium)                                             6,570  hours                  $1,263.41   
+                                                                                                                        
+ google_redis_cluster.no_aof_and_backups["REDIS_STANDARD_SMALL"]                                                        
+ └─ Cluster node (standard small)                                             6,570  hours                    $936.23   
+                                                                                                                        
+ google_redis_cluster.aof_and_backups                                                                                   
+ ├─ Cluster node (standard small)                                             2,190  hours                    $312.08   
+ ├─ AOF persistence                                                           5,110  GB                         $2.80   
+ └─ Backups                                                         Monthly cost depends on usage: $0.0811103 per GB    
+                                                                                                                        
+ google_redis_cluster.no_aof_and_backups["REDIS_SHARED_CORE_NANO"]                                                      
+ └─ Cluster node (shared core nano)                                           6,570  hours                    $208.93   
+                                                                                                                        
+ google_redis_cluster.backups_with_usage                                                                                
+ ├─ Cluster node (standard small)                                               730  hours                    $104.03   
+ └─ Backups                                                                   1,000  GB                        $81.11   
+                                                                                                                        
+ OVERALL TOTAL                                                                                             $8,546.29 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+7 cloud resources were detected:
+∙ 6 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃        $8,546 ┃           - ┃     $8,546 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

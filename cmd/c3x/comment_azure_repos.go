@@ -1,0 +1,165 @@
+package main
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+
+	jsoniter "github.com/json-iterator/go"
+	"github.com/spf13/cobra"
+
+	"github.com/c3xdev/c3x/internal/apiclient"
+	"github.com/c3xdev/c3x/internal/comment"
+	"github.com/c3xdev/c3x/internal/settings"
+	"github.com/c3xdev/c3x/internal/logging"
+	"github.com/c3xdev/c3x/internal/render"
+	"github.com/c3xdev/c3x/internal/ui"
+)
+
+var validCommentAzureReposBehaviors = []string{"update", "new", "delete-and-new"}
+
+func commentAzureReposCmd(ctx *settings.Session) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "azure-repos",
+		Short: "Post a C3X comment to Azure Repos",
+		Long:  "Post a C3X comment to Azure Repos",
+		Example: `  Update comment on a pull request:
+
+      c3x comment azure-repos --repo-url https://dev.azure.com/my-org/my-project/_git/my-repo --pull-request 3 --path c3x.json --azure-access-token $AZURE_ACCESS_TOKEN`,
+		ValidArgs: []string{"--", "-"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx.ContextValues.SetValue("platform", "azure-repos")
+
+			var err error
+
+			format, _ := cmd.Flags().GetString("format")
+			format = strings.ToLower(format)
+			if format != "" && !contains(validCommentOutputFormats, format) {
+				ui.PrintUsage(cmd)
+				return fmt.Errorf("--format only supports %s", strings.Join(validCommentOutputFormats, ", "))
+			}
+
+			token, _ := cmd.Flags().GetString("azure-access-token")
+			tag, _ := cmd.Flags().GetString("tag")
+			initActive, _ := cmd.Flags().GetBool("init-active")
+
+			tlsConfig, err := loadTLSConfigFromEnv(ctx)
+			if err != nil {
+				return err
+			}
+
+			extra := comment.AzureReposExtra{
+				Token:      token,
+				Tag:        tag,
+				InitActive: initActive,
+				TLSConfig:  tlsConfig,
+			}
+
+			prNumber, _ := cmd.Flags().GetInt("pull-request")
+			repoURL, _ := cmd.Flags().GetString("repo-url")
+
+			var commentHandler *comment.CommentHandler
+			if prNumber != 0 {
+				ctx.ContextValues.SetValue("targetType", "pull-request")
+
+				commentHandler, err = comment.NewAzureReposPRHandler(ctx.Context(), repoURL, strconv.Itoa(prNumber), extra)
+				if err != nil {
+					return err
+				}
+			} else {
+				ui.PrintUsage(cmd)
+				return fmt.Errorf("--pull-request is required")
+			}
+
+			behavior, _ := cmd.Flags().GetString("behavior")
+			if behavior != "" && !contains(validCommentAzureReposBehaviors, behavior) {
+				ui.PrintUsage(cmd)
+				return fmt.Errorf("--behavior only supports %s", strings.Join(validCommentAzureReposBehaviors, ", "))
+			}
+			ctx.ContextValues.SetValue("behavior", behavior)
+
+			paths, _ := cmd.Flags().GetStringArray("path")
+
+			commentOut, commentErr := buildCommentOutput(cmd, ctx, paths, render.MarkdownOptions{
+				WillUpdate:          prNumber != 0 && behavior == "update",
+				WillReplace:         prNumber != 0 && behavior == "delete-and-new",
+				IncludeFeedbackLink: !ctx.Config.IsSelfHosted(),
+				MaxMessageSize:      render.AzureReposMaxMessageSize,
+			})
+			if isErrorUnhandled(commentErr) {
+				return commentErr
+			}
+
+			dryRun, _ := cmd.Flags().GetBool("dry-run")
+			if !dryRun {
+				skipNoDiff, _ := cmd.Flags().GetBool("skip-no-diff")
+
+				res, err := commentHandler.CommentWithBehavior(ctx.Context(), behavior, commentOut.Body, &comment.CommentOpts{
+					ValidAt:    commentOut.ValidAt,
+					SkipNoDiff: !commentOut.HasDiff && skipNoDiff,
+				})
+				if err != nil {
+					return err
+				}
+
+				if res.Posted && ctx.IsCloudUploadExplicitlyEnabled() {
+					dashboardClient := apiclient.NewDashboardAPIClient(ctx)
+					if err := dashboardClient.SavePostedPrComment(ctx, commentOut.AddRunResponse.RunID, commentOut.Body); err != nil {
+						logging.Logger.Err(err).Msg("could not save posted PR comment")
+					}
+				}
+
+				pricingClient := apiclient.GetPricingAPIClient(ctx)
+				err = pricingClient.AddEvent("c3x-comment", ctx.EventEnv())
+				if err != nil {
+					logging.Logger.Debug().Err(err).Msg("could not report event")
+				}
+
+				if format == "json" {
+					b, err := jsoniter.MarshalIndent(commentOut.AddRunResponse, "", "  ")
+					if err != nil {
+						return fmt.Errorf("failed to marshal result: %w", err)
+					}
+					cmd.Print(string(b))
+				} else if res.Posted {
+					cmd.Println("Comment posted to Azure Repos")
+				} else {
+					msg := "Comment not posted to Azure Repos"
+					if res.SkipReason != "" {
+						msg += fmt.Sprintf(": %s", res.SkipReason)
+					}
+					cmd.Println(msg)
+				}
+			} else {
+				cmd.Println(commentOut.Body)
+				cmd.Println("Comment not posted to Azure Repos (--dry-run was specified)")
+			}
+
+			return commentErr
+		},
+	}
+
+	cmd.Flags().String("behavior", "update", `Behavior when posting comment, one of:
+  update (default)  Update latest comment
+  new               Create a new comment
+  delete-and-new    Delete previous matching comments and create a new comment`)
+	_ = cmd.RegisterFlagCompletionFunc("behavior", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return validCommentAzureReposBehaviors, cobra.ShellCompDirectiveDefault
+	})
+	cmd.Flags().String("azure-access-token", "", "Azure DevOps access token")
+	_ = cmd.MarkFlagRequired("azure-access-token")
+	cmd.Flags().StringArrayP("path", "p", []string{}, "Path to C3X JSON files, glob patterns need quotes")
+	_ = cmd.MarkFlagRequired("path")
+	_ = cmd.MarkFlagFilename("path", "json")
+	var prNumber PRNumber
+	cmd.Flags().Var(&prNumber, "pull-request", "Pull request number to post comment on")
+	_ = cmd.MarkFlagRequired("pull-request")
+	cmd.Flags().String("repo-url", "", "Repository URL, e.g. https://dev.azure.com/my-org/my-project/_git/my-repo")
+	_ = cmd.MarkFlagRequired("repo-url")
+	cmd.Flags().String("tag", "", "Customize hidden markdown tag used to detect comments posted by C3X")
+	cmd.Flags().Bool("dry-run", false, "Generate comment without actually posting to Azure Repos")
+	cmd.Flags().String("format", "", "Output format: json")
+	cmd.Flags().Bool("init-active", false, "Initialize the comment as active instead of the default: closed")
+
+	return cmd
+}

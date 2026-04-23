@@ -1,0 +1,28 @@
+provider "aws" {
+  region                      = "us-east-1"
+  skip_credentials_validation = true
+  skip_requesting_account_id  = true
+  access_key                  = "mock_access_key"
+  secret_key                  = "mock_secret_key"
+}
+
+resource "aws_instance" "app_server" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "m5.4xlarge"
+
+  root_block_device {
+    volume_size = 50
+  }
+
+  ebs_block_device {
+    device_name = "data_vol"
+    volume_type = "io1"
+    volume_size = 1000
+    iops        = 800
+  }
+}
+
+moved {
+  from = aws_instance.foo
+  to   = aws_instance.app_server
+}

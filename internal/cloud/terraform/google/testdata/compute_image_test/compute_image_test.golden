@@ -1,0 +1,43 @@
+
+ Name                                             Monthly Qty  Unit            Monthly Cost    
+                                                                                               
+ google_compute_image.usage                                                                    
+ └─ Storage                                             1,000  GB                    $50.00  * 
+                                                                                               
+ google_compute_image.with_source_disk                                                         
+ └─ Storage                                             1,000  GB                    $50.00  * 
+                                                                                               
+ google_compute_image.with_source_snapshot                                                     
+ └─ Storage                                             1,000  GB                    $50.00  * 
+                                                                                               
+ google_compute_disk.disk                                                                      
+ └─ Standard provisioned storage (pd-standard)          1,000  GB                    $40.00    
+                                                                                               
+ google_compute_snapshot.snapshot                                                              
+ └─ Storage                                             1,000  GB                    $26.00  * 
+                                                                                               
+ google_compute_image.with_disk_size                                                           
+ └─ Storage                                               500  GB                    $25.00  * 
+                                                                                               
+ google_compute_image.image                                                                    
+ └─ Storage                                               100  GB                     $5.00  * 
+                                                                                               
+ google_compute_image.with_source_image                                                        
+ └─ Storage                                               100  GB                     $5.00  * 
+                                                                                               
+ google_compute_image.empty                                                                    
+ └─ Storage                                     Monthly cost depends on usage: $0.05 per GB    
+                                                                                               
+ OVERALL TOTAL                                                                      $251.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+9 cloud resources were detected:
+∙ 9 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃           $40 ┃        $211 ┃       $251 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

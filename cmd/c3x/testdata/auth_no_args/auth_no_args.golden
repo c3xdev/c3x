@@ -1,0 +1,33 @@
+Get a free API key, or log in to your existing account
+
+USAGE
+  c3x auth [flags]
+  c3x auth [command]
+
+EXAMPLES
+  Get a free API key, or log in to your existing account:
+
+      c3x auth login
+
+      You can also log in at https://dashboard.c3x.dev
+
+  Manually set the API key that your CLI should use. The API key can be retrieved from your account:
+
+      c3x configure set api_key MY_API_KEY
+
+  Regenerate your API key:
+
+      Log in at https://dashboard.c3x.dev > select your organization > Settings
+
+AVAILABLE COMMANDS
+  login       Authenticate the CLI with your c3x account
+
+FLAGS
+  -h, --help   help for auth
+
+GLOBAL FLAGS
+      --debug-report       Generate a debug report file which can be sent to c3x team
+      --log-level string   Log level (trace, debug, info, warn, error, fatal)
+      --no-color           Turn off colored output
+
+Use "c3x auth [command] --help" for more information about a command.

@@ -1,0 +1,23 @@
+
+ Name                                              Monthly Qty  Unit            Monthly Cost   
+                                                                                               
+ azurerm_application_insights_web_test.non_free                                                
+ └─ Multi-step web test                                      1  test                  $10.00   
+                                                                                               
+ azurerm_application_insights.example                                                          
+ └─ Data ingested                                Monthly cost depends on usage: $2.30 per GB   
+                                                                                               
+ OVERALL TOTAL                                                                       $10.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+4 cloud resources were detected:
+∙ 2 were estimated
+∙ 2 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃           $10 ┃           - ┃        $10 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

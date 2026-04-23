@@ -1,0 +1,28 @@
+Upload an c3x JSON file to c3x Cloud. This is useful if you
+do not use 'c3x comment' and instead want to define run metadata,
+such as pull request URL or title, and upload the results manually.
+
+See https://c3x.dev/docs/features/cli_commands/#upload-runs
+
+USAGE
+  c3x upload [flags]
+
+EXAMPLES
+  Upload an c3x JSON file:
+      export C3X_VCS_PULL_REQUEST_URL=http://github.com/myorg...
+      export C3X_VCS_PULL_REQUEST_TITLE="My PR title"
+      # ... other env vars here
+
+      c3x diff --path plan.json --format json --out-file c3x.json
+
+      c3x upload --path c3x.json
+
+FLAGS
+      --format string   Output format: json
+  -h, --help            help for upload
+      --path string     Path to c3x JSON file. (default "p")
+
+GLOBAL FLAGS
+      --debug-report       Generate a debug report file which can be sent to c3x team
+      --log-level string   Log level (trace, debug, info, warn, error, fatal)
+      --no-color           Turn off colored output

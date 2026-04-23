@@ -1,0 +1,23 @@
+
+ Name                         Monthly Qty  Unit   Monthly Cost   
+                                                                 
+ azurerm_powerbi_embedded.a5                                     
+ └─ Node usage (A5)                   730  hours    $11,768.33   
+                                                                 
+ azurerm_powerbi_embedded.a1                                     
+ └─ Node usage (A1)                   730  hours       $735.91   
+                                                                 
+ OVERALL TOTAL                                     $12,504.24 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+3 cloud resources were detected:
+∙ 2 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃       $12,504 ┃           - ┃    $12,504 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

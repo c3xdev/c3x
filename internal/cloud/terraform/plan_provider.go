@@ -1,0 +1,144 @@
+package terraform
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/pkg/errors"
+
+	"github.com/c3xdev/c3x/internal/clierror"
+	"github.com/c3xdev/c3x/internal/settings"
+	"github.com/c3xdev/c3x/internal/logging"
+	"github.com/c3xdev/c3x/internal/engine"
+	"github.com/c3xdev/c3x/internal/ui"
+)
+
+type PlanProvider struct {
+	*DirProvider
+	Path                 string
+	cachedPlanJSON       []byte
+	includePastResources bool
+}
+
+func NewPlanProvider(ctx *settings.ProjectSession, includePastResources bool) engine.Vendor {
+	dirProvider := NewDirProvider(ctx, includePastResources).(*DirProvider)
+
+	return &PlanProvider{
+		DirProvider:          dirProvider,
+		Path:                 ctx.ProjectConfig.Path,
+		includePastResources: includePastResources,
+	}
+}
+
+func (p *PlanProvider) ProjectName() string {
+	return settings.CleanProjectName(p.ctx.ProjectConfig.Path)
+}
+
+func (p *PlanProvider) VarFiles() []string {
+	return nil
+}
+
+func (p *PlanProvider) RelativePath() string {
+	return p.ctx.ProjectConfig.Path
+}
+
+func (p *PlanProvider) Type() string {
+	return "terraform_plan_binary"
+}
+
+func (p *PlanProvider) DisplayType() string {
+	return "Terraform plan binary file"
+}
+
+func (p *PlanProvider) LoadResources(usage engine.ConsumptionMap) (projects []*engine.Workspace, err error) {
+	j, err := p.generatePlanJSON()
+	if err != nil {
+		return []*engine.Workspace{}, err
+	}
+
+	logging.Logger.Debug().Msg("Extracting only cost-related params from terraform")
+	defer func() {
+		if err != nil {
+			logging.Logger.Debug().Err(err).Msg("Error running plan provider")
+		} else {
+			logging.Logger.Debug().Msg("Finished running plan provider")
+		}
+	}()
+
+	metadata := engine.DetectProjectMetadata(p.ctx.ProjectConfig.Path)
+	metadata.Type = p.Type()
+	p.AddMetadata(metadata)
+	name := p.ctx.ProjectConfig.Name
+	if name == "" {
+		name = metadata.GenerateProjectName(p.ctx.RunContext.VCSMetadata.Remote, p.ctx.RunContext.IsCloudEnabled())
+	}
+
+	project := engine.NewProject(name, metadata)
+	parser := NewParser(p.ctx, p.includePastResources)
+
+	j, _ = StripSetupTerraformWrapper(j)
+	parsedConf, err := parser.parseJSON(j, usage)
+	if err != nil {
+		return []*engine.Workspace{project}, errors.Wrap(err, "Error parsing Terraform JSON")
+	}
+
+	project.AddProviderMetadata(parsedConf.ProviderMetadata)
+
+	project.PartialPastResources = parsedConf.PastResources
+	project.PartialResources = parsedConf.CurrentResources
+
+	return []*engine.Workspace{project}, nil
+}
+
+func (p *PlanProvider) generatePlanJSON() ([]byte, error) {
+	if p.cachedPlanJSON != nil {
+		return p.cachedPlanJSON, nil
+	}
+
+	dir := filepath.Dir(p.Path)
+	planPath := filepath.Base(p.Path)
+
+	if !IsTerraformDir(dir) {
+		logging.Logger.Debug().Msgf("%s is not a Terraform directory, checking current working directory", dir)
+		dir, err := os.Getwd()
+		if err != nil {
+			return []byte{}, err
+		}
+		planPath = p.Path
+
+		if !IsTerraformDir(dir) {
+			m := fmt.Sprintf("%s %s.\n%s\n\n%s\n%s\n%s %s",
+				"Could not detect Terraform directory for",
+				p.Path,
+				"Either the current working directory or the plan file's parent directory must be a Terraform directory.",
+				"If the above does not work you can generate the plan JSON file with:",
+				ui.PrimaryString("terraform show -json tfplan.binary > plan.json"),
+				"and then run C3X with",
+				ui.PrimaryString("--path=plan.json"),
+			)
+			return []byte{}, clierror.NewCLIError(errors.New(m), "Could not detect Terraform directory for plan file")
+		}
+	}
+
+	err := p.checks()
+	if err != nil {
+		return []byte{}, err
+	}
+
+	opts, err := p.buildCommandOpts(dir)
+	if err != nil {
+		return []byte{}, err
+	}
+	if opts.TerraformConfigFile != "" {
+		defer os.Remove(opts.TerraformConfigFile)
+	}
+
+	logging.Logger.Debug().Msg("Running terraform show")
+
+	j, err := p.runShow(opts, planPath, false)
+	if err == nil {
+		p.cachedPlanJSON = j
+	}
+	return j, err
+}

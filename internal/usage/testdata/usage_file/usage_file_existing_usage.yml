@@ -1,0 +1,25 @@
+version: 0.1
+resource_usage:
+  aws_instance.instance_counted[*]:
+    operating_system: windows # Override the operating system of the instance, can be: linux, windows, suse, rhel.
+  aws_instance.instance_counted[0]:
+    operating_system: linux # Override the operating system of the instance, can be: linux, windows, suse, rhel.
+  ##
+  ## The following usage values apply to individual resources and override any value defined in the resource_type_default_usage section.
+  ## All values are commented-out, you can uncomment resources and customize as needed.
+  ##
+  aws_instance.with_usage:
+    operating_system: windows
+    reserved_instance_type: standard
+    reserved_instance_term: 1_year
+    reserved_instance_payment_option: all_upfront
+  aws_s3_bucket.with_usage:
+    object_tags: 10000000 # This comment shouldn't be overwritten
+    glacier_flexible_retrieval:
+      storage_gb: 50000
+  aws_cloudfront_distribution.with_usage:
+    custom_ssl_certificates: 3
+    monthly_data_transfer_to_internet_gb:
+      us: 51200000
+      europe: 220000
+      south_africa: 10000

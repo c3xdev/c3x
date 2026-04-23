@@ -1,0 +1,24 @@
+
+ Name                                        Monthly Qty  Unit   Monthly Cost    
+                                                                                 
+ azurerm_virtual_hub.virtual_hub_with_usage                                      
+ ├─ Deployment                                       730  hours       $182.50    
+ └─ Data processed                                    90  GB            $1.80  * 
+                                                                                 
+ azurerm_virtual_hub.virtual_hub                                                 
+ └─ Deployment                                       730  hours       $182.50    
+                                                                                 
+ OVERALL TOTAL                                                        $366.80 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+6 cloud resources were detected:
+∙ 2 were estimated
+∙ 4 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃          $365 ┃          $2 ┃       $367 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

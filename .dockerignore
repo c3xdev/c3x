@@ -1,0 +1,16 @@
+.*
+!.git
+!.env
+**/*.md
+**/*_test.go
+**/testdata
+build
+examples
+schema
+tools
+Dockerfile.*
+c3x-usage-example.yml
+c3x-usage-defaults.large.yml
+c3x-usage-defaults.medium.yml
+c3x-usage-defaults.small.yml
+LICENSE
