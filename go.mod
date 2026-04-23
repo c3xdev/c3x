@@ -94,7 +94,7 @@ require (
 	github.com/alecthomas/jsonschema v0.0.0-20211209230136-e2b41affa5c1
 	github.com/chainguard-dev/git-urls v1.0.2
 	github.com/channelmeter/iso8601duration v0.0.0-20150204201828-8da3af7a2a61
-	github.com/creack/pty v1.1.11
+	github.com/creack/pty v1.1.24
 	github.com/fatih/camelcase v1.0.0
 	github.com/go-errors/errors v1.4.2
 	github.com/go-git/go-git/v5 v5.17.1
