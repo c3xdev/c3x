@@ -1,0 +1,33 @@
+
+ Name                             Monthly Qty  Unit  Monthly Cost    
+                                                                     
+ google_bigquery_table.usage                                         
+ ├─ Active storage                      1,000  GB       not found  * 
+ ├─ Long-term storage                   1,000  GB       not found  * 
+ ├─ Streaming inserts                   1,000  MB       not found  * 
+ ├─ Storage write API                   1,000  GB       not found  * 
+ └─ Storage read API                    1,000  TB       not found  * 
+                                                                     
+ google_bigquery_dataset.default                                     
+ └─ Queries (on-demand)           not found                          
+                                                                     
+ google_bigquery_table.non_usage                                     
+ ├─ Active storage                not found                          
+ ├─ Long-term storage             not found                          
+ ├─ Streaming inserts             not found                          
+ ├─ Storage write API             not found                          
+ └─ Storage read API              not found                          
+                                                                     
+ OVERALL TOTAL                                              $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+3 cloud resources were detected:
+∙ 3 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

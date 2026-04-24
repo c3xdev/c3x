@@ -1,0 +1,9 @@
+Comment posted to GitHub
+
+Logs:
+INFO [1mEstimate uploaded to C3X Cloud[0m
+INFO [1m1 guardrail checked[0m
+INFO [1mguardrail check failed: Stand by your estimate[0m
+INFO [1mCreating new comment[0m
+WARN [1m>\n<summary><strong>⚠️ Guardrails triggered</strong></summary>\n\n> - <b>Warning</b>: Stand by your estimate\n</[0m
+INFO [1mCreated new comment: [0m

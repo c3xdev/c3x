@@ -1,0 +1,48 @@
+Project: main-dev
+
+ Name                       Monthly Qty  Unit   Monthly Cost   
+                                                               
+ aws_eip.test1[0]                                              
+ └─ IP address (if unused)          730  hours     not found   
+                                                               
+ aws_eip.test1[1]                                              
+ └─ IP address (if unused)          730  hours     not found   
+                                                               
+ aws_eip.test2[0]                                              
+ └─ IP address (if unused)          730  hours     not found   
+                                                               
+ aws_eip.test2[1]                                              
+ └─ IP address (if unused)          730  hours     not found   
+                                                               
+ aws_eip.test3[0]                                              
+ └─ IP address (if unused)          730  hours     not found   
+                                                               
+ aws_eip.test3[1]                                              
+ └─ IP address (if unused)          730  hours     not found   
+                                                               
+ aws_eip.test4[0]                                              
+ └─ IP address (if unused)          730  hours     not found   
+                                                               
+ aws_eip.test4[1]                                              
+ └─ IP address (if unused)          730  hours     not found   
+                                                               
+ OVERALL TOTAL                                        $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+8 cloud resources were detected:
+∙ 8 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main-dev                                           ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+
+Err:
+
+
+Logs:
+WARN [1m8 aws_eip prices missing across 8 resources
+[0m

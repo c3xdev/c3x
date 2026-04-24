@@ -1,0 +1,38 @@
+
+ Name                                           Monthly Qty  Unit              Monthly Cost    
+                                                                                               
+ azurerm_mysql_flexible_server.mo                                                              
+ ├─ Compute (MO_Standard_E4ds_v4)                       730  hours                not found    
+ ├─ Storage                                              20  GB                       $2.76    
+ ├─ Additional IOPS                                     140  IOPS                     $8.40    
+ └─ Additional backup storage                         3,000  GB                     $285.00  * 
+                                                                                               
+ azurerm_mysql_flexible_server.gp                                                              
+ ├─ Compute (GP_Standard_D2ads_v5)                      730  hours                not found    
+ ├─ Storage                                              20  GB                       $2.76    
+ └─ Additional backup storage                         2,000  GB                     $190.00  * 
+                                                                                               
+ azurerm_mysql_flexible_server.burstable                                                       
+ ├─ Compute (B_Standard_B1ms)                           730  hours                   $16.06    
+ ├─ Storage                                              30  GB                       $4.14    
+ └─ Additional backup storage                         1,000  GB                      $95.00  * 
+                                                                                               
+ azurerm_mysql_flexible_server.non_usage_gp                                                    
+ ├─ Compute (GP_Standard_D2ads_v5)                      730  hours                not found    
+ ├─ Storage                                              20  GB                       $2.76    
+ └─ Additional backup storage                Monthly cost depends on usage: $0.095 per GB      
+                                                                                               
+ OVERALL TOTAL                                                                      $606.88 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+5 cloud resources were detected:
+∙ 4 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃           $37 ┃        $570 ┃       $607 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

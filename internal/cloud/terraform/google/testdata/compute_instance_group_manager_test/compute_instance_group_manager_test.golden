@@ -1,0 +1,32 @@
+
+ Name                                                 Monthly Qty  Unit   Monthly Cost   
+                                                                                         
+ google_compute_instance_group_manager.default                                           
+ ├─ Instance usage (Linux/UNIX, on-demand, f1-micro)        2,920  hours     not found   
+ ├─ Local SSD provisioned storage                           1,500  GB          $120.00   
+ ├─ NVIDIA Tesla K80 (on-demand)                            5,840  hours     not found   
+ └─ disk[0]                                                                              
+    └─ SSD provisioned storage (pd-ssd)                     1,500  GB          $255.00   
+                                                                                         
+ google_compute_instance_group_manager.two_disks                                         
+ ├─ Instance usage (Linux/UNIX, on-demand, f1-micro)        2,920  hours     not found   
+ ├─ NVIDIA Tesla K80 (on-demand)                            5,840  hours     not found   
+ ├─ disk[0]                                                                              
+ │  └─ SSD provisioned storage (pd-ssd)                        40  GB            $6.80   
+ └─ disk[1]                                                                              
+    └─ SSD provisioned storage (pd-ssd)                       200  GB           $34.00   
+                                                                                         
+ OVERALL TOTAL                                                                $415.80 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+4 cloud resources were detected:
+∙ 2 were estimated
+∙ 2 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃          $416 ┃           - ┃       $416 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

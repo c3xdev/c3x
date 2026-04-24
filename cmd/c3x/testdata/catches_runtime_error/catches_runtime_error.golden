@@ -1,0 +1,42 @@
+
+Logs:
+ERROR [1mAn unexpected error occurred
+
+runtime error: invalid memory address or nil pointer dereference
+goroutine 276 [running]:
+runtime/debug.Stack()
+	/Users/ingandrea/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.8.darwin-arm64/src/runtime/debug/stack.go:26 +0x64
+github.com/c3xdev/c3x/cmd/c3x.Run.func1()
+	/Users/ingandrea/projects/c3x/cmd/c3x/main.go:78 +0x98
+panic({0x108568d80?, 0x10af1a0f0?})
+	/Users/ingandrea/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.8.darwin-arm64/src/runtime/panic.go:783 +0x120
+github.com/c3xdev/c3x/cmd/c3x.loadRunFlags(0x14000bfbc08, 0x140012662c8)
+	/Users/ingandrea/projects/c3x/cmd/c3x/run.go:844 +0x5c4
+github.com/c3xdev/c3x/cmd/c3x.breakdownCmd.func1(0x140012662c8, {0x0?, 0x1081d30a0?, 0x14000818140?})
+	/Users/ingandrea/projects/c3x/cmd/c3x/breakdown.go:44 +0xa8
+github.com/c3xdev/c3x/cmd/c3x.breakdownCmd.checkAPIKeyIsValid.func2(0x140012662c8, {0x140011edbc0, 0x0, 0x4})
+	/Users/ingandrea/projects/c3x/cmd/c3x/run.go:1108 +0x400
+github.com/spf13/cobra.(*Command).execute(0x140012662c8, {0x140011edb80, 0x4, 0x4})
+	/Users/ingandrea/go/pkg/mod/github.com/spf13/cobra@v1.4.0/command.go:856 +0x548
+github.com/spf13/cobra.(*Command).ExecuteC(0x140012402c8)
+	/Users/ingandrea/go/pkg/mod/github.com/spf13/cobra@v1.4.0/command.go:974 +0x2e4
+github.com/spf13/cobra.(*Command).Execute(...)
+	/Users/ingandrea/go/pkg/mod/github.com/spf13/cobra@v1.4.0/command.go:902
+github.com/c3xdev/c3x/cmd/c3x.Run(0x14000e1fd00, 0x14000e1fde0)
+	/Users/ingandrea/projects/c3x/cmd/c3x/main.go:96 +0x144
+github.com/c3xdev/c3x/cmd/c3x_test.GetCommandOutput(0x14000c74fc0, {0x14000e3ab40, 0x5, 0x5}, 0x14000e3ab90, {0x1400120f7f0, 0x2, 0x2})
+	/Users/ingandrea/projects/c3x/cmd/c3x/cmd_test.go:130 +0x1e4
+github.com/c3xdev/c3x/cmd/c3x_test.goldenFileCommandTest(0x14000c74fc0, {0x14001512558, 0x15}, {0x14000e3ab40?, 0x1082d7e60?, 0x6ef?}, 0x14000594f38?, 0x1, {0x1400120f7f0?, 0x104e20570?, ...})
+	/Users/ingandrea/projects/c3x/cmd/c3x/cmd_test.go:89 +0x54
+github.com/c3xdev/c3x/cmd/c3x_test.GoldenFileCommandTest.func2(0x14000c74fc0?)
+	/Users/ingandrea/projects/c3x/cmd/c3x/cmd_test.go:74 +0x108
+testing.tRunner(0x14000c74fc0, 0x140011ed6c0)
+	/Users/ingandrea/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.8.darwin-arm64/src/testing/testing.go:1934 +0xc8
+created by testing.(*T).Run in goroutine 232
+	/Users/ingandrea/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.8.darwin-arm64/src/testing/testing.go:1997 +0x364
+
+Environment:
+C3X 
+
+An unexpected error occurred. We've been notified of it and will investigate it soon. If you would like to follow-up, please copy the above output and create an issue at: https://github.com/c3xdev/c3x/issues/new
+[0m

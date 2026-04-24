@@ -1,0 +1,53 @@
+package {{ .CloudProvider }}
+
+import (
+	"github.com/c3xdev/c3x/internal/resources/{{ .CloudProvider }}"
+	"github.com/c3xdev/c3x/internal/schema"
+	{{- if .WithHelp }}
+
+	"strings"
+	{{- end }}
+)
+
+func {{.RegistryFuncName}}() *schema.RegistryItem {
+	return &schema.RegistryItem{
+		Name:      "{{ .FullResourceName }}",
+		CoreRFunc: {{ .RFuncName }},
+		{{- if (eq .CloudProvider "azure") }}
+		ReferenceAttributes: []string{
+			"resource_group_name",
+		},
+		{{- end }}
+	}
+}
+
+func {{ .RFuncName }}(d *schema.ResourceData) schema.CoreResource {
+	region := d.Region
+	{{- if .WithHelp }}
+
+	// In {{.RFuncName}} we parse the resource data coming from d
+	// into the underlying {{ .ResourceName }}. We use schema.ResourceData lookup
+	// to find data stored on attributes in the resource. This can be done as follows:
+	sku := d.Get("sku_name").String()
+	instanceType := strings.Split(sku, "_")[0]
+	count := d.Get("terraformFieldThatHasNumberOfInstances").Int()
+
+	usageType := "default"
+	if !d.IsEmpty("usageType") {
+		usageType = d.Get("usageType").String()
+	}
+
+	return &{{ .CloudProvider }}.{{ .ResourceName }}{
+		Address:       d.Address,
+		Region:        region,
+		InstanceCount: count,
+		InstanceType:  instanceType,
+		UsageType:     usageType,
+	}
+	{{- else }}
+	return &{{ .CloudProvider }}.{{ .ResourceName }}{
+		Address: d.Address,
+		Region:  region,
+	}
+	{{- end }}
+}

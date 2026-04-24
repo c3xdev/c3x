@@ -1,0 +1,774 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$ref": "#/definitions/Report",
+  "definitions": {
+    "ActualCosts": {
+      "required": [
+        "resourceId",
+        "startTimestamp",
+        "endTimestamp"
+      ],
+      "properties": {
+        "resourceId": {
+          "type": "string"
+        },
+        "startTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "costComponents": {
+          "items": {
+            "$ref": "#/definitions/CostComponent"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "AttributeWithUnknownKeys": {
+      "required": [
+        "attribute",
+        "missingVariables"
+      ],
+      "properties": {
+        "attribute": {
+          "type": "string"
+        },
+        "missingVariables": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Breakdown": {
+      "required": [
+        "resources",
+        "totalHourlyCost",
+        "totalMonthlyCost",
+        "totalMonthlyUsageCost"
+      ],
+      "properties": {
+        "resources": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/Resource"
+          },
+          "type": "array"
+        },
+        "freeResources": {
+          "items": {
+            "$ref": "#/definitions/Resource"
+          },
+          "type": "array"
+        },
+        "totalHourlyCost": {
+          "type": ["string", "null"]
+        },
+        "totalMonthlyCost": {
+          "type": ["string", "null"]
+        },
+        "totalMonthlyUsageCost": {
+          "type": ["string", "null"]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "CostComponent": {
+      "required": [
+        "name",
+        "unit",
+        "hourlyQuantity",
+        "monthlyQuantity",
+        "price",
+        "hourlyCost",
+        "monthlyCost",
+        "priceNotFound"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "hourlyQuantity": {
+          "type": ["string", "null"]
+        },
+        "monthlyQuantity": {
+          "type": ["string", "null"]
+        },
+        "price": {
+          "type": ["string", "null"]
+        },
+        "hourlyCost": {
+          "type": ["string", "null"]
+        },
+        "monthlyCost": {
+          "type": ["string", "null"]
+        },
+        "usageBased": {
+          "type": "boolean"
+        },
+        "priceNotFound": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Diagnostic": {
+      "required": [
+        "code",
+        "message",
+        "data",
+        "isError"
+      ],
+      "properties": {
+        "code": {
+          "type": "integer"
+        },
+        "message": {
+          "type": "string"
+        },
+        "data": {
+          "additionalProperties": true
+        },
+        "isError": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Metadata": {
+      "required": [
+        "c3xCommand",
+        "vcsBranch",
+        "vcsCommitSha",
+        "vcsCommitAuthorName",
+        "vcsCommitAuthorEmail",
+        "vcsCommitTimestamp",
+        "vcsCommitMessage"
+      ],
+      "properties": {
+        "c3xCommand": {
+          "type": "string"
+        },
+        "vcsBranch": {
+          "type": "string"
+        },
+        "vcsBaseCommitSha": {
+          "type": "string"
+        },
+        "vcsCommitSha": {
+          "type": "string"
+        },
+        "vcsCommitAuthorName": {
+          "type": "string"
+        },
+        "vcsCommitAuthorEmail": {
+          "type": "string"
+        },
+        "vcsCommitTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "vcsCommitMessage": {
+          "type": "string"
+        },
+        "vcsRepositoryUrl": {
+          "type": "string"
+        },
+        "vcsProvider": {
+          "type": "string"
+        },
+        "vcsBaseBranch": {
+          "type": "string"
+        },
+        "vcsPullRequestTitle": {
+          "type": "string"
+        },
+        "vcsPullRequestUrl": {
+          "type": "string"
+        },
+        "vcsPullRequestAuthor": {
+          "type": "string"
+        },
+        "vcsPullRequestLabels": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "vcsPipelineRunId": {
+          "type": "string"
+        },
+        "vcsPullRequestId": {
+          "type": "string"
+        },
+        "usageApiEnabled": {
+          "type": "boolean"
+        },
+        "usageFilePath": {
+          "type": "string"
+        },
+        "configFilePath": {
+          "type": "string"
+        },
+        "configFileHasUsageFile": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Policy": {
+      "required": [
+        "id",
+        "title",
+        "description",
+        "resource_type",
+        "resource_attributes",
+        "address",
+        "suggested",
+        "no_cost",
+        "cost"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "resource_type": {
+          "type": "string"
+        },
+        "resource_attributes": {
+          "additionalProperties": true
+        },
+        "address": {
+          "type": "string"
+        },
+        "suggested": {
+          "type": "string"
+        },
+        "no_cost": {
+          "type": "boolean"
+        },
+        "cost": {
+          "type": ["string", "null"]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Project": {
+      "required": [
+        "name",
+        "displayName",
+        "metadata",
+        "pastBreakdown",
+        "breakdown",
+        "diff",
+        "summary"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "metadata": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/WorkspaceMeta"
+        },
+        "pastBreakdown": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/Breakdown"
+        },
+        "breakdown": {
+          "$ref": "#/definitions/Breakdown"
+        },
+        "diff": {
+          "$ref": "#/definitions/Breakdown"
+        },
+        "summary": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/Summary"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Report": {
+      "required": [
+        "version",
+        "metadata",
+        "currency",
+        "projects",
+        "totalHourlyCost",
+        "totalMonthlyCost",
+        "pastTotalHourlyCost",
+        "pastTotalMonthlyCost",
+        "diffTotalHourlyCost",
+        "diffTotalMonthlyCost",
+        "timeGenerated",
+        "summary"
+      ],
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "metadata": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/Metadata"
+        },
+        "runId": {
+          "type": "string"
+        },
+        "shareUrl": {
+          "type": "string"
+        },
+        "cloudUrl": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "projects": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/Project"
+          },
+          "type": "array"
+        },
+        "totalHourlyCost": {
+          "type": ["string", "null"]
+        },
+        "totalMonthlyCost": {
+          "type": ["string", "null"]
+        },
+        "totalMonthlyUsageCost": {
+          "type": ["string", "null"]
+        },
+        "pastTotalHourlyCost": {
+          "type": ["string", "null"]
+        },
+        "pastTotalMonthlyCost": {
+          "type": ["string", "null"]
+        },
+        "pastTotalMonthlyUsageCost": {
+          "type": ["string", "null"]
+        },
+        "diffTotalHourlyCost": {
+          "type": ["string", "null"]
+        },
+        "diffTotalMonthlyCost": {
+          "type": ["string", "null"]
+        },
+        "diffTotalMonthlyUsageCost": {
+          "type": ["string", "null"]
+        },
+        "timeGenerated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "summary": {
+          "$ref": "#/definitions/Summary"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Resource": {
+      "required": [
+        "name",
+        "metadata"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "resourceType": {
+          "type": "string"
+        },
+        "tags": {
+          "patternProperties": {
+            ".*": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "defaultTags": {
+          "patternProperties": {
+            ".*": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "tagPropagation": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/TagPropagation"
+        },
+        "providerSupportsDefaultTags": {
+          "type": "boolean"
+        },
+        "providerLink": {
+          "type": "string"
+        },
+        "metadata": {
+          "patternProperties": {
+            ".*": {
+              "additionalProperties": true
+            }
+          },
+          "type": "object"
+        },
+        "hourlyCost": {
+          "type": ["string", "null"]
+        },
+        "monthlyCost": {
+          "type": ["string", "null"]
+        },
+        "monthlyUsageCost": {
+          "type": ["string", "null"]
+        },
+        "costComponents": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/CostComponent"
+          },
+          "type": "array"
+        },
+        "actualCosts": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/ActualCosts"
+          },
+          "type": "array"
+        },
+        "subresources": {
+          "items": {
+            "$ref": "#/definitions/Subresource"
+          },
+          "type": "array"
+        },
+        "missingVarsCausingUnknownTagKeys": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "missingVarsCausingUnknownDefaultTagKeys": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Subresource": {
+      "required": [
+        "name",
+        "metadata"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "resourceType": {
+          "type": "string"
+        },
+        "tags": {
+          "patternProperties": {
+            ".*": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "defaultTags": {
+          "patternProperties": {
+            ".*": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "tagPropagation": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/TagPropagation"
+        },
+        "providerSupportsDefaultTags": {
+          "type": "boolean"
+        },
+        "providerLink": {
+          "type": "string"
+        },
+        "metadata": {
+          "patternProperties": {
+            ".*": {
+              "additionalProperties": true
+            }
+          },
+          "type": "object"
+        },
+        "hourlyCost": {
+          "type": ["string", "null"]
+        },
+        "monthlyCost": {
+          "type": ["string", "null"]
+        },
+        "monthlyUsageCost": {
+          "type": ["string", "null"]
+        },
+        "costComponents": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/CostComponent"
+          },
+          "type": "array"
+        },
+        "actualCosts": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/ActualCosts"
+          },
+          "type": "array"
+        },
+        "subresources": {
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "missingVarsCausingUnknownTagKeys": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "missingVarsCausingUnknownDefaultTagKeys": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Summary": {
+      "properties": {
+        "totalResources": {
+          "type": "integer"
+        },
+        "totalDetectedResources": {
+          "type": "integer"
+        },
+        "totalSupportedResources": {
+          "type": "integer"
+        },
+        "totalUnsupportedResources": {
+          "type": "integer"
+        },
+        "totalUsageBasedResources": {
+          "type": "integer"
+        },
+        "totalNoPriceResources": {
+          "type": "integer"
+        },
+        "supportedResourceCounts": {
+          "patternProperties": {
+            ".*": {
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "unsupportedResourceCounts": {
+          "patternProperties": {
+            ".*": {
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "noPriceResourceCounts": {
+          "patternProperties": {
+            ".*": {
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TagPropagation": {
+      "required": [
+        "to",
+        "attribute"
+      ],
+      "properties": {
+        "to": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "tags": {
+          "patternProperties": {
+            ".*": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "attribute": {
+          "type": "string"
+        },
+        "hasRequiredAttributes": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "VendorMeta": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "defaultTags": {
+          "patternProperties": {
+            ".*": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "startLine": {
+          "type": "integer"
+        },
+        "endLine": {
+          "type": "integer"
+        },
+        "attributesWithUnknownKeys": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/AttributeWithUnknownKeys"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "WorkspaceMeta": {
+      "required": [
+        "path",
+        "type"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "configSha": {
+          "type": "string"
+        },
+        "policySha": {
+          "type": "string"
+        },
+        "pastPolicySha": {
+          "type": "string"
+        },
+        "terraformModulePath": {
+          "type": "string"
+        },
+        "terraformWorkspace": {
+          "type": "string"
+        },
+        "vcsSubPath": {
+          "type": "string"
+        },
+        "vcsCodeChanged": {
+          "type": "boolean"
+        },
+        "errors": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/Diagnostic"
+          },
+          "type": "array"
+        },
+        "currentErrors": {
+          "items": {
+            "$ref": "#/definitions/Diagnostic"
+          },
+          "type": "array"
+        },
+        "pastErrors": {
+          "items": {
+            "$ref": "#/definitions/Diagnostic"
+          },
+          "type": "array"
+        },
+        "warnings": {
+          "items": {
+            "$ref": "#/definitions/Diagnostic"
+          },
+          "type": "array"
+        },
+        "policies": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/Policy"
+          },
+          "type": "array"
+        },
+        "providers": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/VendorMeta"
+          },
+          "type": "array"
+        },
+        "remoteModuleCalls": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}

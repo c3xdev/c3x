@@ -1,0 +1,29 @@
+Project: main
+
+ Name                                Monthly Qty  Unit              Monthly Cost   
+                                                                                   
+ aws_nat_gateway.public_nat["a"]                                                   
+ ├─ NAT gateway                              730  hours                   $32.85   
+ └─ Data processed                Monthly cost depends on usage: $0.045 per GB     
+                                                                                   
+ aws_nat_gateway.public_nat["b"]                                                   
+ ├─ NAT gateway                              730  hours                   $32.85   
+ └─ Data processed                Monthly cost depends on usage: $0.045 per GB     
+                                                                                   
+ OVERALL TOTAL                                                           $65.70 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+8 cloud resources were detected:
+∙ 2 were estimated
+∙ 6 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃           $66 ┃           - ┃        $66 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+
+Err:
+

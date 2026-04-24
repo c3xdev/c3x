@@ -1,0 +1,45 @@
+{
+  "id": "ff050cb8-eaaa-479f-8865-3fc0fd689b9f",
+  "shareUrl": "",
+  "cloudUrl": "https://dashboard.c3x.dev/org/tim/repos/4e936c53-6091-4836-82da-e106ff653aec/runs/ff050cb8-eaaa-479f-8865-3fc0fd689b9f",
+  "pullRequestUrl": "https://dashboard.c3x.dev/org/tim/repos/4e936c53-6091-4836-82da-e106ff653aec/pulls/null",
+  "commentMarkdown": "\n\u003ch4\u003eGovernance checks\u003c/h4\u003e\n\n\u003cdetails\u003e\n\u003csummary\u003e\u003cstrong\u003e🔴 4 failures\u003c/strong\u003e...",
+  "governanceFailures": null,
+  "governanceResults": [
+    {
+      "govType": "tag_policy",
+      "checked": 1,
+      "warnings": [
+        "Timtags"
+      ],
+      "failures": [],
+      "unblocked": []
+    },
+    {
+      "govType": "finops_policy",
+      "checked": 48,
+      "warnings": [
+        "Cloudwatch - consider using a retention policy to reduce storage costs",
+        "EBS - consider upgrading gp2 volumes to gp3",
+        "S3 - consider using a lifecycle policy to reduce storage costs"
+      ],
+      "failures": [],
+      "unblocked": []
+    },
+    {
+      "govType": "guardrail",
+      "checked": 0,
+      "warnings": [],
+      "failures": [],
+      "unblocked": []
+    }
+  ]
+}
+Logs:
+INFO [1mEstimate uploaded to C3X Cloud[0m
+INFO [1m1 tag policy checked[0m
+INFO [1mtag policy check failed: Timtags[0m
+INFO [1m48 finops policies checked[0m
+INFO [1mfinops policy check failed: Cloudwatch - consider using a retention policy to reduce storage costs[0m
+INFO [1mfinops policy check failed: EBS - consider upgrading gp2 volumes to gp3[0m
+INFO [1mfinops policy check failed: S3 - consider using a lifecycle policy to reduce storage costs[0m

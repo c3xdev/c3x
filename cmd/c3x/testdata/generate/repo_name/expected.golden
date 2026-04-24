@@ -1,0 +1,13 @@
+version: 0.1
+
+projects:
+  - path: apps/bar
+    name: apps-bar
+    terraform_vars:
+  - path: apps/foo
+    name: apps-foo-dev
+    terraform_vars:
+  - path: apps/foo
+    name: apps-foo-prod
+    terraform_vars:
+

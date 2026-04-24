@@ -1,0 +1,170 @@
+policyResourceAllowList:
+[
+  {
+    "query": "\n\t\tquery GetPolicyResourceAllowList{\n\t\t\tpolicyResourceAllowList {\n\t\t\t\tresourceType\n                allowed\n\t\t\t}\n\t\t}\n\t",
+    "variables": {}
+  }
+]
+
+storePolicyResources:
+[
+  {
+    "query": "\n\tmutation($policyResources: [PolicyResourceInput!]!) {\n\t\tstorePolicyResources(policyResources: $policyResources) {\n\t\t\tsha\n\t\t}\n\t}\n\t",
+    "variables": {
+      "policyResources": [
+        {
+          "resourceType": "aws_instance",
+          "providerName": "",
+          "address": "aws_instance.app_server",
+          "tags": [
+            {
+              "key": "DefaultNotOverride",
+              "value": "defaultnotoverride"
+            },
+            {
+              "key": "DefaultOverride",
+              "value": "defaultoverride"
+            },
+            {
+              "key": "foo",
+              "value": "bar"
+            },
+            {
+              "key": "volume_tags.DefaultNotOverride",
+              "value": "defaultnotoverride"
+            },
+            {
+              "key": "volume_tags.DefaultOverride",
+              "value": "defaultoverride"
+            },
+            {
+              "key": "volume_tags.baz",
+              "value": "bat"
+            }
+          ],
+          "defaultTags": [
+            {
+              "key": "DefaultNotOverride",
+              "value": "defaultnotoverride"
+            },
+            {
+              "key": "DefaultOverride",
+              "value": "defaultoverride"
+            }
+          ],
+          "supportForDefaultTags": false,
+          "values": {
+            "ebs_block_device": [
+              {
+                "iops": 800,
+                "volume_type": "gp2"
+              }
+            ],
+            "instance_type": "m5.4xlarge",
+            "root_block_device": [
+              {}
+            ]
+          },
+          "references": [],
+          "c3xMetadata": {
+            "calls": [
+              {
+                "filename": "REPLACED_PROJECT_PATH/testdata/breakdown_with_policy_data_upload_terragrunt/main.tf",
+                "blockName": "aws_instance.app_server",
+                "startLine": 1,
+                "endLine": 22
+              }
+            ],
+            "checksum": "06e99a2b2538bad19a7c09fc83517fe75d31f4fa1f8e685db4b6d472743fb685",
+            "endLine": 22,
+            "filename": "REPLACED_PROJECT_PATH/testdata/breakdown_with_policy_data_upload_terragrunt/main.tf",
+            "startLine": 1
+          },
+          "region": "us-east-1"
+        }
+      ]
+    }
+  }
+]
+
+storePolicyResources:
+[
+  {
+    "query": "\n\tmutation($policyResources: [PolicyResourceInput!]!) {\n\t\tstorePolicyResources(policyResources: $policyResources) {\n\t\t\tsha\n\t\t}\n\t}\n\t",
+    "variables": {
+      "policyResources": [
+        {
+          "resourceType": "aws_instance",
+          "providerName": "",
+          "address": "aws_instance.app_server",
+          "tags": [
+            {
+              "key": "DefaultNotOverride",
+              "value": "defaultnotoverride"
+            },
+            {
+              "key": "DefaultOverride",
+              "value": "defaultoverride"
+            },
+            {
+              "key": "foo",
+              "value": "bar"
+            },
+            {
+              "key": "volume_tags.DefaultNotOverride",
+              "value": "defaultnotoverride"
+            },
+            {
+              "key": "volume_tags.DefaultOverride",
+              "value": "defaultoverride"
+            },
+            {
+              "key": "volume_tags.baz",
+              "value": "bat"
+            }
+          ],
+          "defaultTags": [
+            {
+              "key": "DefaultNotOverride",
+              "value": "defaultnotoverride"
+            },
+            {
+              "key": "DefaultOverride",
+              "value": "defaultoverride"
+            }
+          ],
+          "supportForDefaultTags": false,
+          "values": {
+            "ebs_block_device": [
+              {
+                "iops": 800,
+                "volume_type": "gp2"
+              }
+            ],
+            "instance_type": "m5.4xlarge",
+            "root_block_device": [
+              {}
+            ]
+          },
+          "references": [],
+          "c3xMetadata": {
+            "calls": [
+              {
+                "filename": "REPLACED_PROJECT_PATH/testdata/breakdown_with_policy_data_upload_terragrunt/main.tf",
+                "blockName": "aws_instance.app_server",
+                "startLine": 1,
+                "endLine": 22
+              }
+            ],
+            "checksum": "06e99a2b2538bad19a7c09fc83517fe75d31f4fa1f8e685db4b6d472743fb685",
+            "endLine": 22,
+            "filename": "REPLACED_PROJECT_PATH/testdata/breakdown_with_policy_data_upload_terragrunt/main.tf",
+            "startLine": 1
+          },
+          "region": "us-east-1"
+        }
+      ]
+    }
+  }
+]
+

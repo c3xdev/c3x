@@ -1,0 +1,22 @@
+
+ Name  Monthly Qty  Unit  Monthly Cost   
+                                         
+ OVERALL TOTAL                  $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+272 cloud resources were detected:
+∙ 265 were estimated
+∙ 6 were free
+∙ 1 is not supported yet, see https://c3x.dev/requested-resources:
+  ∙ 1 x azurerm_cognitive_deployment
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+Logs:
+
+WARN [1mSkipping resource azurerm_cognitive_deployment.unsupported. Model 'ada' is not supported[0m

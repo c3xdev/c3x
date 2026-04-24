@@ -1,0 +1,83 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill out the sections below so we can reproduce and fix the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Run `c3x estimate --path ...`
+        2. See error ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: terraform
+    attributes:
+      label: Terraform/IaC config
+      description: Relevant Terraform (or other IaC) configuration. Redact any sensitive values.
+      render: hcl
+
+  - type: input
+    id: version
+    attributes:
+      label: C3X version
+      description: Output of `c3x --version`
+      placeholder: v1.0.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: cloud
+    attributes:
+      label: Cloud provider
+      options:
+        - AWS
+        - Azure
+        - Google Cloud
+        - Multiple
+        - N/A
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 14.5 / Ubuntu 22.04 / Windows 11
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Run with `--log-level debug` for verbose output.
+      render: shell
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Any other context about the problem.

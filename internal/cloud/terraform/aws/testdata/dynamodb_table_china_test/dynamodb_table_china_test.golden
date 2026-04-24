@@ -1,0 +1,25 @@
+
+ Name                                             Monthly Qty  Unit  Monthly Cost (CNY)   
+                                                                                          
+ aws_dynamodb_table.my_dynamodb_table_china                                               
+ ├─ Write capacity unit (WCU)                              20  WCU            not found   
+ ├─ Read capacity unit (RCU)                               30  RCU            not found   
+ ├─ Data storage                                  not found                               
+ ├─ Point-In-Time Recovery (PITR) backup storage  not found                               
+ ├─ On-demand backup storage                      not found                               
+ ├─ Table data restored                           not found                               
+ └─ Streams read request unit (sRRU)              not found                               
+                                                                                          
+ OVERALL TOTAL (CNY)                                                            0.00 元 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+1 cloud resource was detected:
+∙ 1 was estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃       0.00 元 ┃           - ┃    0.00 元 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

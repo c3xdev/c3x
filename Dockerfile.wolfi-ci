@@ -1,0 +1,30 @@
+FROM cgr.dev/chainguard/go AS builder
+
+ARG ARCH=linux64
+
+# Set Environment Variables
+SHELL ["/bin/bash", "-c"]
+ENV HOME=/app
+ENV CGO_ENABLED=0
+
+WORKDIR /app
+
+# Build Application
+COPY . .
+RUN NO_DIRTY=true make build
+RUN chmod +x /app/build/c3x
+
+# Application
+FROM cgr.dev/chainguard/wolfi-base AS app
+# Tools needed for running diffs in CI integrations
+RUN apk --no-cache add bash curl git openssh-client jq
+
+WORKDIR /root/
+
+COPY --from=builder /app/build/c3x /usr/bin/
+
+ENV C3X_CI_IMAGE=true
+ENV C3X_SKIP_UPDATE_CHECK='true'
+ENV C3X_LOG_LEVEL=info
+
+ENTRYPOINT ["c3x"]

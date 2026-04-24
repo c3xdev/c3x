@@ -1,0 +1,39 @@
+FROM golang:1.25.8 AS builder
+
+ARG ARCH=linux64
+
+# Set Environment Variables
+SHELL ["/bin/bash", "-c"]
+ENV HOME=/app
+ENV CGO_ENABLED=0
+
+WORKDIR /app
+
+# Build Application
+COPY . .
+RUN NO_DIRTY=true make build
+RUN chmod +x /app/build/c3x
+
+# Application
+FROM alpine:3.16 AS app
+# Tools needed for running diffs in CI integrations
+RUN apk --no-cache add bash curl git openssh-client
+
+# The jq package provided by alpine:3.15 (jq 1.6-rc1) is flagged as a
+# high severity vulnerability, so we install the latest release ourselves
+# Reference: https://nvd.nist.gov/vuln/detail/CVE-2016-4074 (this is present on jq-1.6-rc1 as well)
+RUN \
+    # Install jq-1.6 (final release)
+    curl -s -L -o /tmp/jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 && \
+    mv /tmp/jq /usr/local/bin/jq && \
+    chmod +x /usr/local/bin/jq
+
+WORKDIR /root/
+
+COPY --from=builder /app/build/c3x /usr/bin/
+
+ENV C3X_CI_IMAGE=true
+ENV C3X_SKIP_UPDATE_CHECK='true'
+ENV C3X_LOG_LEVEL=info
+
+ENTRYPOINT ["c3x"]

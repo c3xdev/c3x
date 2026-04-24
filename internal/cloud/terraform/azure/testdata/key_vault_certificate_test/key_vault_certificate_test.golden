@@ -1,0 +1,29 @@
+
+ Name                                     Monthly Qty  Unit              Monthly Cost   
+                                                                                        
+ azurerm_key_vault_certificate.premium                                                  
+ ├─ Certificate renewals                          100  requests             not found   
+ └─ Certificate operations                         10  10K transactions     not found   
+                                                                                        
+ azurerm_key_vault_certificate.standard                                                 
+ ├─ Certificate renewals                          100  requests             not found   
+ └─ Certificate operations                         10  10K transactions     not found   
+                                                                                        
+ azurerm_key_vault_certificate.non-usage                                                
+ ├─ Certificate renewals                  not found                                     
+ └─ Certificate operations                not found                                     
+                                                                                        
+ OVERALL TOTAL                                                                 $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+6 cloud resources were detected:
+∙ 3 were estimated
+∙ 3 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

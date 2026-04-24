@@ -1,0 +1,11 @@
+version: 0.1
+
+projects:
+  - path: .
+    name: stem(terraform)
+  - path: .
+    name: base(terraform.tfvars)
+  - path: .
+    name: ext(.tfvars)
+  - path: .
+    name: name-of-project

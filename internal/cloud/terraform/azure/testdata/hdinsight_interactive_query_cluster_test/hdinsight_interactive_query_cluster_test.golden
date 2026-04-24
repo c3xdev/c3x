@@ -1,0 +1,25 @@
+
+ Name                                                   Monthly Qty  Unit            Monthly Cost   
+                                                                                                    
+ azurerm_hdinsight_interactive_query_cluster.example                                                
+ ├─ Head node (Standard_E2_V3)                                1,460  hours                $277.40   
+ ├─ Worker node (Standard_E16_V3)                             2,190  hours              $3,328.80   
+ └─ Zookeeper node (Standard_E64i_V3)                         2,190  hours             $12,246.48   
+                                                                                                    
+ azurerm_storage_account.example                                                                    
+ └─ Early deletion                                    Monthly cost depends on usage: $0.01 per GB   
+                                                                                                    
+ OVERALL TOTAL                                                                        $15,852.68 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+4 cloud resources were detected:
+∙ 2 were estimated
+∙ 2 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃       $15,853 ┃           - ┃    $15,853 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

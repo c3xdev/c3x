@@ -1,0 +1,29 @@
+
+ Name                                 Monthly Qty  Unit           Monthly Cost    
+                                                                                  
+ azurerm_iothub.iothub_multiple                                                   
+ └─ IoT Hub                                     4  units             not found    
+                                                                                  
+ azurerm_iothub.iothub_single                                                     
+ └─ IoT Hub                                     1  units             not found    
+                                                                                  
+ azurerm_iothub_dps.dps_withUsage                                                 
+ └─ Device provisioning                        10  1k operations     not found  * 
+                                                                                  
+ azurerm_iothub_dps.dps_withoutUsage                                              
+ └─ Device provisioning               not found                                   
+                                                                                  
+ OVERALL TOTAL                                                           $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+6 cloud resources were detected:
+∙ 4 were estimated
+∙ 2 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

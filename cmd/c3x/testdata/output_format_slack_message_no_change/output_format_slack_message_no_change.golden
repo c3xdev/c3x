@@ -1,0 +1,51 @@
+{
+  "attachments": [
+    {
+      "color": "#dcd8e1",
+      "blocks": [
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "*C3X output*\n```──────────────────────────────────\n```"
+          }
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "💰 C3X estimate: *Monthly estimate generated*"
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "fields": [
+        {
+          "type": "plain_text",
+          "text": "Project"
+        },
+        {
+          "type": "plain_text",
+          "text": "Diff"
+        },
+        {
+          "type": "plain_text",
+          "text": "c3x/c3x/cmd/c3x/test..._nochange_plan.json"
+        },
+        {
+          "type": "plain_text",
+          "text": "$0.00 ($41 → $41)"
+        }
+      ]
+    }
+  ],
+  "replace_original": false,
+  "delete_original": false
+}

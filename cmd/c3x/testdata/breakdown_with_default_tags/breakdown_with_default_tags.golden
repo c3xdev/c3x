@@ -1,0 +1,436 @@
+{
+  "version": "0.2",
+  "metadata": {
+    "c3xCommand": "breakdown",
+    "vcsBranch": "stub-branch",
+    "vcsCommitSha": "stub-sha",
+    "vcsCommitAuthorName": "stub-author",
+    "vcsCommitAuthorEmail": "stub@stub.com",
+    "vcsCommitTimestamp": "REPLACED_TIME",
+    "vcsCommitMessage": "stub-message",
+    "vcsRepositoryUrl": "https://github.com/c3xdev/c3x"
+  },
+  "currency": "USD",
+  "projects": [
+    {
+      "name": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags",
+      "displayName": "main",
+      "metadata": {
+        "path": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags",
+        "type": "terraform_dir",
+        "vcsSubPath": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags",
+        "providers": [
+          {
+            "name": "aws",
+            "defaultTags": {
+              "Environment": "Test",
+              "Owner": "TFProviders",
+              "Project": "TestProject",
+              "SomeBool": "true",
+              "SomeFloat": "1.1",
+              "SomeNumber": "1"
+            },
+            "filename": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags/main.tf",
+            "startLine": 1,
+            "endLine": 18
+          }
+        ]
+      },
+      "pastBreakdown": {
+        "resources": [
+          {
+            "name": "aws_autoscaling_group.asg",
+            "resourceType": "aws_autoscaling_group",
+            "tags": {
+              "Environment": "Test-var",
+              "Owner": "TFProviders-var",
+              "Project": "TestProject-var",
+              "SomeDynamicBool": "true",
+              "SomeDynamicFloat": "1.1",
+              "SomeDynamicNumber": "1"
+            },
+            "defaultTags": {
+              "Environment": "Test",
+              "Owner": "TFProviders",
+              "Project": "TestProject",
+              "SomeBool": "true",
+              "SomeFloat": "1.1",
+              "SomeNumber": "1"
+            },
+            "providerSupportsDefaultTags": true,
+            "providerLink": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags/main.tf:1",
+            "metadata": {
+              "calls": [
+                {
+                  "blockName": "aws_autoscaling_group.asg",
+                  "endLine": 100,
+                  "filename": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags/main.tf",
+                  "startLine": 75
+                }
+              ],
+              "checksum": "ea064bbcbd559c213f0baf5b0c3793ca2041f3a3e07160e5ac4472b06d1ccf35",
+              "endLine": 100,
+              "filename": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags/main.tf",
+              "startLine": 75
+            },
+            "hourlyCost": "0.04557260273972602",
+            "monthlyCost": "33.268",
+            "subresources": [
+              {
+                "name": "aws_launch_configuration.lc",
+                "metadata": {},
+                "hourlyCost": "0.04557260273972602",
+                "monthlyCost": "33.268",
+                "costComponents": [
+                  {
+                    "name": "Instance usage (Linux/UNIX, on-demand, t3.medium)",
+                    "unit": "hours",
+                    "hourlyQuantity": "1",
+                    "monthlyQuantity": "730",
+                    "price": "0.0416",
+                    "hourlyCost": "0.0416",
+                    "monthlyCost": "30.368",
+                    "priceNotFound": false
+                  },
+                  {
+                    "name": "EC2 detailed monitoring",
+                    "unit": "metrics",
+                    "hourlyQuantity": "0.0095890410958904",
+                    "monthlyQuantity": "7",
+                    "price": "0.3",
+                    "hourlyCost": "0.00287671232876712",
+                    "monthlyCost": "2.1",
+                    "priceNotFound": false
+                  },
+                  {
+                    "name": "CPU credits",
+                    "unit": "vCPU-hours",
+                    "hourlyQuantity": "0",
+                    "monthlyQuantity": "0",
+                    "price": "0.05",
+                    "hourlyCost": "0",
+                    "monthlyCost": "0",
+                    "priceNotFound": false
+                  }
+                ],
+                "subresources": [
+                  {
+                    "name": "root_block_device",
+                    "metadata": {},
+                    "hourlyCost": "0.0010958904109589",
+                    "monthlyCost": "0.8",
+                    "costComponents": [
+                      {
+                        "name": "Storage (general purpose SSD, gp2)",
+                        "unit": "GB",
+                        "hourlyQuantity": "0.010958904109589",
+                        "monthlyQuantity": "8",
+                        "price": "0.1",
+                        "hourlyCost": "0.0010958904109589",
+                        "monthlyCost": "0.8",
+                        "priceNotFound": false
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "aws_lambda_function.event_handler",
+            "resourceType": "aws_lambda_function",
+            "tags": {
+              "Environment": "Test",
+              "Owner": "TFProviders",
+              "Project": "LambdaTestProject",
+              "SomeBool": "true",
+              "SomeFloat": "1.1",
+              "SomeNumber": "1",
+              "lambdaTag": "hello"
+            },
+            "defaultTags": {
+              "Environment": "Test",
+              "Owner": "TFProviders",
+              "Project": "TestProject",
+              "SomeBool": "true",
+              "SomeFloat": "1.1",
+              "SomeNumber": "1"
+            },
+            "providerSupportsDefaultTags": true,
+            "providerLink": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags/main.tf:1",
+            "metadata": {
+              "calls": [
+                {
+                  "blockName": "aws_lambda_function.event_handler",
+                  "endLine": 32,
+                  "filename": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags/main.tf",
+                  "startLine": 22
+                }
+              ],
+              "checksum": "23aa0c6cd97d29e97408c23a4251f546976ba77e6dda0c7a49589db03a04bcd3",
+              "defaultTagsChecksum": "554cb5bc144f8c4690b6f71b48b5f746dc3141e609f7ab49fabb549fd5fee449",
+              "endLine": 32,
+              "filename": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags/main.tf",
+              "startLine": 22
+            },
+            "costComponents": [
+              {
+                "name": "Requests",
+                "unit": "1M requests",
+                "hourlyQuantity": null,
+                "monthlyQuantity": null,
+                "price": "0.2",
+                "hourlyCost": null,
+                "monthlyCost": null,
+                "usageBased": true,
+                "priceNotFound": false
+              },
+              {
+                "name": "Ephemeral storage",
+                "unit": "GB-seconds",
+                "hourlyQuantity": null,
+                "monthlyQuantity": null,
+                "price": "0.0000000309",
+                "hourlyCost": null,
+                "monthlyCost": null,
+                "priceNotFound": false
+              },
+              {
+                "name": "Duration (first 6B)",
+                "unit": "GB-seconds",
+                "hourlyQuantity": null,
+                "monthlyQuantity": null,
+                "price": "0.0000166667",
+                "hourlyCost": null,
+                "monthlyCost": null,
+                "usageBased": true,
+                "priceNotFound": false
+              }
+            ]
+          }
+        ],
+        "totalHourlyCost": "0.04557260273972602",
+        "totalMonthlyCost": "33.268",
+        "totalMonthlyUsageCost": "0"
+      },
+      "breakdown": {
+        "resources": [
+          {
+            "name": "aws_autoscaling_group.asg",
+            "resourceType": "aws_autoscaling_group",
+            "tags": {
+              "Environment": "Test-var",
+              "Owner": "TFProviders-var",
+              "Project": "TestProject-var",
+              "SomeDynamicBool": "true",
+              "SomeDynamicFloat": "1.1",
+              "SomeDynamicNumber": "1"
+            },
+            "defaultTags": {
+              "Environment": "Test",
+              "Owner": "TFProviders",
+              "Project": "TestProject",
+              "SomeBool": "true",
+              "SomeFloat": "1.1",
+              "SomeNumber": "1"
+            },
+            "providerSupportsDefaultTags": true,
+            "providerLink": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags/main.tf:1",
+            "metadata": {
+              "calls": [
+                {
+                  "blockName": "aws_autoscaling_group.asg",
+                  "endLine": 100,
+                  "filename": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags/main.tf",
+                  "startLine": 75
+                }
+              ],
+              "checksum": "ea064bbcbd559c213f0baf5b0c3793ca2041f3a3e07160e5ac4472b06d1ccf35",
+              "endLine": 100,
+              "filename": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags/main.tf",
+              "startLine": 75
+            },
+            "hourlyCost": "0.04557260273972602",
+            "monthlyCost": "33.268",
+            "subresources": [
+              {
+                "name": "aws_launch_configuration.lc",
+                "metadata": {},
+                "hourlyCost": "0.04557260273972602",
+                "monthlyCost": "33.268",
+                "costComponents": [
+                  {
+                    "name": "Instance usage (Linux/UNIX, on-demand, t3.medium)",
+                    "unit": "hours",
+                    "hourlyQuantity": "1",
+                    "monthlyQuantity": "730",
+                    "price": "0.0416",
+                    "hourlyCost": "0.0416",
+                    "monthlyCost": "30.368",
+                    "priceNotFound": false
+                  },
+                  {
+                    "name": "EC2 detailed monitoring",
+                    "unit": "metrics",
+                    "hourlyQuantity": "0.0095890410958904",
+                    "monthlyQuantity": "7",
+                    "price": "0.3",
+                    "hourlyCost": "0.00287671232876712",
+                    "monthlyCost": "2.1",
+                    "priceNotFound": false
+                  },
+                  {
+                    "name": "CPU credits",
+                    "unit": "vCPU-hours",
+                    "hourlyQuantity": "0",
+                    "monthlyQuantity": "0",
+                    "price": "0.05",
+                    "hourlyCost": "0",
+                    "monthlyCost": "0",
+                    "priceNotFound": false
+                  }
+                ],
+                "subresources": [
+                  {
+                    "name": "root_block_device",
+                    "metadata": {},
+                    "hourlyCost": "0.0010958904109589",
+                    "monthlyCost": "0.8",
+                    "costComponents": [
+                      {
+                        "name": "Storage (general purpose SSD, gp2)",
+                        "unit": "GB",
+                        "hourlyQuantity": "0.010958904109589",
+                        "monthlyQuantity": "8",
+                        "price": "0.1",
+                        "hourlyCost": "0.0010958904109589",
+                        "monthlyCost": "0.8",
+                        "priceNotFound": false
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "aws_lambda_function.event_handler",
+            "resourceType": "aws_lambda_function",
+            "tags": {
+              "Environment": "Test",
+              "Owner": "TFProviders",
+              "Project": "LambdaTestProject",
+              "SomeBool": "true",
+              "SomeFloat": "1.1",
+              "SomeNumber": "1",
+              "lambdaTag": "hello"
+            },
+            "defaultTags": {
+              "Environment": "Test",
+              "Owner": "TFProviders",
+              "Project": "TestProject",
+              "SomeBool": "true",
+              "SomeFloat": "1.1",
+              "SomeNumber": "1"
+            },
+            "providerSupportsDefaultTags": true,
+            "providerLink": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags/main.tf:1",
+            "metadata": {
+              "calls": [
+                {
+                  "blockName": "aws_lambda_function.event_handler",
+                  "endLine": 32,
+                  "filename": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags/main.tf",
+                  "startLine": 22
+                }
+              ],
+              "checksum": "23aa0c6cd97d29e97408c23a4251f546976ba77e6dda0c7a49589db03a04bcd3",
+              "defaultTagsChecksum": "554cb5bc144f8c4690b6f71b48b5f746dc3141e609f7ab49fabb549fd5fee449",
+              "endLine": 32,
+              "filename": "REPLACED_PROJECT_PATH/testdata/breakdown_with_default_tags/main.tf",
+              "startLine": 22
+            },
+            "costComponents": [
+              {
+                "name": "Requests",
+                "unit": "1M requests",
+                "hourlyQuantity": null,
+                "monthlyQuantity": null,
+                "price": "0.2",
+                "hourlyCost": null,
+                "monthlyCost": null,
+                "usageBased": true,
+                "priceNotFound": false
+              },
+              {
+                "name": "Ephemeral storage",
+                "unit": "GB-seconds",
+                "hourlyQuantity": null,
+                "monthlyQuantity": null,
+                "price": "0.0000000309",
+                "hourlyCost": null,
+                "monthlyCost": null,
+                "priceNotFound": false
+              },
+              {
+                "name": "Duration (first 6B)",
+                "unit": "GB-seconds",
+                "hourlyQuantity": null,
+                "monthlyQuantity": null,
+                "price": "0.0000166667",
+                "hourlyCost": null,
+                "monthlyCost": null,
+                "usageBased": true,
+                "priceNotFound": false
+              }
+            ]
+          }
+        ],
+        "totalHourlyCost": "0.04557260273972602",
+        "totalMonthlyCost": "33.268",
+        "totalMonthlyUsageCost": "0"
+      },
+      "diff": {
+        "resources": [],
+        "totalHourlyCost": "0",
+        "totalMonthlyCost": "0",
+        "totalMonthlyUsageCost": "0"
+      },
+      "summary": {
+        "totalDetectedResources": 3,
+        "totalSupportedResources": 2,
+        "totalUnsupportedResources": 0,
+        "totalUsageBasedResources": 2,
+        "totalNoPriceResources": 1,
+        "unsupportedResourceCounts": {},
+        "noPriceResourceCounts": {
+          "aws_launch_configuration": 1
+        }
+      }
+    }
+  ],
+  "totalHourlyCost": "0.04557260273972602",
+  "totalMonthlyCost": "33.268",
+  "totalMonthlyUsageCost": "0",
+  "pastTotalHourlyCost": "0.04557260273972602",
+  "pastTotalMonthlyCost": "33.268",
+  "pastTotalMonthlyUsageCost": "0",
+  "diffTotalHourlyCost": "0",
+  "diffTotalMonthlyCost": "0",
+  "diffTotalMonthlyUsageCost": "0",
+  "timeGenerated": "REPLACED_TIME",
+  "summary": {
+    "totalDetectedResources": 3,
+    "totalSupportedResources": 2,
+    "totalUnsupportedResources": 0,
+    "totalUsageBasedResources": 2,
+    "totalNoPriceResources": 1,
+    "unsupportedResourceCounts": {},
+    "noPriceResourceCounts": {
+      "aws_launch_configuration": 1
+    }
+  }
+}
+
+Err:
+

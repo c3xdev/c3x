@@ -1,0 +1,32 @@
+
+ Name                                    Monthly Qty  Unit       Monthly Cost    
+                                                                                 
+ azurerm_databricks_workspace.premium                                            
+ ├─ All-purpose compute DBUs                     500  DBU-hours     not found  * 
+ ├─ Jobs compute DBUs                          1,000  DBU-hours     not found  * 
+ └─ Jobs light compute DBUs                    2,000  DBU-hours     not found  * 
+                                                                                 
+ azurerm_databricks_workspace.standard                                           
+ ├─ All-purpose compute DBUs                   1,000  DBU-hours     not found  * 
+ ├─ Jobs compute DBUs                          2,000  DBU-hours     not found  * 
+ └─ Jobs light compute DBUs                    4,000  DBU-hours     not found  * 
+                                                                                 
+ azurerm_databricks_workspace.non_usage                                          
+ ├─ All-purpose compute DBUs             not found                               
+ ├─ Jobs compute DBUs                    not found                               
+ └─ Jobs light compute DBUs              not found                               
+                                                                                 
+ OVERALL TOTAL                                                          $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+5 cloud resources were detected:
+∙ 3 were estimated
+∙ 2 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

@@ -1,0 +1,31 @@
+
+ Name                                             Monthly Qty  Unit            Monthly Cost   
+                                                                                              
+ azurerm_hdinsight_hadoop_cluster.without_edge                                                
+ ├─ Head node (Standard_A4m_V2)                         1,460  hours                $446.76   
+ ├─ Worker node (Standard_A1_V2)                          730  hours                 $43.80   
+ └─ Zookeeper node (Standard_A5)                        2,190  hours              not found   
+                                                                                              
+ azurerm_hdinsight_hadoop_cluster.with_edge                                                   
+ ├─ Head node (Standard_D3_V2)                          1,460  hours              not found   
+ ├─ Worker node (Standard_D4_V2)                        2,190  hours              not found   
+ ├─ Zookeeper node (Standard_D3_V2)                     2,190  hours              not found   
+ └─ Edge node (Standard_A5)                             2,190  hours              not found   
+                                                                                              
+ azurerm_storage_account.example                                                              
+ └─ Early deletion                              Monthly cost depends on usage: $0.01 per GB   
+                                                                                              
+ OVERALL TOTAL                                                                     $490.56 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+5 cloud resources were detected:
+∙ 3 were estimated
+∙ 2 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃          $491 ┃           - ┃       $491 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

@@ -1,0 +1,29 @@
+Project: main
+
+ Name                                                      Monthly Qty  Unit   Monthly Cost   
+                                                                                              
+ aws_db_instance.database                                                                     
+ ├─ Database instance (on-demand, Single-AZ, db.r5.large)          730  hours       $182.50   
+ └─ Storage (general purpose SSD, gp3)                              50  GB            $5.75   
+                                                                                              
+ aws_instance.app                                                                             
+ ├─ Instance usage (Linux/UNIX, on-demand, m5.xlarge)              730  hours       $140.16   
+ └─ root_block_device                                                                         
+    └─ Storage (general purpose SSD, gp3)                           50  GB            $4.00   
+                                                                                              
+ OVERALL TOTAL                                                                     $332.41 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+2 cloud resources were detected:
+∙ 2 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃          $332 ┃           - ┃       $332 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+
+Err:
+

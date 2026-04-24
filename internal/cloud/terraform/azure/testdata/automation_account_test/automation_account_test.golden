@@ -1,0 +1,31 @@
+
+ Name                                      Monthly Qty  Unit     Monthly Cost    
+                                                                                 
+ azurerm_automation_account.allUsageEx                                           
+ ├─ Job run time                                     5  minutes     not found  * 
+ ├─ Non-azure config nodes                           2  nodes       not found  * 
+ └─ Watchers                                        10  hours       not found  * 
+                                                                                 
+ azurerm_automation_account.someUsageEx                                          
+ ├─ Job run time                                    20  minutes     not found  * 
+ └─ Watchers                                        15  hours       not found  * 
+                                                                                 
+ azurerm_automation_account.without_usage                                        
+ ├─ Job run time                           not found                             
+ ├─ Non-azure config nodes                 not found                             
+ └─ Watchers                               not found                             
+                                                                                 
+ OVERALL TOTAL                                                          $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+5 cloud resources were detected:
+∙ 4 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

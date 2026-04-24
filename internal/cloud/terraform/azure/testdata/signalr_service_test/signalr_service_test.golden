@@ -1,0 +1,33 @@
+
+ Name                                                       Monthly Qty  Unit         Monthly Cost    
+                                                                                                      
+ azurerm_signalr_service.example["Premium_P1"]                                                        
+ ├─ Service usage (Premium)                                           1  units           not found    
+ └─ Additional messages (Premium)                           not found                                 
+                                                                                                      
+ azurerm_signalr_service.example["Standard_S1"]                                                       
+ ├─ Service usage (Standard)                                          1  units           not found    
+ └─ Additional messages (Standard)                          not found                                 
+                                                                                                      
+ azurerm_signalr_service.example_with_usage["Premium_P1"]                                             
+ ├─ Service usage (Premium)                                           5  units           not found    
+ └─ Additional messages (Premium)                               12.3456  1M messages     not found  * 
+                                                                                                      
+ azurerm_signalr_service.example_with_usage["Standard_S1"]                                            
+ ├─ Service usage (Standard)                                          5  units           not found    
+ └─ Additional messages (Standard)                               1.2345  1M messages     not found  * 
+                                                                                                      
+ OVERALL TOTAL                                                                               $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+6 cloud resources were detected:
+∙ 4 were estimated
+∙ 2 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

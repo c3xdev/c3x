@@ -1,0 +1,40 @@
+
+ Name                                         Monthly Qty  Unit   Monthly Cost   
+                                                                                 
+ azurerm_public_ip.example                                                       
+ └─ IP address (static, regional)                     730  hours         $3.65   
+                                                                                 
+ azurerm_firewall.non_usage                                                      
+ ├─ Deployment (Standard)                             730  hours     not found   
+ └─ Data processed                            not found                          
+                                                                                 
+ azurerm_firewall.premium                                                        
+ ├─ Deployment (Premium)                              730  hours     not found   
+ └─ Data processed                                 10,000  GB        not found   
+                                                                                 
+ azurerm_firewall.premium_virtual_hub                                            
+ ├─ Deployment (Premium Secured Virtual Hub)          730  hours     not found   
+ └─ Data processed                                 20,000  GB        not found   
+                                                                                 
+ azurerm_firewall.standard                                                       
+ ├─ Deployment (Standard)                             730  hours     not found   
+ └─ Data processed                                 10,000  GB        not found   
+                                                                                 
+ azurerm_firewall.standard_virtual_hub                                           
+ ├─ Deployment (Standard Secure Virtual Hub)          730  hours     not found   
+ └─ Data processed                                 20,000  GB        not found   
+                                                                                 
+ OVERALL TOTAL                                                          $3.65 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+11 cloud resources were detected:
+∙ 6 were estimated
+∙ 5 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃            $4 ┃           - ┃         $4 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

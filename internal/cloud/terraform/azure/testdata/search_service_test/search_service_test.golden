@@ -1,0 +1,37 @@
+
+ Name                                            Monthly Qty  Unit         Monthly Cost   
+                                                                                          
+ azurerm_search_service.basic                                                             
+ ├─ Search usage (Basic, 4 units)                      2,920  hours           not found   
+ ├─ Image extraction (first 1M)                        1,000  1000 images     not found   
+ ├─ Image extraction (next 4M)                         4,000  1000 images     not found   
+ └─ Image extraction (over 5M)                         1,000  1000 images     not found   
+                                                                                          
+ azurerm_search_service.non_usage_l1                                                      
+ ├─ Search usage (Storage Optimized L1, 1 unit)          730  hours           not found   
+ └─ Image extraction (first 1M)                  not found                                
+                                                                                          
+ azurerm_search_service.optimized_l1                                                      
+ ├─ Search usage (Storage Optimized L1, 1 unit)          730  hours           not found   
+ ├─ Image extraction (first 1M)                        1,000  1000 images     not found   
+ └─ Image extraction (next 4M)                         2,000  1000 images     not found   
+                                                                                          
+ azurerm_search_service.standard_s2                                                       
+ ├─ Search usage (Standard S2, 1 unit)                   730  hours           not found   
+ ├─ Image extraction (first 1M)                        1,000  1000 images     not found   
+ └─ Image extraction (next 4M)                         1,000  1000 images     not found   
+                                                                                          
+ OVERALL TOTAL                                                                   $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+5 cloud resources were detected:
+∙ 4 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

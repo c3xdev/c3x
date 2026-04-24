@@ -1,0 +1,18 @@
+──────────────────────────────────
+Project: c3xdev/examples
+Module path: ../../examples
+Errors:
+  terragrunt run-all terragrunt-info failed:
+    exec:
+      "terragrunt":
+        executable file not found in $PATH
+
+See https://c3x.dev/troubleshoot for how to generate multiple Terraform plan JSON files for your Terragrunt project, and use them with C3X.
+
+──────────────────────────────────
+
+No cloud resources were detected
+
+Err:
+
+

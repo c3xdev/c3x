@@ -1,0 +1,123 @@
+Key: * usage cost, ~ changed, + added, - removed
+
+──────────────────────────────────
+Project: REPLACED_PROJECT_PATH/testdata/breakdown_terragrunt_diff_project_error/exp/dev
+Module path: exp/dev
+
+- aws_lambda_function.event_handler
+  Monthly cost depends on usage
+
+    - Requests
+      Monthly cost depends on usage
+        -$0.20 per 1M requests
+
+    - Ephemeral storage
+      Monthly cost depends on usage
+        -$0.0000000309 per GB-seconds
+
+    - Duration (first 6B)
+      Monthly cost depends on usage
+        -$0.0000166667 per GB-seconds
+
+- aws_instance.app_server
+  -$52
+
+    - Instance usage (Linux/UNIX, on-demand, t2.micro)
+      -$8
+
+    - root_block_device
+    
+        - Storage (general purpose SSD, gp2)
+          -$5
+
+    - ebs_block_device[0]
+    
+        - Storage (provisioned IOPS SSD, io1)
+          -$13
+    
+        - Provisioned IOPS
+          -$26
+
+Monthly cost change for REPLACED_PROJECT_PATH/testdata/breakdown_terragrunt_diff_project_error/exp/dev (Module path: exp/dev)
+Amount:  -$52 ($52 → $0.00)
+
+──────────────────────────────────
+Project: REPLACED_PROJECT_PATH/testdata/breakdown_terragrunt_diff_project_error/exp/prod
+Module path: exp/prod
+
+- aws_lambda_function.event_handler
+  Monthly cost depends on usage
+
+    - Requests
+      Monthly cost depends on usage
+        -$0.20 per 1M requests
+
+    - Ephemeral storage
+      Monthly cost depends on usage
+        -$0.0000000309 per GB-seconds
+
+    - Duration (first 6B)
+      Monthly cost depends on usage
+        -$0.0000166667 per GB-seconds
+
+- aws_instance.app_server
+  -$748
+
+    - Instance usage (Linux/UNIX, on-demand, m5.4xlarge)
+      -$561
+
+    - root_block_device
+    
+        - Storage (general purpose SSD, gp2)
+          -$10
+
+    - ebs_block_device[0]
+    
+        - Storage (provisioned IOPS SSD, io1)
+          -$125
+    
+        - Provisioned IOPS
+          -$52
+
+Monthly cost change for REPLACED_PROJECT_PATH/testdata/breakdown_terragrunt_diff_project_error/exp/prod (Module path: exp/prod)
+Amount:  -$748 ($748 → $0.00)
+
+──────────────────────────────────
+Project: REPLACED_PROJECT_PATH/testdata/breakdown_terragrunt_diff_project_error/exp/dev
+Module path: exp/dev
+Errors:
+  Error processing module at 'REPLACED_PROJECT_PATH/testdata/breakdown_terragrunt_diff_project_error/foo/terragrunt.hcl'. How this module was found:
+    dependency of module at 'REPLACED_PROJECT_PATH/testdata/breakdown_terragrunt_diff_project_error/exp/dev'. Underlying error:
+      Error reading file at path REPLACED_PROJECT_PATH/testdata/breakdown_terragrunt_diff_project_error/foo/terragrunt.hcl:
+        open REPLACED_PROJECT_PATH/testdata/breakdown_terragrunt_diff_project_error/foo/terragrunt.hcl:
+          no such file or directory
+
+──────────────────────────────────
+Project: REPLACED_PROJECT_PATH/testdata/breakdown_terragrunt_diff_project_error/exp/prod
+Module path: exp/prod
+Errors:
+  Error processing module at 'REPLACED_PROJECT_PATH/testdata/breakdown_terragrunt_diff_project_error/foo/terragrunt.hcl'. How this module was found:
+    dependency of module at 'REPLACED_PROJECT_PATH/testdata/breakdown_terragrunt_diff_project_error/exp/dev'. Underlying error:
+      Error reading file at path REPLACED_PROJECT_PATH/testdata/breakdown_terragrunt_diff_project_error/foo/terragrunt.hcl:
+        open REPLACED_PROJECT_PATH/testdata/breakdown_terragrunt_diff_project_error/foo/terragrunt.hcl:
+          no such file or directory
+
+──────────────────────────────────
+Key: * usage cost, ~ changed, + added, - removed
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+No cloud resources were detected
+
+C3X estimate: Monthly estimate decreased by $800 ↓
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ Changed project                                                  ┃ Baseline cost ┃ Usage cost* ┃ Total change ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━━━┫
+┃ REPLACED_PROJECT_PATH/testdata/breakd...unt_diff_project_error/exp/dev ┃          -$52 ┃           - ┃         -$52 ┃
+┃ REPLACED_PROJECT_PATH/testdata/breakd...nt_diff_project_error/exp/prod ┃         -$748 ┃           - ┃        -$748 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━━━┛
+
+Err:
+
+
+

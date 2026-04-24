@@ -1,0 +1,39 @@
+
+ Name                                                Monthly Qty  Unit         Monthly Cost   
+                                                                                              
+ azurerm_monitor_metric_alert.example-dynamic                                                 
+ ├─ Metrics monitoring                                         1  time-series     not found   
+ └─ Dynamic threshold monitoring                               1  time-series     not found   
+                                                                                              
+ azurerm_monitor_metric_alert.example-dynamic-multi                                           
+ ├─ Metrics monitoring                                         4  time-series     not found   
+ └─ Dynamic threshold monitoring                               4  time-series     not found   
+                                                                                              
+ azurerm_monitor_metric_alert.example-multi                                                   
+ └─ Metrics monitoring                                         8  time-series     not found   
+                                                                                              
+ azurerm_monitor_metric_alert.example-single                                                  
+ └─ Metrics monitoring                                         1  time-series     not found   
+                                                                                              
+ OVERALL TOTAL                                                                       $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+7 cloud resources were detected:
+∙ 6 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+Logs:
+
+WARN [1mNo products found for azurerm_monitor_metric_alert.example-dynamic Dynamic threshold monitoring. Product filter: {"vendorName":"azure","service":"Azure Monitor","productFamily":"Management and Governance","region":"eastus","attributeFilters":[{"key":"meterName","value":"Alerts Dynamic Threshold"}]} Price filter:{"startUsageAmount":"0"}[0m
+WARN [1mNo products found for azurerm_monitor_metric_alert.example-dynamic Metrics monitoring. Product filter: {"vendorName":"azure","service":"Azure Monitor","productFamily":"Management and Governance","region":"eastus","attributeFilters":[{"key":"meterName","value":"Alerts Metric Monitored"}]} Price filter:{"startUsageAmount":"10"}[0m
+WARN [1mNo products found for azurerm_monitor_metric_alert.example-dynamic-multi Dynamic threshold monitoring. Product filter: {"vendorName":"azure","service":"Azure Monitor","productFamily":"Management and Governance","region":"eastus","attributeFilters":[{"key":"meterName","value":"Alerts Dynamic Threshold"}]} Price filter:{"startUsageAmount":"0"}[0m
+WARN [1mNo products found for azurerm_monitor_metric_alert.example-dynamic-multi Metrics monitoring. Product filter: {"vendorName":"azure","service":"Azure Monitor","productFamily":"Management and Governance","region":"eastus","attributeFilters":[{"key":"meterName","value":"Alerts Metric Monitored"}]} Price filter:{"startUsageAmount":"10"}[0m
+WARN [1mNo products found for azurerm_monitor_metric_alert.example-multi Metrics monitoring. Product filter: {"vendorName":"azure","service":"Azure Monitor","productFamily":"Management and Governance","region":"eastus","attributeFilters":[{"key":"meterName","value":"Alerts Metric Monitored"}]} Price filter:{"startUsageAmount":"10"}[0m
+WARN [1mNo products found for azurerm_monitor_metric_alert.example-single Metrics monitoring. Product filter: {"vendorName":"azure","service":"Azure Monitor","productFamily":"Management and Governance","region":"eastus","attributeFilters":[{"key":"meterName","value":"Alerts Metric Monitored"}]} Price filter:{"startUsageAmount":"10"}[0m

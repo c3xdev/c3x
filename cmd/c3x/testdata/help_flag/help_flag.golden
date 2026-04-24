@@ -1,0 +1,42 @@
+C3X - Cloud cost estimates for Terraform
+
+DOCS
+  Quick start: https://c3x.dev/docs
+  Add cost estimates to your pull requests: https://c3x.dev/cicd
+
+USAGE
+  c3x [flags]
+  c3x [command]
+
+EXAMPLES
+  Estimate costs from Terraform directory:
+
+      c3x estimate --path /code --terraform-var-file my.tfvars
+
+  Show cost diff:
+
+      c3x estimate --path /code --format json --out-file c3x-base.json
+      # Make Terraform code changes
+      c3x diff --path /code --compare-to c3x-base.json
+
+AVAILABLE COMMANDS
+  auth             Get a free API key, or log in to your existing account
+  comment          Post a C3X comment to GitHub, GitLab, Azure Repos or Bitbucket
+  completion       Generate shell completion script
+  config           Display or change global configuration
+  diff             Show diff of monthly costs between current and planned state
+  estimate         Estimate cloud infrastructure costs
+  generate         Generate configuration to help run C3X
+  help             Help about any command
+  pricing          Manage local pricing data for offline estimation
+  recommend        Suggest cost optimizations for estimated resources
+  report           Combine and format C3X JSON files in different formats
+  upload           Upload a C3X JSON file to C3X Cloud
+
+FLAGS
+      --debug-report       Generate a debug report file which can be sent to C3X team
+  -h, --help               help for c3x
+      --log-level string   Log level (trace, debug, info, warn, error, fatal)
+      --no-color           Turn off colored output
+
+Use "c3x [command] --help" for more information about a command.

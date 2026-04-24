@@ -1,0 +1,51 @@
+Project: main
+
+ Name                                                        Monthly Qty  Unit   Monthly Cost   
+                                                                                                
+ module.vpc.aws_eip.available["eu-central-1-ham-1a"]                                            
+ └─ IP address (if unused)                                           730  hours     not found   
+                                                                                                
+ module.vpc.aws_eip.available["eu-central-1-waw-1a"]                                            
+ └─ IP address (if unused)                                           730  hours     not found   
+                                                                                                
+ module.vpc.aws_eip.available["eu-central-1-wl1-ber-wlz-1"]                                     
+ └─ IP address (if unused)                                           730  hours     not found   
+                                                                                                
+ module.vpc.aws_eip.available["eu-central-1-wl1-dtm-wlz-1"]                                     
+ └─ IP address (if unused)                                           730  hours     not found   
+                                                                                                
+ module.vpc.aws_eip.available["eu-central-1-wl1-muc-wlz-1"]                                     
+ └─ IP address (if unused)                                           730  hours     not found   
+                                                                                                
+ module.vpc.aws_eip.available["eu-central-1a"]                                                  
+ └─ IP address (if unused)                                           730  hours     not found   
+                                                                                                
+ module.vpc.aws_eip.available["eu-central-1b"]                                                  
+ └─ IP address (if unused)                                           730  hours     not found   
+                                                                                                
+ module.vpc.aws_eip.available["eu-central-1c"]                                                  
+ └─ IP address (if unused)                                           730  hours     not found   
+                                                                                                
+ module.vpc.aws_eip.current["eu-central-1"]                                                     
+ └─ IP address (if unused)                                           730  hours     not found   
+                                                                                                
+ OVERALL TOTAL                                                                         $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+9 cloud resources were detected:
+∙ 9 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+
+Err:
+
+
+Logs:
+WARN [1m9 aws_eip prices missing across 9 resources
+[0m

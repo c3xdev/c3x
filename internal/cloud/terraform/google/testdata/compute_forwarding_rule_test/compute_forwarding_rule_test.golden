@@ -1,0 +1,28 @@
+
+ Name                                           Monthly Qty  Unit   Monthly Cost    
+                                                                                    
+ google_compute_forwarding_rule.default                                             
+ ├─ Forwarding rules                                    730  hours         $7.30    
+ └─ Ingress data                                        100  GB        not found  * 
+                                                                                    
+ google_compute_forwarding_rule.withoutUsage                                        
+ ├─ Forwarding rules                                    730  hours         $7.30    
+ └─ Ingress data                                not found                           
+                                                                                    
+ google_compute_global_forwarding_rule.default                                      
+ ├─ Forwarding rules                                    730  hours         $7.30    
+ └─ Ingress data                                        100  GB        not found  * 
+                                                                                    
+ OVERALL TOTAL                                                            $21.90 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+3 cloud resources were detected:
+∙ 3 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃           $22 ┃           - ┃        $22 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

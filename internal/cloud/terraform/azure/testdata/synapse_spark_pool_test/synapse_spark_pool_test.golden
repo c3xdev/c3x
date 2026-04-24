@@ -1,0 +1,39 @@
+
+ Name                                                             Monthly Qty  Unit                  Monthly Cost   
+                                                                                                                    
+ azurerm_synapse_spark_pool.autoscale                                                                               
+ └─ small (4 nodes)                                                       144  vCore-hours              not found   
+                                                                                                                    
+ azurerm_synapse_spark_pool.default                                                                                 
+ └─ small (3 nodes)                                                       132  vCore-hours              not found   
+                                                                                                                    
+ azurerm_synapse_workspace.example                                                                                  
+ ├─ Serverless SQL pool size                                               11  TB                       not found   
+ ├─ Data flow (basic)                                        Monthly cost depends on usage: $0.27 per vCore-hours   
+ ├─ Data flow (standard)                                     Monthly cost depends on usage: $0.35 per vCore-hours   
+ ├─ Data pipeline azure hosted activity runs                 not found                                              
+ ├─ Data pipeline azure hosted data integration units        not found                                              
+ ├─ Data pipeline azure hosted integration runtime           not found                                              
+ ├─ Data pipeline azure hosted external integration runtime  not found                                              
+ ├─ Data pipeline self hosted activity runs                  not found                                              
+ ├─ Data pipeline self hosted data movement                  not found                                              
+ ├─ Data pipeline self hosted integration runtime            not found                                              
+ └─ Data pipeline self hosted external integration runtime   not found                                              
+                                                                                                                    
+ azurerm_storage_account.example                                                                                    
+ └─ Early deletion                                           Monthly cost depends on usage: $0.01 per GB            
+                                                                                                                    
+ OVERALL TOTAL                                                                                             $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+6 cloud resources were detected:
+∙ 4 were estimated
+∙ 2 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

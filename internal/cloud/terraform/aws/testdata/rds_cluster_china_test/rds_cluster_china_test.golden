@@ -1,0 +1,28 @@
+
+ Name                         Monthly Qty  Unit  Monthly Cost (CNY)   
+                                                                      
+ aws_rds_cluster.mysql_china                                          
+ ├─ Storage                   not found                               
+ ├─ I/O requests              not found                               
+ ├─ Backup storage            not found                               
+ └─ Snapshot export           not found                               
+                                                                      
+ OVERALL TOTAL (CNY)                                        0.00 元 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+1 cloud resource was detected:
+∙ 1 was estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃       0.00 元 ┃           - ┃    0.00 元 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+Logs:
+
+WARN [1mNo products found for aws_rds_cluster.mysql_china Backup storage. Product filter: {"vendorName":"aws","service":"AmazonRDS","productFamily":"Storage Snapshot","region":"cn-north-1","attributeFilters":[{"key":"databaseEngine","value_regex":"/Aurora MySQL/i"},{"key":"usagetype","value_regex":"/Aurora:BackupUsage$/i"}]} Price filter:null[0m
+WARN [1mNo products found for aws_rds_cluster.mysql_china I/O requests. Product filter: {"vendorName":"aws","service":"AmazonRDS","productFamily":"System Operation","region":"cn-north-1","attributeFilters":[{"key":"databaseEngine","value_regex":"/(Any|Aurora MySQL)/i"},{"key":"usagetype","value_regex":"/Aurora:StorageIOUsage$/i"}]} Price filter:null[0m
+WARN [1mNo products found for aws_rds_cluster.mysql_china Snapshot export. Product filter: {"vendorName":"aws","service":"AmazonRDS","productFamily":"System Operation","region":"cn-north-1","attributeFilters":[{"key":"databaseEngine","value_regex":"/Aurora MySQL/i"},{"key":"usagetype","value_regex":"/Aurora:SnapshotExportToS3$/i"}]} Price filter:null[0m
+WARN [1mNo products found for aws_rds_cluster.mysql_china Storage. Product filter: {"vendorName":"aws","service":"AmazonRDS","productFamily":"Database Storage","region":"cn-north-1","attributeFilters":[{"key":"databaseEngine","value_regex":"/(Any|Aurora MySQL)/i"},{"key":"usagetype","value_regex":"/Aurora:StorageUsage$/i"}]} Price filter:null[0m

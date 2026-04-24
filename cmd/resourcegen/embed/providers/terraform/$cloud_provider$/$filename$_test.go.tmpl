@@ -1,0 +1,16 @@
+package {{ .CloudProvider }}_test
+
+import (
+	"testing"
+
+	"github.com/c3xdev/c3x/internal/providers/terraform/tftest"
+)
+
+func Test{{ .ResourceName }}(t *testing.T) {
+	t.Parallel()
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+
+	tftest.GoldenFileResourceTests(t, "{{ .Filename }}_test")
+}

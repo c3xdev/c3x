@@ -1,0 +1,49 @@
+name: Resource Support Request
+description: Request cost estimation for a new cloud resource
+labels: ["resource"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Request support for a cloud resource that C3X doesn't currently estimate.
+
+  - type: dropdown
+    id: cloud
+    attributes:
+      label: Cloud provider
+      options:
+        - AWS
+        - Azure
+        - Google Cloud
+    validations:
+      required: true
+
+  - type: input
+    id: resource_type
+    attributes:
+      label: Resource type
+      description: The Terraform resource type identifier.
+      placeholder: aws_rds_cluster, azurerm_kubernetes_cluster, google_compute_instance
+    validations:
+      required: true
+
+  - type: textarea
+    id: terraform
+    attributes:
+      label: Example Terraform config
+      description: A sample Terraform resource block for this resource.
+      render: hcl
+    validations:
+      required: true
+
+  - type: textarea
+    id: pricing
+    attributes:
+      label: Pricing details
+      description: Link to the cloud provider's pricing page for this resource, or a description of how it's priced.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Any other context about the request.

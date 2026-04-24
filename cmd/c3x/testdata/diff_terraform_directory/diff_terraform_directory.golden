@@ -1,0 +1,110 @@
+Key: * usage cost, ~ changed, + added, - removed
+
+──────────────────────────────────
+Project: main
+
++ aws_db_instance.postgres
+  +$411
+
+    + Database instance (on-demand, Multi-AZ, db.r5.large)
+      +$365
+
+    + Storage (general purpose SSD, gp3)
+      +$46
+
++ aws_instance.api
+  +$190
+
+    + Instance usage (Linux/UNIX, on-demand, m5.xlarge)
+      +$140
+
+    + root_block_device
+    
+        + Storage (general purpose SSD, gp2)
+          +$10
+
+    + ebs_block_device[0]
+    
+        + Storage (general purpose SSD, gp3)
+          +$40
+
++ aws_nat_gateway.main
+  +$33
+
+    + NAT gateway
+      +$33
+
+    + Data processed
+      Monthly cost depends on usage
+        +$0.045 per GB
+
++ aws_lb.api
+  +$16
+
+    + Application load balancer
+      +$16
+
+    + Load balancer capacity units
+      Monthly cost depends on usage
+        +$5.84 per LCU
+
++ aws_cloudwatch_log_group.app
+  Monthly cost depends on usage
+
+    + Data ingested
+      Monthly cost depends on usage
+        +$0.50 per GB
+
+    + Archival Storage
+      Monthly cost depends on usage
+        +$0.03 per GB
+
+    + Insights queries data scanned
+      Monthly cost depends on usage
+        +$0.005 per GB
+
++ aws_s3_bucket.data
+  Monthly cost depends on usage
+
+    + Standard
+    
+        + Storage
+          Monthly cost depends on usage
+            +$0.023 per GB
+    
+        + PUT, COPY, POST, LIST requests
+          Monthly cost depends on usage
+            +$0.005 per 1k requests
+    
+        + GET, SELECT, and all other requests
+          Monthly cost depends on usage
+            +$0.0004 per 1k requests
+    
+        + Select data scanned
+          Monthly cost depends on usage
+            +$0.002 per GB
+    
+        + Select data returned
+          Monthly cost depends on usage
+            +$0.0007 per GB
+
+Monthly cost change for c3xdev/c3x/examples/terraform
+Amount:  +$650 ($0.00 → $650)
+
+──────────────────────────────────
+Key: * usage cost, ~ changed, + added, - removed
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+6 cloud resources were detected:
+∙ 6 were estimated
+
+C3X estimate: Monthly estimate increased by $650 ↑
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ Changed project                                    ┃ Baseline cost ┃ Usage cost* ┃ Total change ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━━━┫
+┃ c3xdev/c3x/examples/terraform                      ┃         +$650 ┃           - ┃        +$650 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━━━┛
+
+Err:
+

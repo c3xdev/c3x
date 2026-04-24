@@ -1,0 +1,46 @@
+
+ Name                                         Monthly Qty  Unit     Monthly Cost    
+                                                                                    
+ azurerm_container_registry.basic                                                   
+ ├─ Registry usage (Basic)                             30  days        not found    
+ ├─ Storage (over 10GB)                               140  GB          not found  * 
+ └─ Build vCPU                                    540,000  seconds     not found  * 
+                                                                                    
+ azurerm_container_registry.my_registry                                             
+ ├─ Geo replication (1 location)                       30  days        not found    
+ ├─ Registry usage (Premium)                           30  days        not found    
+ └─ Build vCPU                                    540,000  seconds     not found  * 
+                                                                                    
+ azurerm_container_registry.overStorage                                             
+ ├─ Registry usage (Basic)                             30  days        not found    
+ ├─ Storage (over 10GB)                               540  GB          not found  * 
+ └─ Build vCPU                                    540,000  seconds     not found  * 
+                                                                                    
+ azurerm_container_registry.twoLocations                                            
+ ├─ Geo replication (2 locations)                      60  days        not found    
+ ├─ Registry usage (Premium)                           30  days        not found    
+ └─ Build vCPU                                    540,000  seconds     not found  * 
+                                                                                    
+ azurerm_container_registry.withoutLocations                                        
+ ├─ Registry usage (Premium)                           30  days        not found    
+ └─ Build vCPU                                    540,000  seconds     not found  * 
+                                                                                    
+ azurerm_container_registry.withoutUsage                                            
+ ├─ Registry usage (Basic)                             30  days        not found    
+ ├─ Storage (over 10GB)                       not found                             
+ └─ Build vCPU                                not found                             
+                                                                                    
+ OVERALL TOTAL                                                             $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+7 cloud resources were detected:
+∙ 6 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

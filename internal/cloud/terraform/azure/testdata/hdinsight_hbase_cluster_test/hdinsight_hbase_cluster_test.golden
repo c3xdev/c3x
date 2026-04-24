@@ -1,0 +1,25 @@
+
+ Name                                       Monthly Qty  Unit            Monthly Cost   
+                                                                                        
+ azurerm_hdinsight_hbase_cluster.example                                                
+ ├─ Head node (Standard_D1)                       1,460  hours              not found   
+ ├─ Region node (Standard_D14)                    2,190  hours              not found   
+ └─ Zookeeper node (Standard_D4a V4)              2,190  hours                $525.60   
+                                                                                        
+ azurerm_storage_account.example                                                        
+ └─ Early deletion                        Monthly cost depends on usage: $0.01 per GB   
+                                                                                        
+ OVERALL TOTAL                                                               $525.60 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+4 cloud resources were detected:
+∙ 2 were estimated
+∙ 2 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃          $526 ┃           - ┃       $526 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
