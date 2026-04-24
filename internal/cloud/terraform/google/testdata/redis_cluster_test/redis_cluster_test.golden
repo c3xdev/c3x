@@ -1,0 +1,38 @@
+
+ Name                                                               Monthly Qty  Unit   Monthly Cost   
+                                                                                                       
+ google_redis_cluster.aof_and_backups                                                                  
+ ├─ Cluster node (standard small)                                         2,190  hours     not found   
+ ├─ AOF persistence                                                       5,110  GB        not found   
+ └─ Backups                                                         not found                          
+                                                                                                       
+ google_redis_cluster.backups_with_usage                                                               
+ ├─ Cluster node (standard small)                                           730  hours     not found   
+ └─ Backups                                                               1,000  GB        not found   
+                                                                                                       
+ google_redis_cluster.no_aof_and_backups["REDIS_HIGHMEM_MEDIUM"]                                       
+ └─ Cluster node (highmem medium)                                         6,570  hours     not found   
+                                                                                                       
+ google_redis_cluster.no_aof_and_backups["REDIS_HIGHMEM_XLARGE"]                                       
+ └─ Cluster node (highmem xlarge)                                         6,570  hours     not found   
+                                                                                                       
+ google_redis_cluster.no_aof_and_backups["REDIS_SHARED_CORE_NANO"]                                     
+ └─ Cluster node (shared core nano)                                       6,570  hours     not found   
+                                                                                                       
+ google_redis_cluster.no_aof_and_backups["REDIS_STANDARD_SMALL"]                                       
+ └─ Cluster node (standard small)                                         6,570  hours     not found   
+                                                                                                       
+ OVERALL TOTAL                                                                                $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+7 cloud resources were detected:
+∙ 6 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

@@ -1,0 +1,16 @@
+Comment posted to GitHub
+
+
+Err:
+Error: Governance check failed:
+
+ - guardrail check failed: Stand by your estimate
+
+
+Logs:
+INFO [1mEstimate uploaded to C3X Cloud[0m
+INFO [1m1 guardrail checked[0m
+INFO [1mguardrail check failed: Stand by your estimate[0m
+INFO [1mCreating new comment[0m
+WARN [1m>\n<summary><strong>❌ Guardrails triggered (needs action)</strong></summary>\nThis change is blocked, either reduce the costs or wait for an admin to review and unblock it.\n\n> - <b>Blocked</b>: Stand by your estimate\n</[0m
+INFO [1mCreated new comment: [0m

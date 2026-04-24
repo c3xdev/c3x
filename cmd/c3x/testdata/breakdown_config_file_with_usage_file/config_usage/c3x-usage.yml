@@ -1,0 +1,9 @@
+# You can use this file to define resource usage estimates for C3X to use when calculating
+# the cost of usage-based resource, such as AWS Lambda.
+# `c3x breakdown --usage-file c3x-usage.yml [other flags]`
+# See https://c3x.dev/usage-file/ for docs
+version: 0.1
+resource_usage:
+  aws_lambda_function.event_handler:
+    monthly_requests: 900000000
+    request_duration_ms: 900  # Try changing this to 100 (milliseconds) to compare costs

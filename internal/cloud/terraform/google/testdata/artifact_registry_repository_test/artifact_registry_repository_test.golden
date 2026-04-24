@@ -1,0 +1,42 @@
+
+ Name                                                            Monthly Qty  Unit  Monthly Cost    
+                                                                                                    
+ google_artifact_registry_repository.asia_east1_usage                                               
+ ├─ Storage                                                              150  GB       not found  * 
+ └─ Data egress AsiaPacific to AsiaPacific                               100  GB       not found  * 
+                                                                                                    
+ google_artifact_registry_repository.australia_southeast1_usage                                     
+ ├─ Storage                                                              150  GB       not found  * 
+ └─ Data egress from/to Oceania                                          100  GB       not found  * 
+                                                                                                    
+ google_artifact_registry_repository.europe_north1_usage                                            
+ ├─ Storage                                                              150  GB       not found  * 
+ ├─ Data egress from/to Oceania                                          100  GB       not found  * 
+ ├─ Data egress Europe to Europe                                         200  GB       not found  * 
+ └─ Intercontinental (Excl Oceania)                                      100  GB       not found  * 
+                                                                                                    
+ google_artifact_registry_repository.multiregion_europe_usage                                       
+ └─ Storage                                                              150  GB       not found  * 
+                                                                                                    
+ google_artifact_registry_repository.us_east1_usage                                                 
+ ├─ Storage                                                              150  GB       not found  * 
+ ├─ Data egress from/to Oceania                                          100  GB       not found  * 
+ ├─ Intercontinental (Excl Oceania)                                      200  GB       not found  * 
+ └─ Data egress North America to North America                           100  GB       not found  * 
+                                                                                                    
+ google_artifact_registry_repository.us_east1                                                       
+ └─ Storage                                                      not found                          
+                                                                                                    
+ OVERALL TOTAL                                                                             $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+6 cloud resources were detected:
+∙ 6 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

@@ -1,0 +1,27 @@
+
+ Name                                   Monthly Qty  Unit      Monthly Cost    
+                                                                               
+ google_compute_router_nat.nat                                                 
+ ├─ Assigned VMs (first 32)                   2,920  VM-hours     not found  * 
+ └─ Data processed                            1,000  GB           not found  * 
+                                                                               
+ google_compute_router_nat.no_usage                                            
+ └─ Data processed                      not found                              
+                                                                               
+ google_compute_router_nat.over_32_vms                                         
+ ├─ Assigned VMs (first 32)                  23,360  VM-hours     not found  * 
+ └─ Data processed                            1,000  GB           not found  * 
+                                                                               
+ OVERALL TOTAL                                                        $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+3 cloud resources were detected:
+∙ 3 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

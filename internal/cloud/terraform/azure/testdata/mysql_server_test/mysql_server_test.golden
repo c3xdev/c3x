@@ -1,0 +1,48 @@
+
+ Name                                Monthly Qty  Unit            Monthly Cost   
+                                                                                 
+ azurerm_mysql_server.with_geo                                                   
+ ├─ Compute (GP_Gen5_4)                      730  hours              not found   
+ ├─ Storage                                4,000  GB                   $460.00   
+ └─ Additional backup storage              3,000  GB                   $600.00   
+                                                                                 
+ azurerm_mysql_server.gp_4core                                                   
+ ├─ Compute (GP_Gen5_4)                      730  hours              not found   
+ ├─ Storage                                4,000  GB                   $460.00   
+ └─ Additional backup storage      Monthly cost depends on usage: $0.10 per GB   
+                                                                                 
+ azurerm_mysql_server.without_geo                                                
+ ├─ Compute (MO_Gen5_16)                     730  hours              not found   
+ ├─ Storage                                    5  GB                     $0.58   
+ └─ Additional backup storage              2,000  GB                   $200.00   
+                                                                                 
+ azurerm_mysql_server.basic_2core                                                
+ ├─ Compute (B_Gen5_2)                       730  hours                 $49.64   
+ ├─ Storage                                    5  GB                     $0.50   
+ └─ Additional backup storage      Monthly cost depends on usage: $0.10 per GB   
+                                                                                 
+ azurerm_mysql_server.mo_16core                                                  
+ ├─ Compute (MO_Gen5_16)                     730  hours              not found   
+ ├─ Storage                                    5  GB                     $0.58   
+ └─ Additional backup storage      Monthly cost depends on usage: $0.10 per GB   
+                                                                                 
+ OVERALL TOTAL                                                      $1,771.29 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+6 cloud resources were detected:
+∙ 5 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃        $1,771 ┃           - ┃     $1,771 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+Logs:
+
+WARN [1mNo products found for azurerm_mysql_server.gp_4core Compute (GP_Gen5_4). Product filter: {"vendorName":"azure","service":"Azure Database for MySQL","productFamily":"Databases","region":"eastus","attributeFilters":[{"key":"productName","value_regex":"/General Purpose - Compute Gen5/"},{"key":"skuName","value":"4 vCore"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_mysql_server.mo_16core Compute (MO_Gen5_16). Product filter: {"vendorName":"azure","service":"Azure Database for MySQL","productFamily":"Databases","region":"eastus","attributeFilters":[{"key":"productName","value_regex":"/Memory Optimized - Compute Gen5/"},{"key":"skuName","value":"16 vCore"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_mysql_server.with_geo Compute (GP_Gen5_4). Product filter: {"vendorName":"azure","service":"Azure Database for MySQL","productFamily":"Databases","region":"eastus","attributeFilters":[{"key":"productName","value_regex":"/General Purpose - Compute Gen5/"},{"key":"skuName","value":"4 vCore"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_mysql_server.without_geo Compute (MO_Gen5_16). Product filter: {"vendorName":"azure","service":"Azure Database for MySQL","productFamily":"Databases","region":"eastus","attributeFilters":[{"key":"productName","value_regex":"/Memory Optimized - Compute Gen5/"},{"key":"skuName","value":"16 vCore"}]} Price filter:{"purchaseOption":"Consumption"}[0m

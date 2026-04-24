@@ -1,0 +1,17 @@
+version: 0.1
+resource_usage:
+  azurerm_log_analytics_workspace.per_gb_data_ingestion:
+    monthly_log_data_ingestion_gb: 20
+  azurerm_log_analytics_workspace.log_data_retention_with_usage:
+    monthly_additional_log_data_retention_gb: 30
+  azurerm_log_analytics_workspace.log_data_export:
+    monthly_log_data_export_gb: 40
+  azurerm_log_analytics_workspace.per_gb_sentinel_data_ingestion_with_usage:
+    monthly_sentinel_data_ingestion_gb: 40
+  azurerm_log_analytics_workspace.per_gb_basic_data_ingestion_with_usage:
+    monthly_basic_log_data_ingestion_gb: 50
+    monthly_basic_log_search_gb: 60
+  azurerm_log_analytics_workspace.archive_data_with_usage:
+    monthly_archive_data_gb: 70
+    monthly_archive_data_restored_gb: 80
+    monthly_archive_data_searched_gb: 90

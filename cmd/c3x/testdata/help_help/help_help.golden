@@ -1,0 +1,13 @@
+Help provides help for any command in the application.
+Simply type c3x help [path to command] for full details.
+
+USAGE
+  c3x help [command] [flags]
+
+FLAGS
+  -h, --help   help for help
+
+GLOBAL FLAGS
+      --debug-report       Generate a debug report file which can be sent to C3X team
+      --log-level string   Log level (trace, debug, info, warn, error, fatal)
+      --no-color           Turn off colored output

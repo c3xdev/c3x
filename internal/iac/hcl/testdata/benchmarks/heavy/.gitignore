@@ -1,0 +1,14 @@
+# we want to explicitly keep the benchmarks .c3x folder as the benchmark
+# tests are only benchmarks for the parsing/evaluation functionality
+
+!.c3x
+.c3x/terraform_modules/**/.git
+.c3x/terraform_modules/**/.github
+.c3x/terraform_modules/**/Makefile
+.c3x/terraform_modules/**/README.md
+.c3x/terraform_modules/**/LICENSE.md
+.c3x/terraform_modules/**/LICENSE
+.c3x/terraform_modules/**/README.yaml
+.c3x/terraform_modules/**/docs
+.c3x/terraform_modules/**/examples
+.c3x/terraform_modules/**/test

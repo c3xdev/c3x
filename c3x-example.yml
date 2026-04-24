@@ -1,0 +1,10 @@
+# This is an example config file. It tells C3X where the
+# Terraform projects live and any var files they need:
+# `c3x breakdown --config-file c3x-projects.yml
+# See docs: https://c3x.dev/config-file
+version: 0.1
+
+# Details of the repo's Terraform projects, their results will be merged into the same breakdown or diff output
+projects:
+  - path: examples/terraform
+    usage_file: c3x-usage-example.yml # Define resource usage estimates, see https://c3x.dev/usage-file

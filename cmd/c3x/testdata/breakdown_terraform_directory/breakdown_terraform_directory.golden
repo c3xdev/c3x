@@ -1,0 +1,52 @@
+Project: main
+
+ Name                                                           Monthly Qty  Unit                    Monthly Cost   
+                                                                                                                    
+ aws_db_instance.postgres                                                                                           
+ ├─ Database instance (on-demand, Multi-AZ, db.r5.large)                730  hours                        $365.00   
+ └─ Storage (general purpose SSD, gp3)                                  200  GB                            $46.00   
+                                                                                                                    
+ aws_instance.api                                                                                                   
+ ├─ Instance usage (Linux/UNIX, on-demand, m5.xlarge)                   730  hours                        $140.16   
+ ├─ root_block_device                                                                                               
+ │  └─ Storage (general purpose SSD, gp2)                               100  GB                            $10.00   
+ └─ ebs_block_device[0]                                                                                             
+    └─ Storage (general purpose SSD, gp3)                               500  GB                            $40.00   
+                                                                                                                    
+ aws_nat_gateway.main                                                                                               
+ ├─ NAT gateway                                                         730  hours                         $32.85   
+ └─ Data processed                                        Monthly cost depends on usage: $0.045 per GB              
+                                                                                                                    
+ aws_lb.api                                                                                                         
+ ├─ Application load balancer                                           730  hours                         $16.43   
+ └─ Load balancer capacity units                          Monthly cost depends on usage: $5.84 per LCU              
+                                                                                                                    
+ aws_cloudwatch_log_group.app                                                                                       
+ ├─ Data ingested                                         Monthly cost depends on usage: $0.50 per GB               
+ ├─ Archival Storage                                      Monthly cost depends on usage: $0.03 per GB               
+ └─ Insights queries data scanned                         Monthly cost depends on usage: $0.005 per GB              
+                                                                                                                    
+ aws_s3_bucket.data                                                                                                 
+ └─ Standard                                                                                                        
+    ├─ Storage                                            Monthly cost depends on usage: $0.023 per GB              
+    ├─ PUT, COPY, POST, LIST requests                     Monthly cost depends on usage: $0.005 per 1k requests     
+    ├─ GET, SELECT, and all other requests                Monthly cost depends on usage: $0.0004 per 1k requests    
+    ├─ Select data scanned                                Monthly cost depends on usage: $0.002 per GB              
+    └─ Select data returned                               Monthly cost depends on usage: $0.0007 per GB             
+                                                                                                                    
+ OVERALL TOTAL                                                                                           $650.44 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+6 cloud resources were detected:
+∙ 6 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃          $650 ┃           - ┃       $650 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+
+Err:
+

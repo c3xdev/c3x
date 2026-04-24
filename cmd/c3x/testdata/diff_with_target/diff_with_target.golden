@@ -1,0 +1,32 @@
+Key: * usage cost, ~ changed, + added, - removed
+
+──────────────────────────────────
+Project: REPLACED_PROJECT_PATH/testdata/plan_with_target.json
+
+~ aws_instance.app_server_1
+  +$8 ($9 → $16)
+
+    ~ Instance usage (Linux/UNIX, on-demand, t3.micro → t3.small)
+      +$8 ($8 → $15)
+
+Monthly cost change for REPLACED_PROJECT_PATH/testdata/plan_with_target.json
+Amount:  +$8 ($9 → $16)
+Percent: +88%
+
+──────────────────────────────────
+Key: * usage cost, ~ changed, + added, - removed
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+1 cloud resource was detected:
+∙ 1 was estimated
+
+C3X estimate: Monthly estimate increased by $8 ↑
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ Changed project                                    ┃ Baseline cost ┃ Usage cost* ┃ Total change ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━━━┫
+┃ REPLACED_PROJECT_PATH/testdata/plan_with_target.json  ┃           +$8 ┃           - ┃   +$8 (+88%) ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━━━┛
+
+Err:
+

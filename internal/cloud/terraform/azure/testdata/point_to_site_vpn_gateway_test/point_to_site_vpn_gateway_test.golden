@@ -1,0 +1,24 @@
+
+ Name                                                            Monthly Qty  Unit         Monthly Cost    
+                                                                                                           
+ azurerm_point_to_site_vpn_gateway.point_to_site_vpn                                                       
+ └─ P2S scale units (500 Mbps)                                             5  scale units     not found    
+                                                                                                           
+ azurerm_point_to_site_vpn_gateway.point_to_site_vpn_with_usage                                            
+ ├─ P2S scale units (500 Mbps)                                             5  scale units     not found    
+ └─ P2S connections                                                        9  hours           not found  * 
+                                                                                                           
+ OVERALL TOTAL                                                                                    $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+6 cloud resources were detected:
+∙ 2 were estimated
+∙ 4 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

@@ -1,0 +1,48 @@
+
+ Name                                              Monthly Qty  Unit   Monthly Cost    
+                                                                                       
+ google_compute_region_target_http_proxy.default                                       
+ ├─ Proxy instance                                       7,446  hours     not found  * 
+ └─ Data processed                                         100  GB        not found  * 
+                                                                                       
+ google_compute_region_target_https_proxy.default                                      
+ ├─ Proxy instance                                       7,446  hours     not found  * 
+ └─ Data processed                                         100  GB        not found  * 
+                                                                                       
+ google_compute_target_grpc_proxy.default                                              
+ ├─ Proxy instance                                       7,446  hours     not found  * 
+ └─ Data processed                                         100  GB        not found  * 
+                                                                                       
+ google_compute_target_http_proxy.default                                              
+ ├─ Proxy instance                                       7,446  hours     not found  * 
+ └─ Data processed                                         100  GB        not found  * 
+                                                                                       
+ google_compute_target_https_proxy.default                                             
+ ├─ Proxy instance                                       7,446  hours     not found  * 
+ └─ Data processed                                         100  GB        not found  * 
+                                                                                       
+ google_compute_target_ssl_proxy.default                                               
+ ├─ Proxy instance                                       7,446  hours     not found  * 
+ └─ Data processed                                         100  GB        not found  * 
+                                                                                       
+ google_compute_target_tcp_proxy.default                                               
+ ├─ Proxy instance                                       7,446  hours     not found  * 
+ └─ Data processed                                         100  GB        not found  * 
+                                                                                       
+ google_compute_target_grpc_proxy.withoutUsage                                         
+ ├─ Proxy instance                                 not found                           
+ └─ Data processed                                 not found                           
+                                                                                       
+ OVERALL TOTAL                                                                $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+8 cloud resources were detected:
+∙ 8 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

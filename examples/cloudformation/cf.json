@@ -1,0 +1,56 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "C3X Example — CloudFormation with DynamoDB tables (on-demand and provisioned)",
+  "Resources": {
+    "EventsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": "app-events",
+        "AttributeDefinitions": [
+          { "AttributeName": "eventId", "AttributeType": "S" },
+          { "AttributeName": "timestamp", "AttributeType": "N" }
+        ],
+        "KeySchema": [
+          { "AttributeName": "eventId", "KeyType": "HASH" },
+          { "AttributeName": "timestamp", "KeyType": "RANGE" }
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true
+        }
+      }
+    },
+    "SessionsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": "app-sessions",
+        "AttributeDefinitions": [
+          { "AttributeName": "sessionId", "AttributeType": "S" }
+        ],
+        "KeySchema": [
+          { "AttributeName": "sessionId", "KeyType": "HASH" }
+        ],
+        "BillingMode": "PAY_PER_REQUEST"
+      }
+    },
+    "AnalyticsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": "app-analytics",
+        "AttributeDefinitions": [
+          { "AttributeName": "metricId", "AttributeType": "S" },
+          { "AttributeName": "period", "AttributeType": "S" }
+        ],
+        "KeySchema": [
+          { "AttributeName": "metricId", "KeyType": "HASH" },
+          { "AttributeName": "period", "KeyType": "RANGE" }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 25,
+          "WriteCapacityUnits": 50
+        },
+        "BillingMode": "PROVISIONED"
+      }
+    }
+  }
+}

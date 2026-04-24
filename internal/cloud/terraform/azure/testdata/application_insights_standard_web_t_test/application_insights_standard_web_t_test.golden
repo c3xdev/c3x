@@ -1,0 +1,32 @@
+
+ Name                                                                      Monthly Qty  Unit   Monthly Cost   
+                                                                                                              
+ azurerm_application_insights_standard_web_test.example-default-frequency                                     
+ └─ Standard web test (300 second frequency)                                     8,760  tests         $5.65   
+                                                                                                              
+ azurerm_application_insights_standard_web_test.example["300"]                                                
+ └─ Standard web test (300 second frequency)                                     8,760  tests         $5.65   
+                                                                                                              
+ azurerm_application_insights_standard_web_test.example["600"]                                                
+ └─ Standard web test (600 second frequency)                                     4,380  tests         $2.83   
+                                                                                                              
+ azurerm_application_insights_standard_web_test.example["900"]                                                
+ └─ Standard web test (900 second frequency)                                     2,920  tests         $1.88   
+                                                                                                              
+ azurerm_application_insights.example                                                                         
+ └─ Data ingested                                                          not found                          
+                                                                                                              
+ OVERALL TOTAL                                                                                      $16.01 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+7 cloud resources were detected:
+∙ 6 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃           $16 ┃           - ┃        $16 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

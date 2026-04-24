@@ -1,0 +1,53 @@
+Project: dev
+Module path: dev
+
+ Name                                                   Monthly Qty  Unit   Monthly Cost   
+                                                                                           
+ aws_instance.app_server                                                                   
+ ├─ Instance usage (Linux/UNIX, on-demand, m5.4xlarge)          730  hours       $560.64   
+ ├─ root_block_device                                                                      
+ │  └─ Storage (general purpose SSD, gp2)                        50  GB            $5.00   
+ └─ ebs_block_device[0]                                                                    
+    ├─ Storage (provisioned IOPS SSD, io1)                    1,000  GB          $125.00   
+    └─ Provisioned IOPS                                         800  IOPS         $52.00   
+                                                                                           
+ Project total                                                                   $742.64   
+
+──────────────────────────────────
+Project: prod
+Module path: prod
+
+ Name                                                   Monthly Qty  Unit   Monthly Cost   
+                                                                                           
+ aws_instance.app_server                                                                   
+ ├─ Instance usage (Linux/UNIX, on-demand, m5.4xlarge)          730  hours       $560.64   
+ ├─ root_block_device                                                                      
+ │  └─ Storage (general purpose SSD, gp2)                        50  GB            $5.00   
+ └─ ebs_block_device[0]                                                                    
+    ├─ Storage (provisioned IOPS SSD, io1)                    1,000  GB          $125.00   
+    └─ Provisioned IOPS                                         800  IOPS         $52.00   
+                                                                                           
+ Project total                                                                   $742.64   
+
+ OVERALL TOTAL                                                                $1,485.28 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+2 cloud resources were detected:
+∙ 2 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ dev                                                ┃          $743 ┃           - ┃       $743 ┃
+┃ prod                                               ┃          $743 ┃           - ┃       $743 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+
+Err:
+
+
+Logs:
+INFO [1mAutodetected 2 Terraform projects across 2 root modules[0m
+INFO [1mFound Terraform project dev at directory dev[0m
+INFO [1mFound Terraform project prod at directory prod[0m

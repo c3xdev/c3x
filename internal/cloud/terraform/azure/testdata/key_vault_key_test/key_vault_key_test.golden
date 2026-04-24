@@ -1,0 +1,67 @@
+
+ Name                                       Monthly Qty  Unit                 Monthly Cost   
+                                                                                             
+ azurerm_key_vault_key.std_rsa2048                                                           
+ ├─ Secrets operations                                7  10K transactions        not found   
+ ├─ Storage key rotations                            70  renewals                   $70.00   
+ └─ Software-protected keys                         700  10K transactions        not found   
+                                                                                             
+ azurerm_key_vault_key.std_rsa3072                                                           
+ ├─ Secrets operations                                6  10K transactions        not found   
+ ├─ Storage key rotations                            60  renewals                   $60.00   
+ └─ Software-protected keys                         600  10K transactions        not found   
+                                                                                             
+ azurerm_key_vault_key.std_hsm_rsa3072                                                       
+ ├─ Secrets operations                                5  10K transactions        not found   
+ ├─ Storage key rotations                            50  renewals                   $50.00   
+ └─ Software-protected keys                         500  10K transactions        not found   
+                                                                                             
+ azurerm_key_vault_key.pr_hsm_rsa2048                                                        
+ ├─ Secrets operations                                4  10K transactions        not found   
+ ├─ Storage key rotations                            40  renewals                   $40.00   
+ ├─ HSM-protected keys                            5,000  months                  not found   
+ └─ HSM-protected keys                              400  10K transactions        not found   
+                                                                                             
+ azurerm_key_vault_key.pr_hsm_rsa3072                                                        
+ ├─ Secrets operations                                4  10K transactions        not found   
+ ├─ Storage key rotations                            40  renewals                   $40.00   
+ ├─ HSM-protected keys (first 250)                  250  months                  not found   
+ ├─ HSM-protected keys (next 1250)                1,250  months                  not found   
+ ├─ HSM-protected keys (next 2500)                2,500  months                  not found   
+ ├─ HSM-protected keys (over 4000)                1,000  months                  not found   
+ └─ HSM-protected keys                              400  10K transactions        not found   
+                                                                                             
+ azurerm_key_vault_key.pr_ec                                                                 
+ ├─ Secrets operations                                3  10K transactions        not found   
+ ├─ Storage key rotations                            30  renewals                   $30.00   
+ └─ Software-protected keys                         300  10K transactions        not found   
+                                                                                             
+ azurerm_key_vault_key.pr_rsa3072                                                            
+ ├─ Secrets operations                                2  10K transactions        not found   
+ ├─ Storage key rotations                            20  renewals                   $20.00   
+ └─ Software-protected keys                         200  10K transactions        not found   
+                                                                                             
+ azurerm_key_vault_key.pr_rsa2048                                                            
+ ├─ Secrets operations                                1  10K transactions        not found   
+ ├─ Storage key rotations                            10  renewals                   $10.00   
+ └─ Software-protected keys                         100  10K transactions        not found   
+                                                                                             
+ azurerm_key_vault_key.no_usage                                                              
+ ├─ Secrets operations                  not found                                            
+ ├─ Storage key rotations               Monthly cost depends on usage: $1.00 per renewals    
+ └─ Software-protected keys             not found                                            
+                                                                                             
+ OVERALL TOTAL                                                                    $320.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+12 cloud resources were detected:
+∙ 9 were estimated
+∙ 3 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃          $320 ┃           - ┃       $320 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

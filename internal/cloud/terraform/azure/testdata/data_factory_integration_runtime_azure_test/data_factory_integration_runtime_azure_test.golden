@@ -1,0 +1,69 @@
+
+ Name                                                               Monthly Qty  Unit     Monthly Cost    
+                                                                                                          
+ azurerm_data_factory_integration_runtime_azure.mo                                                        
+ ├─ Compute (Memory Optimized, 272 vCores)                                  730  hours      $68,453.56    
+ ├─ Orchestration                                                   not found                             
+ ├─ Data movement activity                                                  730  hours       not found    
+ ├─ Pipeline activity                                                       730  hours       not found    
+ └─ External pipeline activity                                              730  hours       not found    
+                                                                                                          
+ azurerm_data_factory_integration_runtime_azure.co                                                        
+ ├─ Compute (Compute Optimized, 16 vCores)                                  730  hours       $2,318.48    
+ ├─ Orchestration                                                   not found                             
+ ├─ Data movement activity                                                  730  hours       not found    
+ ├─ Pipeline activity                                                       730  hours       not found    
+ └─ External pipeline activity                                              730  hours       not found    
+                                                                                                          
+ azurerm_data_factory_integration_runtime_azure.default_with_usage                                        
+ ├─ Compute (General Purpose, 8 vCores)                                     730  hours       $1,565.12    
+ ├─ Orchestration                                                            10  1k runs     not found  * 
+ ├─ Data movement activity                                                  730  hours       not found    
+ ├─ Pipeline activity                                                       730  hours       not found    
+ └─ External pipeline activity                                              730  hours       not found    
+                                                                                                          
+ azurerm_data_factory_integration_runtime_azure.gp                                                        
+ ├─ Compute (General Purpose, 8 vCores)                                     730  hours       $1,565.12    
+ ├─ Orchestration                                                   not found                             
+ ├─ Data movement activity                                                  730  hours       not found    
+ ├─ Pipeline activity                                                       730  hours       not found    
+ └─ External pipeline activity                                              730  hours       not found    
+                                                                                                          
+ azurerm_data_factory.example                                                                             
+ ├─ Read/Write operations                                           not found                             
+ └─ Monitoring operations                                           not found                             
+                                                                                                          
+ OVERALL TOTAL                                                                              $73,902.28 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+6 cloud resources were detected:
+∙ 5 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃       $73,902 ┃           - ┃    $73,902 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+Logs:
+
+WARN [1mNo products found for azurerm_data_factory.example Monitoring operations. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud Monitoring Operations$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory.example Read/Write operations. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud Read Write Operations$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.co Data movement activity. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud Data Movement$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.co External pipeline activity. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud External Pipeline Activity$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.co Orchestration. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud Orchestration Activity Run$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.co Pipeline activity. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud Pipeline Activity$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.default_with_usage Data movement activity. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud Data Movement$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.default_with_usage External pipeline activity. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud External Pipeline Activity$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.default_with_usage Orchestration. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud Orchestration Activity Run$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.default_with_usage Pipeline activity. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud Pipeline Activity$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.gp Data movement activity. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud Data Movement$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.gp External pipeline activity. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud External Pipeline Activity$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.gp Orchestration. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud Orchestration Activity Run$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.gp Pipeline activity. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud Pipeline Activity$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.mo Data movement activity. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud Data Movement$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.mo External pipeline activity. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud External Pipeline Activity$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.mo Orchestration. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud Orchestration Activity Run$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_data_factory_integration_runtime_azure.mo Pipeline activity. Product filter: {"vendorName":"azure","service":"Azure Data Factory v2","productFamily":"Analytics","region":"westeurope","attributeFilters":[{"key":"meterName","value_regex":"/^Cloud Pipeline Activity$/i"},{"key":"skuName","value_regex":"/^Cloud$/i"},{"key":"productName","value_regex":"/^Azure Data Factory v2$/i"}]} Price filter:{"purchaseOption":"Consumption"}[0m

@@ -1,0 +1,5 @@
+version: 0.1
+resource_usage:
+  aws_lambda_function.event_handler[*]:
+    monthly_requests: 100000000
+    request_duration_ms: 250

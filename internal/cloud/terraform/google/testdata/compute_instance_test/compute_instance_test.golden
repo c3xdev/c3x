@@ -1,0 +1,117 @@
+
+ Name                                                              Monthly Qty  Unit   Monthly Cost   
+                                                                                                      
+ google_compute_instance.gpu                                                                          
+ ├─ Instance usage (Linux/UNIX, on-demand, n1-standard-16)                 730  hours       $388.36   
+ ├─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+ └─ NVIDIA Tesla K80 (on-demand)                                         2,920  hours     not found   
+                                                                                                      
+ google_compute_instance.gpu_l4                                                                       
+ ├─ Instance usage (Linux/UNIX, on-demand, g2-standard-4)                  730  hours     not found   
+ ├─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+ └─ NVIDIA L4 (on-demand)                                                  730  hours       $286.18   
+                                                                                                      
+ google_compute_instance.sud_20_perc_with_hours                                                       
+ ├─ Instance usage (Linux/UNIX, on-demand, n2-standard-8)                  730  hours       $226.87   
+ └─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+                                                                                                      
+ google_compute_instance.preemptible_gpu                                                              
+ ├─ Instance usage (Linux/UNIX, preemptible, n1-standard-16)               730  hours       $184.87   
+ ├─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+ └─ NVIDIA Tesla K80 (preemptible)                                       2,920  hours     not found   
+                                                                                                      
+ google_compute_instance.custom_n2                                                                    
+ ├─ Custom instance CPU (Linux/UNIX, on-demand, N2 6 vCPUs)                730  hours       $116.30   
+ ├─ Custom Instance RAM (Linux/UNIX, on-demand, N2 20 GB)                  730  hours        $51.96   
+ └─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+                                                                                                      
+ google_compute_instance.custom                                                                       
+ ├─ Custom instance CPU (Linux/UNIX, on-demand, N1 6 vCPUs)                730  hours       $101.77   
+ ├─ Custom Instance RAM (Linux/UNIX, on-demand, N1 20 GB)                  730  hours        $45.44   
+ └─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+                                                                                                      
+ google_compute_instance.custom_n1                                                                    
+ ├─ Custom instance CPU (Linux/UNIX, on-demand, N1 6 vCPUs)                730  hours       $101.77   
+ ├─ Custom Instance RAM (Linux/UNIX, on-demand, N1 20 GB)                  730  hours        $45.44   
+ └─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+                                                                                                      
+ google_compute_instance.gpu_with_hours                                                               
+ ├─ Instance usage (Linux/UNIX, on-demand, n1-standard-16)                 100  hours        $76.00   
+ ├─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+ └─ NVIDIA Tesla K80 (on-demand)                                           400  hours     not found   
+                                                                                                      
+ google_compute_instance.custom_ext                                                                   
+ ├─ Custom instance CPU (Linux/UNIX, on-demand, N1 2 vCPUs)                730  hours        $33.92   
+ ├─ Custom Instance RAM (Linux/UNIX, on-demand, N1 13 GB)                  730  hours        $29.53   
+ ├─ Custom Instance Extended RAM (Linux/UNIX, on-demand, N1 2 GB)          730  hours         $9.76   
+ └─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+                                                                                                      
+ google_compute_instance.custom_preemptible                                                           
+ ├─ Custom instance CPU (Linux/UNIX, preemptible, N1 6 vCPUs)              730  hours        $49.14   
+ ├─ Custom Instance RAM (Linux/UNIX, preemptible, N1 20 GB)                730  hours        $21.01   
+ └─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+                                                                                                      
+ google_compute_instance.local_ssd                                                                    
+ ├─ Instance usage (Linux/UNIX, on-demand, f1-micro)                       730  hours     not found   
+ ├─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+ └─ Local SSD provisioned storage                                          750  GB           $60.00   
+                                                                                                      
+ google_compute_instance.custom_n2d                                                                   
+ ├─ Custom instance CPU (Linux/UNIX, preemptible, N2D 4 vCPUs)             730  hours        $17.52   
+ ├─ Custom Instance RAM (Linux/UNIX, preemptible, N2D 20 GB)               730  hours        $11.72   
+ └─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+                                                                                                      
+ google_compute_instance.preemptible_local_ssd                                                        
+ ├─ Instance usage (Linux/UNIX, preemptible, f1-micro)                     730  hours     not found   
+ ├─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+ └─ Local SSD provisioned storage                                          375  GB            $9.94   
+                                                                                                      
+ google_compute_instance.ssd                                                                          
+ ├─ Instance usage (Linux/UNIX, on-demand, f1-micro)                       730  hours     not found   
+ └─ SSD provisioned storage (pd-ssd)                                        40  GB            $6.80   
+                                                                                                      
+ google_compute_instance.preemptible                                                                  
+ ├─ Instance usage (Linux/UNIX, preemptible, f1-micro)                     730  hours     not found   
+ └─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+                                                                                                      
+ google_compute_instance.standard                                                                     
+ ├─ Instance usage (Linux/UNIX, on-demand, f1-micro)                       730  hours     not found   
+ └─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+                                                                                                      
+ google_compute_instance.sud_30_perc_with_hours                                                       
+ ├─ Instance usage (Linux/UNIX, on-demand, m1-ultramem-80)                 730  hours     not found   
+ └─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+                                                                                                      
+ google_compute_instance.with_hours                                                                   
+ ├─ Instance usage (Linux/UNIX, on-demand, f1-micro)                       100  hours     not found   
+ └─ Standard provisioned storage (pd-standard)                              10  GB            $0.40   
+                                                                                                      
+ OVERALL TOTAL                                                                           $1,881.09 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+19 cloud resources were detected:
+∙ 18 were estimated
+∙ 1 is not supported yet, see https://c3x.dev/requested-resources:
+  ∙ 1 x google_compute_instance
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃        $1,881 ┃           - ┃     $1,881 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+Logs:
+
+WARN [1mNo products found for google_compute_instance.gpu NVIDIA Tesla K80 (on-demand). Product filter: {"vendorName":"gcp","service":"Compute Engine","productFamily":"Compute","region":"us-central1","attributeFilters":[{"key":"description","value_regex":"/^Nvidia Tesla K80 GPU running/"}]} Price filter:{"endUsageAmount":""}[0m
+WARN [1mNo products found for google_compute_instance.gpu_l4 Instance usage (Linux/UNIX, on-demand, g2-standard-4). Product filter: {"vendorName":"gcp","service":"Compute Engine","productFamily":"Compute Instance","region":"us-central1","attributeFilters":[{"key":"machineType","value_regex":"/^g2-standard-4$/i"}]} Price filter:{"purchaseOption":"on_demand"}[0m
+WARN [1mNo products found for google_compute_instance.gpu_with_hours NVIDIA Tesla K80 (on-demand). Product filter: {"vendorName":"gcp","service":"Compute Engine","productFamily":"Compute","region":"us-central1","attributeFilters":[{"key":"description","value_regex":"/^Nvidia Tesla K80 GPU running/"}]} Price filter:{"endUsageAmount":""}[0m
+WARN [1mNo products found for google_compute_instance.local_ssd Instance usage (Linux/UNIX, on-demand, f1-micro). Product filter: {"vendorName":"gcp","service":"Compute Engine","productFamily":"Compute Instance","region":"us-central1","attributeFilters":[{"key":"machineType","value_regex":"/^f1-micro$/i"}]} Price filter:{"purchaseOption":"on_demand"}[0m
+WARN [1mNo products found for google_compute_instance.preemptible Instance usage (Linux/UNIX, preemptible, f1-micro). Product filter: {"vendorName":"gcp","service":"Compute Engine","productFamily":"Compute Instance","region":"us-central1","attributeFilters":[{"key":"machineType","value_regex":"/^f1-micro$/i"}]} Price filter:{"purchaseOption":"preemptible"}[0m
+WARN [1mNo products found for google_compute_instance.preemptible_gpu NVIDIA Tesla K80 (preemptible). Product filter: {"vendorName":"gcp","service":"Compute Engine","productFamily":"Compute","region":"us-central1","attributeFilters":[{"key":"description","value_regex":"/^Nvidia Tesla K80 GPU attached to Spot Preemptible VMs running/"}]} Price filter:{"endUsageAmount":""}[0m
+WARN [1mNo products found for google_compute_instance.preemptible_local_ssd Instance usage (Linux/UNIX, preemptible, f1-micro). Product filter: {"vendorName":"gcp","service":"Compute Engine","productFamily":"Compute Instance","region":"us-central1","attributeFilters":[{"key":"machineType","value_regex":"/^f1-micro$/i"}]} Price filter:{"purchaseOption":"preemptible"}[0m
+WARN [1mNo products found for google_compute_instance.ssd Instance usage (Linux/UNIX, on-demand, f1-micro). Product filter: {"vendorName":"gcp","service":"Compute Engine","productFamily":"Compute Instance","region":"us-central1","attributeFilters":[{"key":"machineType","value_regex":"/^f1-micro$/i"}]} Price filter:{"purchaseOption":"on_demand"}[0m
+WARN [1mNo products found for google_compute_instance.standard Instance usage (Linux/UNIX, on-demand, f1-micro). Product filter: {"vendorName":"gcp","service":"Compute Engine","productFamily":"Compute Instance","region":"us-central1","attributeFilters":[{"key":"machineType","value_regex":"/^f1-micro$/i"}]} Price filter:{"purchaseOption":"on_demand"}[0m
+WARN [1mNo products found for google_compute_instance.sud_30_perc_with_hours Instance usage (Linux/UNIX, on-demand, m1-ultramem-80). Product filter: {"vendorName":"gcp","service":"Compute Engine","productFamily":"Compute Instance","region":"us-central1","attributeFilters":[{"key":"machineType","value_regex":"/^m1-ultramem-80$/i"}]} Price filter:{"purchaseOption":"on_demand"}[0m
+WARN [1mNo products found for google_compute_instance.with_hours Instance usage (Linux/UNIX, on-demand, f1-micro). Product filter: {"vendorName":"gcp","service":"Compute Engine","productFamily":"Compute Instance","region":"us-central1","attributeFilters":[{"key":"machineType","value_regex":"/^f1-micro$/i"}]} Price filter:{"purchaseOption":"on_demand"}[0m
+WARN [1mSkipping resource google_compute_instance.e2_custom. C3X currently does not support E2 custom instances[0m

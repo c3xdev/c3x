@@ -1,0 +1,67 @@
+
+ Name                                                                        Monthly Qty  Unit           Monthly Cost    
+                                                                                                                         
+ azurerm_servicebus_namespace.servicebus_namespace["Premium.1"]                                                          
+ └─ Messaging units                                                                    1  units             not found    
+                                                                                                                         
+ azurerm_servicebus_namespace.servicebus_namespace["Premium.16"]                                                         
+ └─ Messaging units                                                                   16  units             not found    
+                                                                                                                         
+ azurerm_servicebus_namespace.servicebus_namespace["Premium.2"]                                                          
+ └─ Messaging units                                                                    2  units             not found    
+                                                                                                                         
+ azurerm_servicebus_namespace.servicebus_namespace["Premium.4"]                                                          
+ └─ Messaging units                                                                    4  units             not found    
+                                                                                                                         
+ azurerm_servicebus_namespace.servicebus_namespace["Premium.8"]                                                          
+ └─ Messaging units                                                                    8  units             not found    
+                                                                                                                         
+ azurerm_servicebus_namespace.servicebus_namespace["Standard.0"]                                                         
+ ├─ Base charge                                                                      730  hours             not found    
+ ├─ Messaging operations (13M-100M)                                          not found                                   
+ └─ Brokered connections (1K-100K)                                           not found                                   
+                                                                                                                         
+ azurerm_servicebus_namespace.servicebus_namespace_with_usage["Basic.0"]                                                 
+ └─ Messaging operations                                                           1,000  1M operations     not found  * 
+                                                                                                                         
+ azurerm_servicebus_namespace.servicebus_namespace_with_usage["Premium.1"]                                               
+ └─ Messaging units                                                                    1  units             not found    
+                                                                                                                         
+ azurerm_servicebus_namespace.servicebus_namespace_with_usage["Premium.16"]                                              
+ └─ Messaging units                                                                   16  units             not found    
+                                                                                                                         
+ azurerm_servicebus_namespace.servicebus_namespace_with_usage["Premium.2"]                                               
+ └─ Messaging units                                                                    2  units             not found    
+                                                                                                                         
+ azurerm_servicebus_namespace.servicebus_namespace_with_usage["Premium.4"]                                               
+ └─ Messaging units                                                                    4  units             not found    
+                                                                                                                         
+ azurerm_servicebus_namespace.servicebus_namespace_with_usage["Premium.8"]                                               
+ └─ Messaging units                                                                    8  units             not found    
+                                                                                                                         
+ azurerm_servicebus_namespace.servicebus_namespace_with_usage["Standard.0"]                                              
+ ├─ Base charge                                                                      730  hours             not found    
+ ├─ Messaging operations (13M-100M)                                                   87  1M operations     not found  * 
+ ├─ Messaging operations (100M-2,500M)                                             2,400  1M operations     not found  * 
+ ├─ Messaging operations (over 2,500M)                                               500  1M operations     not found  * 
+ ├─ Brokered connections (1K-100K)                                                99,000  connections       not found  * 
+ ├─ Brokered connections (100K-500K)                                             400,000  connections       not found  * 
+ └─ Brokered connections (over 500K)                                             500,000  connections       not found  * 
+                                                                                                                         
+ azurerm_servicebus_namespace.servicebus_namespace["Basic.0"]                                                            
+ └─ Messaging operations                                                     not found                                   
+                                                                                                                         
+ OVERALL TOTAL                                                                                                  $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+15 cloud resources were detected:
+∙ 14 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

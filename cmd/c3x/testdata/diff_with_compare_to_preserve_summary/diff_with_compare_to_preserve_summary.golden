@@ -1,0 +1,66 @@
+Key: * usage cost, ~ changed, + added, - removed
+
+──────────────────────────────────
+Project: REPLACED_PROJECT_PATH/testdata/express_route_gateway_plan.json
+
+- azurerm_express_route_connection.express_route_conn
+  -$37
+
+    - ER Connections
+      -$37
+
+- azurerm_express_route_gateway.express_route
+  -$307
+
+    - ER scale units (2 Gbps)
+      -$307
+
+Monthly cost change for REPLACED_PROJECT_PATH/testdata/express_route_gateway_plan.json
+Amount:  -$343 ($343 → $0.00)
+
+──────────────────────────────────
+Project: REPLACED_PROJECT_PATH/testdata/express_route_gateway_plan.json
+
++ azurerm_express_route_connection.express_route_conn
+  $0.00
+
+    + ER Connections
+      $0.00
+
++ azurerm_express_route_gateway.express_route
+  $0.00
+
+    + ER scale units (2 Gbps)
+      $0.00
+
+Monthly cost change for REPLACED_PROJECT_PATH/testdata/express_route_gateway_plan.json
+Amount:  $0.00 ($0.00 → $0.00)
+
+──────────────────────────────────
+Key: * usage cost, ~ changed, + added, - removed
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+8 cloud resources were detected:
+∙ 2 were estimated
+∙ 3 were free
+∙ 3 are not supported yet, see https://c3x.dev/requested-resources:
+  ∙ 1 x azurerm_express_route_circuit
+  ∙ 1 x azurerm_express_route_circuit_peering
+  ∙ 1 x azurerm_express_route_port
+
+C3X estimate: Monthly estimate decreased by $343 ↓
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ Changed project                                             ┃ Baseline cost ┃ Usage cost* ┃ Total change ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━━━┫
+┃ REPLACED_PROJECT_PATH/testdata/express_route_gateway_plan.json    ┃         -$343 ┃           - ┃        -$343 ┃
+┃ REPLACED_PROJECT_PATH/testdata/express_route_gateway_plan.json ┃           +$0 ┃           - ┃          +$0 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━━━┛
+
+Err:
+
+
+Logs:
+WARN [1m1 azurerm_express_route_connection price missing across 1 resource
+     1 azurerm_express_route_gateway price missing across 1 resource
+[0m

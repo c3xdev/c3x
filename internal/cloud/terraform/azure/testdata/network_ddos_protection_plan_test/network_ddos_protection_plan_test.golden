@@ -1,0 +1,25 @@
+
+ Name                                                                          Monthly Qty  Unit       Monthly Cost    
+                                                                                                                       
+ azurerm_network_ddos_protection_plan.network_ddos_protection_plan                                                     
+ ├─ DDoS Protection Plan                                                               730  hours         not found    
+ └─ Overage charges                                                            not found                               
+                                                                                                                       
+ azurerm_network_ddos_protection_plan.network_ddos_protection_plan_with_usage                                          
+ ├─ DDoS Protection Plan                                                               730  hours         not found    
+ └─ Overage charges                                                                      5  resources     not found  * 
+                                                                                                                       
+ OVERALL TOTAL                                                                                                $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+3 cloud resources were detected:
+∙ 2 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

@@ -1,0 +1,11 @@
+.
+├── .c3x
+│   └── foo
+│       └── main.tf
+├── .git
+│   └── main.ft
+└── .infra
+    ├── baz
+    │   └── main.tf
+    └── bat
+        └── main.tf

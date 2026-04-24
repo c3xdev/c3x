@@ -1,0 +1,86 @@
+
+ Name                                       Monthly Qty  Unit         Monthly Cost (CNY)    
+                                                                                            
+ aws_s3_bucket.bucket_china_with_usage                                                      
+ ├─ Standard                                                                                
+ │  ├─ Storage                                   10,000  GB                    not found  * 
+ │  ├─ PUT, COPY, POST, LIST requests                10  1k requests           not found  * 
+ │  ├─ GET, SELECT, and all other requests           10  1k requests           not found  * 
+ │  ├─ Select data scanned                       10,000  GB                    not found  * 
+ │  └─ Select data returned                      10,000  GB                    not found  * 
+ ├─ Intelligent tiering                                                                     
+ │  ├─ Storage (frequent access)                 20,000  GB                    not found  * 
+ │  ├─ Storage (infrequent access)               20,000  GB                    not found  * 
+ │  ├─ Storage (archive access)                  20,000  GB                    not found  * 
+ │  ├─ Storage (deep archive access)             20,000  GB                    not found  * 
+ │  ├─ Monitoring and automation                     20  1k objects            not found  * 
+ │  ├─ PUT, COPY, POST, LIST requests                20  1k requests           not found  * 
+ │  ├─ GET, SELECT, and all other requests           20  1k requests           not found  * 
+ │  ├─ Lifecycle transition                          20  1k requests           not found  * 
+ │  ├─ Select data scanned                       20,000  GB                    not found  * 
+ │  ├─ Select data returned                      20,000  GB                    not found  * 
+ │  └─ Early delete (within 30 days)             20,000  GB                    not found  * 
+ ├─ Standard - infrequent access                                                            
+ │  ├─ Storage                                   30,000  GB                    not found  * 
+ │  ├─ PUT, COPY, POST, LIST requests                30  1k requests           not found  * 
+ │  ├─ GET, SELECT, and all other requests           30  1k requests           not found  * 
+ │  ├─ Lifecycle transition                          30  1k requests           not found  * 
+ │  ├─ Retrievals                                30,000  GB                    not found  * 
+ │  ├─ Select data scanned                       30,000  GB                    not found  * 
+ │  └─ Select data returned                      30,000  GB                    not found  * 
+ ├─ One zone - infrequent access                                                            
+ │  ├─ Storage                                   40,000  GB                    not found  * 
+ │  ├─ PUT, COPY, POST, LIST requests                40  1k requests           not found  * 
+ │  ├─ GET, SELECT, and all other requests           40  1k requests           not found  * 
+ │  ├─ Lifecycle transition                          40  1k requests           not found  * 
+ │  ├─ Retrievals                                40,000  GB                    not found  * 
+ │  ├─ Select data scanned                       40,000  GB                    not found  * 
+ │  └─ Select data returned                      40,000  GB                    not found  * 
+ ├─ Glacier flexible retrieval                                                              
+ │  ├─ Storage                                   50,000  GB                    not found  * 
+ │  ├─ PUT, COPY, POST, LIST requests                50  1k requests           not found  * 
+ │  ├─ GET, SELECT, and all other requests           50  1k requests           not found  * 
+ │  ├─ Lifecycle transition                          50  1k requests           not found  * 
+ │  ├─ Retrieval requests (standard)                 50  1k requests           not found  * 
+ │  ├─ Retrievals (standard)                     50,000  GB                    not found  * 
+ │  ├─ Select data scanned (standard)            50,000  GB                    not found  * 
+ │  ├─ Select data returned (standard)           50,000  GB                    not found  * 
+ │  ├─ Retrieval requests (expedited)                50  1k requests           not found  * 
+ │  ├─ Retrievals (expedited)                    50,000  GB                    not found  * 
+ │  ├─ Select data scanned (expedited)           50,000  GB                    not found  * 
+ │  ├─ Select data returned (expedited)          50,000  GB                    not found  * 
+ │  ├─ Select data scanned (bulk)                50,000  GB                    not found  * 
+ │  ├─ Select data returned (bulk)               50,000  GB                    not found  * 
+ │  └─ Early delete (within 90 days)             50,000  GB                    not found  * 
+ └─ Glacier deep archive                                                                    
+    ├─ Storage                                   60,000  GB                    not found  * 
+    ├─ PUT, COPY, POST, LIST requests                60  1k requests           not found  * 
+    ├─ GET, SELECT, and all other requests           60  1k requests           not found  * 
+    ├─ Lifecycle transition                          60  1k requests           not found  * 
+    ├─ Retrieval requests (standard)                 60  1k requests           not found  * 
+    ├─ Retrievals (standard)                     60,000  GB                    not found  * 
+    ├─ Retrieval requests (bulk)                     60  1k requests           not found  * 
+    ├─ Retrievals (bulk)                         60,000  GB                    not found  * 
+    └─ Early delete (within 180 days)            60,000  GB                    not found  * 
+                                                                                            
+ aws_s3_bucket.bucket_china                                                                 
+ └─ Standard                                                                                
+    ├─ Storage                              not found                                       
+    ├─ PUT, COPY, POST, LIST requests       not found                                       
+    ├─ GET, SELECT, and all other requests  not found                                       
+    ├─ Select data scanned                  not found                                       
+    └─ Select data returned                 not found                                       
+                                                                                            
+ OVERALL TOTAL (CNY)                                                              0.00 元 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+2 cloud resources were detected:
+∙ 2 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃       0.00 元 ┃           - ┃    0.00 元 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

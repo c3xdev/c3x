@@ -1,0 +1,61 @@
+version: 0.1
+resource_usage:
+  aws_db_instance.mysql-multi-az:
+    additional_backup_storage_gb: 1000
+  aws_db_instance.mysql-iops-below-min:
+    additional_backup_storage_gb: 1000
+  aws_db_instance.mysql-iops:
+    additional_backup_storage_gb: 1000
+  aws_db_instance.aurora:
+    additional_backup_storage_gb: 1000
+  aws_db_instance.mariadb:
+    additional_backup_storage_gb: 1000
+  aws_db_instance.mysql:
+    additional_backup_storage_gb: 1000
+  aws_db_instance.postgres:
+    additional_backup_storage_gb: 1000
+  aws_db_instance.oracle-se:
+    additional_backup_storage_gb: 1000
+  aws_db_instance.oracle-se1:
+    additional_backup_storage_gb: 1000
+  aws_db_instance.oracle-se2:
+    additional_backup_storage_gb: 1000
+  aws_db_instance.oracle-se2-cdb:
+    additional_backup_storage_gb: 1000
+  aws_db_instance.sqlserver-ex:
+    additional_backup_storage_gb: 1000
+  aws_db_instance.sqlserver-web:
+    additional_backup_storage_gb: 1000
+  aws_db_instance.mysql-performance-insights-usage:
+    monthly_cpu_credit_hrs: 30
+    monthly_additional_performance_insights_requests: 12345
+  aws_db_instance.mysql-1yr-all-upfront-single-az:
+    reserved_instance_term: 1_year
+    reserved_instance_payment_option: all_upfront
+  aws_db_instance.mysql-1yr-no-upfront-single-az:
+    reserved_instance_term: 1_year
+    reserved_instance_payment_option: no_upfront
+  aws_db_instance.mysql-1yr-partial-upfront-single-az:
+    reserved_instance_term: 1_year
+    reserved_instance_payment_option: partial_upfront
+  aws_db_instance.mysql-1yr-all-upfront-multi-az:
+    reserved_instance_term: 1_year
+    reserved_instance_payment_option: all_upfront
+  aws_db_instance.mysql-1yr-no-upfront-multi-az:
+    reserved_instance_term: 1_year
+    reserved_instance_payment_option: no_upfront
+  aws_db_instance.mysql-1yr-partial-upfront-multi-az:
+    reserved_instance_term: 1_year
+    reserved_instance_payment_option: partial_upfront
+  aws_db_instance.postgres-3yr-all-upfront-single-az:
+    reserved_instance_term: 3_year
+    reserved_instance_payment_option: all_upfront
+  aws_db_instance.postgres-3yr-partial-upfront-single-az:
+    reserved_instance_term: 3_year
+    reserved_instance_payment_option: partial_upfront
+  aws_db_instance.postgres-3yr-all-upfront-multi-az:
+    reserved_instance_term: 3_year
+    reserved_instance_payment_option: all_upfront
+  aws_db_instance.postgres-3yr-partial-upfront-multi-az:
+    reserved_instance_term: 3_year
+    reserved_instance_payment_option: partial_upfront

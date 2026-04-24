@@ -1,0 +1,50 @@
+Project: dev
+Module path: dev
+
+ Name                                                      Monthly Qty  Unit   Monthly Cost   
+                                                                                              
+ aws_instance.app                                                                             
+ ├─ Instance usage (Linux/UNIX, on-demand, t3.small)               730  hours        $15.18   
+ └─ root_block_device                                                                         
+    └─ Storage (general purpose SSD, gp3)                           50  GB            $4.00   
+                                                                                              
+ aws_db_instance.database                                                                     
+ ├─ Database instance (on-demand, Single-AZ, db.t3.micro)          730  hours        $13.14   
+ └─ Storage (general purpose SSD, gp3)                              50  GB            $5.75   
+                                                                                              
+ Project total                                                                       $38.07   
+
+──────────────────────────────────
+Project: prod
+Module path: prod
+
+ Name                                                      Monthly Qty  Unit   Monthly Cost   
+                                                                                              
+ aws_db_instance.database                                                                     
+ ├─ Database instance (on-demand, Single-AZ, db.r5.large)          730  hours       $182.50   
+ └─ Storage (general purpose SSD, gp3)                              50  GB            $5.75   
+                                                                                              
+ aws_instance.app                                                                             
+ ├─ Instance usage (Linux/UNIX, on-demand, m5.xlarge)              730  hours       $140.16   
+ └─ root_block_device                                                                         
+    └─ Storage (general purpose SSD, gp3)                           50  GB            $4.00   
+                                                                                              
+ Project total                                                                      $332.41   
+
+ OVERALL TOTAL                                                                     $370.48 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+4 cloud resources were detected:
+∙ 4 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ dev                                                ┃           $38 ┃           - ┃        $38 ┃
+┃ prod                                               ┃          $332 ┃           - ┃       $332 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+
+Err:
+

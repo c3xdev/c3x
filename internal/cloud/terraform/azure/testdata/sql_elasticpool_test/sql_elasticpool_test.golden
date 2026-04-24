@@ -1,0 +1,33 @@
+
+ Name                                  Monthly Qty  Unit   Monthly Cost    
+                                                                           
+ azurerm_sql_elasticpool.premium_500                                       
+ ├─ Compute (Premium, 500 DTUs)                730  hours     not found    
+ └─ Extra data storage                         274  GB          $121.11  * 
+                                                                           
+ azurerm_sql_elasticpool.standard_200                                      
+ ├─ Compute (Standard, 200 DTUs)               730  hours     not found    
+ └─ Extra data storage                         100  GB           $22.10  * 
+                                                                           
+ azurerm_sql_elasticpool.basic_100                                         
+ └─ Compute (Basic, 100 DTUs)                  730  hours     not found    
+                                                                           
+ OVERALL TOTAL                                                  $143.21 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+5 cloud resources were detected:
+∙ 3 were estimated
+∙ 2 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃        $143 ┃       $143 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+Logs:
+
+WARN [1mNo products found for azurerm_sql_elasticpool.basic_100 Compute (Basic, 100 DTUs). Product filter: {"vendorName":"azure","service":"SQL Database","productFamily":"Databases","region":"westeurope","attributeFilters":[{"key":"productName","value":"SQL Database Elastic Pool - Basic"},{"key":"skuName","value":"100 DTU Pack"},{"key":"meterName","value":"eDTUs"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_sql_elasticpool.premium_500 Compute (Premium, 500 DTUs). Product filter: {"vendorName":"azure","service":"SQL Database","productFamily":"Databases","region":"westeurope","attributeFilters":[{"key":"productName","value":"SQL Database Elastic Pool - Premium"},{"key":"skuName","value":"500 DTU Pack"},{"key":"meterName","value":"eDTUs"}]} Price filter:{"purchaseOption":"Consumption"}[0m
+WARN [1mNo products found for azurerm_sql_elasticpool.standard_200 Compute (Standard, 200 DTUs). Product filter: {"vendorName":"azure","service":"SQL Database","productFamily":"Databases","region":"westeurope","attributeFilters":[{"key":"productName","value":"SQL Database Elastic Pool - Standard"},{"key":"skuName","value":"200 DTU Pack"},{"key":"meterName","value":"eDTUs"}]} Price filter:{"purchaseOption":"Consumption"}[0m

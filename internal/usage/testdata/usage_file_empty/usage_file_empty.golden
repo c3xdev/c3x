@@ -1,0 +1,7 @@
+# You can use this file to define resource usage estimates for C3X to use when calculating
+# the cost of usage-based resource, such as AWS S3 or Lambda.
+# `c3x breakdown --usage-file c3x-usage.yml [other flags]`
+# See https://c3x.dev/usage-file/ for docs
+version: 0.1
+# resource_type_default_usage: {}
+# resource_usage: {}

@@ -1,0 +1,53 @@
+
+ Name                                      Monthly Qty  Unit  Monthly Cost   
+                                                                             
+ aws_ecs_service.ecs_fargate5                                                
+ ├─ Per GB per hour                                 10  GB          $32.45   
+ └─ Per vCPU per hour                                5  CPU        $147.75   
+                                                                             
+ aws_ecs_service.ecs_fargate4                                                
+ ├─ Per GB per hour                                  8  GB          $25.96   
+ └─ Per vCPU per hour                                4  CPU        $118.20   
+                                                                             
+ aws_ecs_service.task_set                                                    
+ ├─ Per GB per hour                                  8  GB          $25.96   
+ └─ Per vCPU per hour                                4  CPU        $118.20   
+                                                                             
+ aws_ecs_service.ecs_fargate3                                                
+ ├─ Per GB per hour                                  6  GB          $19.47   
+ └─ Per vCPU per hour                                3  CPU         $88.65   
+                                                                             
+ aws_ecs_service.ecs_fargate2                                                
+ ├─ Per GB per hour                                  4  GB          $12.98   
+ └─ Per vCPU per hour                                2  CPU         $59.10   
+                                                                             
+ aws_ecs_service.ecs_fargate_no_cluster_2                                    
+ ├─ Per GB per hour                                  4  GB          $12.98   
+ └─ Per vCPU per hour                                2  CPU         $59.10   
+                                                                             
+ aws_ecs_service.ecs_fargate1                                                
+ ├─ Per GB per hour                                  2  GB           $6.49   
+ └─ Per vCPU per hour                                1  CPU         $29.55   
+                                                                             
+ aws_ecs_service.ecs_fargate11_family                                        
+ ├─ Per GB per hour                                  2  GB           $6.49   
+ └─ Per vCPU per hour                                1  CPU         $29.55   
+                                                                             
+ aws_ecs_service.ecs_fargate_no_cluster_1                                    
+ ├─ Per GB per hour                                  2  GB           $6.49   
+ └─ Per vCPU per hour                                1  CPU         $29.55   
+                                                                             
+ OVERALL TOTAL                                                    $828.92 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+26 cloud resources were detected:
+∙ 9 were estimated
+∙ 17 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃          $829 ┃           - ┃       $829 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

@@ -1,0 +1,33 @@
+
+ Name                                                             Monthly Qty  Unit     Monthly Cost    
+                                                                                                        
+ azurerm_data_factory_integration_runtime_self_hosted.example                                           
+ ├─ Orchestration                                                 not found                             
+ ├─ Data movement activity                                                730  hours       not found    
+ ├─ Pipeline activity                                                     730  hours       not found    
+ └─ External pipeline activity                                            730  hours       not found    
+                                                                                                        
+ azurerm_data_factory_integration_runtime_self_hosted.with_usage                                        
+ ├─ Orchestration                                                          10  1k runs     not found  * 
+ ├─ Data movement activity                                                730  hours       not found    
+ ├─ Pipeline activity                                                     730  hours       not found    
+ └─ External pipeline activity                                            730  hours       not found    
+                                                                                                        
+ azurerm_data_factory.example                                                                           
+ ├─ Read/Write operations                                         not found                             
+ └─ Monitoring operations                                         not found                             
+                                                                                                        
+ OVERALL TOTAL                                                                                 $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+4 cloud resources were detected:
+∙ 3 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

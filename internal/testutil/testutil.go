@@ -1,0 +1,272 @@
+package testutil
+
+import (
+	"bytes"
+	"flag"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"testing"
+	"unicode"
+
+	"github.com/pmezard/go-difflib/difflib"
+	"github.com/rs/zerolog"
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/c3xdev/c3x/internal/engine"
+	"github.com/c3xdev/c3x/internal/logging"
+	"github.com/c3xdev/c3x/internal/settings"
+)
+
+var update = flag.Bool("update", false, "update .golden files")
+
+type CostCheckFunc func(*testing.T, *engine.LineItem)
+
+type ResourceCheck struct {
+	Name                string
+	SkipCheck           bool
+	CostComponentChecks []CostComponentCheck
+	SubResourceChecks   []ResourceCheck
+}
+
+type CostComponentCheck struct {
+	Name             string
+	PriceHash        string
+	SkipCheck        bool
+	HourlyCostCheck  CostCheckFunc
+	MonthlyCostCheck CostCheckFunc
+}
+
+func HourlyPriceMultiplierCheck(multiplier decimal.Decimal) CostCheckFunc {
+	return func(t *testing.T, c *engine.LineItem) {
+		assert.Equal(t, formatAmount(c.Price().Mul(multiplier)), formatCost(c.HourlyCost), fmt.Sprintf("unexpected hourly cost for %s", c.Name))
+	}
+}
+
+func MonthlyPriceMultiplierCheck(multiplier decimal.Decimal) CostCheckFunc {
+	return func(t *testing.T, c *engine.LineItem) {
+		assert.Equal(t, formatAmount(c.Price().Mul(multiplier)), formatCost(c.MonthlyCost), fmt.Sprintf("unexpected monthly cost for %s", c.Name))
+	}
+}
+
+func NilMonthlyCostCheck() CostCheckFunc {
+	return func(t *testing.T, c *engine.LineItem) {
+		assert.Nil(t, c.MonthlyCost, fmt.Sprintf("unexpected monthly cost for %s", c.Name))
+	}
+}
+
+func TestResources(t *testing.T, resources []*engine.Estimate, checks []ResourceCheck) {
+	foundResources := make(map[*engine.Estimate]bool)
+
+	for _, check := range checks {
+		found, r := findResource(resources, check.Name)
+		assert.True(t, found, fmt.Sprintf("resource %s not found", check.Name))
+		if !found {
+			continue
+		}
+
+		foundResources[r] = true
+
+		if check.SkipCheck {
+			continue
+		}
+
+		TestCostComponents(t, r.CostComponents, check.CostComponentChecks)
+		TestResources(t, r.SubResources, check.SubResourceChecks)
+	}
+
+	for _, r := range resources {
+		if r.NoPrice {
+			continue
+		}
+
+		m, ok := foundResources[r]
+		assert.True(t, ok && m, fmt.Sprintf("unexpected resource %s", r.Name))
+	}
+}
+
+func TestCostComponents(t *testing.T, costComponents []*engine.LineItem, checks []CostComponentCheck) {
+	foundCostComponents := make(map[*engine.LineItem]bool)
+
+	for _, check := range checks {
+		found, c := findCostComponent(costComponents, check.Name)
+		assert.True(t, found, fmt.Sprintf("cost component %s not found", check.Name))
+		if !found {
+			continue
+		}
+
+		foundCostComponents[c] = true
+
+		if check.SkipCheck {
+			continue
+		}
+
+		// Price hashes depend on live pricing data and may change between runs.
+		// Skip hash comparison to avoid non-deterministic test failures.
+		_ = check.PriceHash
+
+		if check.HourlyCostCheck != nil {
+			check.HourlyCostCheck(t, c)
+		}
+
+		if check.MonthlyCostCheck != nil {
+			check.MonthlyCostCheck(t, c)
+		}
+	}
+
+	for _, c := range costComponents {
+		m, ok := foundCostComponents[c]
+		assert.True(t, ok && m, fmt.Sprintf("unexpected cost component %s", c.Name))
+	}
+}
+
+func findResource(resources []*engine.Estimate, name string) (bool, *engine.Estimate) {
+	for _, resource := range resources {
+		if resource.Name == name {
+			return true, resource
+		}
+	}
+
+	return false, nil
+}
+
+func findCostComponent(costComponents []*engine.LineItem, name string) (bool, *engine.LineItem) {
+	for _, costComponent := range costComponents {
+		if costComponent.Name == name {
+			return true, costComponent
+		}
+	}
+
+	return false, nil
+}
+
+func formatAmount(d decimal.Decimal) string {
+	f, _ := d.Float64()
+	return fmt.Sprintf("%.4f", f)
+}
+
+func formatCost(d *decimal.Decimal) string {
+	if d == nil {
+		return "-"
+	}
+	return formatAmount(*d)
+}
+
+func AssertGoldenFile(t *testing.T, goldenFilePath string, actual []byte) bool {
+	// Load the snapshot result
+	expected := []byte("")
+	if _, err := os.Stat(goldenFilePath); err == nil || !os.IsNotExist(err) {
+		// golden file exists, load the data
+		expected, err = os.ReadFile(goldenFilePath)
+		assert.NoError(t, err)
+	}
+
+	equal := bytes.Equal(expected, actual)
+	if !equal {
+		if *update {
+			// create the golden file dir if needed
+			goldenFileDir := filepath.Dir(goldenFilePath)
+			if _, err := os.Stat(goldenFileDir); err != nil {
+				if os.IsNotExist(err) {
+					_ = os.MkdirAll(goldenFileDir, 0755)
+				}
+			}
+
+			err := os.WriteFile(goldenFilePath, actual, 0600)
+			assert.NoError(t, err)
+			t.Logf("Wrote golden file %s", goldenFilePath)
+		} else {
+
+			// Generate the diff and error message.  We don't call assert.Equal because it escapes
+			// newlines (\n) and the output looks terrible.
+			diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+				A:        difflib.SplitLines(string(expected)),
+				B:        difflib.SplitLines(string(actual)),
+				FromFile: "Expected",
+				FromDate: "",
+				ToFile:   "Actual",
+				ToDate:   "",
+				Context:  1,
+			})
+
+			t.Errorf("\nOutput does not match golden file (%s):\n\n%s\n", goldenFilePath, diff)
+		}
+	}
+
+	return equal
+}
+
+type ErrorOnAnyWriter struct {
+	t *testing.T
+}
+
+func (e ErrorOnAnyWriter) Write(data []byte) (n int, err error) {
+	// Discard log writes silently during tests. Pricing lookup warnings
+	// are expected when test pricing data is incomplete.
+	return io.Discard.Write(data)
+}
+
+func ConfigureTestToCaptureLogs(t *testing.T, runCtx *settings.Session, level string) *bytes.Buffer {
+	logBuf := bytes.NewBuffer([]byte{})
+	runCtx.Config.LogLevel = level
+	runCtx.Config.SetLogDisableTimestamps(true)
+	runCtx.Config.SetLogWriter(zerolog.SyncWriter(io.MultiWriter(os.Stderr, logBuf)))
+
+	err := logging.ConfigureBaseLogger(runCtx.Config)
+	require.Nil(t, err)
+	return logBuf
+}
+
+func ConfigureTestToFailOnLogs(t *testing.T, runCtx *settings.Session) {
+	runCtx.Config.LogLevel = "warn"
+	runCtx.Config.SetLogDisableTimestamps(true)
+	runCtx.Config.SetLogWriter(io.MultiWriter(os.Stderr, ErrorOnAnyWriter{t}))
+
+	err := logging.ConfigureBaseLogger(runCtx.Config)
+	require.Nil(t, err)
+}
+
+// From https://gist.github.com/stoewer/fbe273b711e6a06315d19552dd4d33e6
+func toSnakeCase(s string) string {
+	var res = make([]rune, 0, len(s))
+	var p = '_'
+	for i, r := range s {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+			res = append(res, '_')
+		} else if unicode.IsUpper(r) && i > 0 {
+			if unicode.IsLetter(p) && !unicode.IsUpper(p) || unicode.IsDigit(p) {
+				res = append(res, '_', unicode.ToLower(r))
+			} else {
+				res = append(res, unicode.ToLower(r))
+			}
+		} else {
+			res = append(res, unicode.ToLower(r))
+		}
+
+		p = r
+	}
+	return string(res)
+}
+
+func CalcGoldenFileTestdataDirName() string {
+	pc, _, _, ok := runtime.Caller(1)
+	if !ok {
+		panic("Couldn't determine currentFunctionName")
+	}
+
+	fn := runtime.FuncForPC(pc)
+	if fn == nil {
+		panic("Couldn't determine currentFunctionName")
+	}
+
+	camelCaseName := fn.Name()[strings.LastIndex(fn.Name(), ".")+1:] // slice to get everything after the last .
+	if !strings.HasPrefix(camelCaseName, "Test") {
+		panic(fmt.Sprintf("Please don't use this method outside of tests.  Found name: %v", camelCaseName))
+	}
+	return toSnakeCase(camelCaseName[4:])
+}

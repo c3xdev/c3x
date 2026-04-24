@@ -1,0 +1,14 @@
+{{- if .WithHelp -}}
+# Add your expected C3X output for {{ .ResourceName }} below.
+# Test output can be populated into this file by running the following cmd from the root directory:
+#
+# {{ .RunTestCommand }}
+#
+# Be sure to check the output matches the expected pricing for {{ .ResourceName }}.
+{{- else -}}
+# Run:
+#
+# {{ .RunTestCommand }}
+#
+# to update this file with golden file outputs.
+{{ end -}}

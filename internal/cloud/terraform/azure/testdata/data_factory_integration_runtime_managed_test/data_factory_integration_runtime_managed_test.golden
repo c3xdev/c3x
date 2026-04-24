@@ -1,0 +1,42 @@
+
+ Name                                                                      Monthly Qty  Unit     Monthly Cost    
+                                                                                                                 
+ azurerm_data_factory_integration_runtime_managed.default_with_usage                                             
+ ├─ Compute (D8 v3, Standard, license included)                                    730  hours       not found    
+ ├─ Orchestration                                                                   10  1k runs     not found  * 
+ ├─ Data movement activity                                                         730  hours       not found    
+ ├─ Pipeline activity                                                              730  hours       not found    
+ └─ External pipeline activity                                                     730  hours       not found    
+                                                                                                                 
+ azurerm_data_factory_integration_runtime_managed.enterprise_with_license                                        
+ ├─ Compute (E64 v3, Enterprise, license included)                                 730  hours       not found    
+ ├─ Orchestration                                                          not found                             
+ ├─ Data movement activity                                                         730  hours       not found    
+ ├─ Pipeline activity                                                              730  hours       not found    
+ └─ External pipeline activity                                                     730  hours       not found    
+                                                                                                                 
+ azurerm_data_factory_integration_runtime_managed.standard_ahb_v2                                                
+ ├─ Compute (D1 v2, Standard)                                                    2,920  hours       not found    
+ ├─ Orchestration                                                          not found                             
+ ├─ Data movement activity                                                         730  hours       not found    
+ ├─ Pipeline activity                                                              730  hours       not found    
+ └─ External pipeline activity                                                     730  hours       not found    
+                                                                                                                 
+ azurerm_data_factory.example                                                                                    
+ ├─ Read/Write operations                                                  not found                             
+ └─ Monitoring operations                                                  not found                             
+                                                                                                                 
+ OVERALL TOTAL                                                                                          $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+5 cloud resources were detected:
+∙ 4 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

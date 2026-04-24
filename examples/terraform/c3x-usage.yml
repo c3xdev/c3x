@@ -1,0 +1,20 @@
+# C3X Usage File — SaaS Application Stack
+#
+# Defines expected usage for resources with variable pricing.
+# Run: c3x estimate --path . --usage-file c3x-usage.yml
+# Docs: https://c3x.dev/docs/usage-file
+version: 0.1
+resource_usage:
+  aws_nat_gateway.main:
+    monthly_gb_data_processed: 1000
+
+  aws_s3_bucket.data:
+    standard:
+      storage_gb: 500
+      monthly_tier_1_requests: 100000
+      monthly_tier_2_requests: 500000
+
+  aws_cloudwatch_log_group.app:
+    monthly_data_ingested_gb: 50
+    monthly_data_scanned_gb: 20
+    storage_gb: 100

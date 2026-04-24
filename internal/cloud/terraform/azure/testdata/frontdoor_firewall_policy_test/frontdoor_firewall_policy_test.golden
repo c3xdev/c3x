@@ -1,0 +1,31 @@
+
+ Name                                                          Monthly Qty  Unit         Monthly Cost    
+                                                                                                         
+ azurerm_frontdoor_firewall_policy.firewall_policy_example                                               
+ ├─ Policy                                                               1  months          not found    
+ ├─ Custom rules                                                         2  rules           not found    
+ ├─ Custom rule requests                                       not found                                 
+ ├─ Managed rulesets                                                     2  rulesets        not found    
+ └─ Managed ruleset requests                                   not found                                 
+                                                                                                         
+ azurerm_frontdoor_firewall_policy.firewall_policy_with_usage                                            
+ ├─ Policy                                                               1  months          not found    
+ ├─ Custom rules                                                         2  rules           not found    
+ ├─ Custom rule requests                                              0.11  1M requests     not found  * 
+ ├─ Managed rulesets                                                     2  rulesets        not found    
+ └─ Managed ruleset requests                                             1  1M requests     not found  * 
+                                                                                                         
+ OVERALL TOTAL                                                                                  $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+3 cloud resources were detected:
+∙ 2 were estimated
+∙ 1 was free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

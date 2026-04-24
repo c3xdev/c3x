@@ -1,0 +1,49 @@
+
+ Name                                                     Monthly Qty  Unit       Monthly Cost   
+                                                                                                 
+ azurerm_notification_hub_namespace.basicabove100M                                               
+ ├─ Namespace usage (Basic)                                         1  months        not found   
+ └─ Pushes (over 10M)                                             190  1M pushes     not found   
+                                                                                                 
+ azurerm_notification_hub_namespace.basicabove10M                                                
+ ├─ Namespace usage (Basic)                                         1  months        not found   
+ └─ Pushes (over 10M)                                              10  1M pushes     not found   
+                                                                                                 
+ azurerm_notification_hub_namespace.basicbelow10M                                                
+ └─ Namespace usage (Basic)                                         1  months        not found   
+                                                                                                 
+ azurerm_notification_hub_namespace.basicwithoutUsage                                            
+ ├─ Namespace usage (Basic)                                         1  months        not found   
+ └─ Pushes (over 10M)                                     not found                              
+                                                                                                 
+ azurerm_notification_hub_namespace.standardwithoutUsage                                         
+ ├─ Namespace usage (Standard)                                      1  months        not found   
+ ├─ Pushes (10-100M)                                      not found                              
+ └─ Pushes (over 100M)                                    not found                              
+                                                                                                 
+ azurerm_notification_hub_namespace.stdabove100M                                                 
+ ├─ Namespace usage (Standard)                                      1  months        not found   
+ ├─ Pushes (10-100M)                                               90  1M pushes     not found   
+ └─ Pushes (over 100M)                                             30  1M pushes     not found   
+                                                                                                 
+ azurerm_notification_hub_namespace.stdabove10M                                                  
+ ├─ Namespace usage (Standard)                                      1  months        not found   
+ └─ Pushes (10-100M)                                               80  1M pushes     not found   
+                                                                                                 
+ azurerm_notification_hub_namespace.stdbelow10M                                                  
+ └─ Namespace usage (Standard)                                      1  months        not found   
+                                                                                                 
+ OVERALL TOTAL                                                                          $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+10 cloud resources were detected:
+∙ 8 were estimated
+∙ 2 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

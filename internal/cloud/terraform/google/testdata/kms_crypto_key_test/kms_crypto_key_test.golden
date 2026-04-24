@@ -1,0 +1,29 @@
+
+ Name                                         Monthly Qty  Unit            Monthly Cost    
+                                                                                           
+ google_kms_crypto_key.my_keys_withUsage                                                   
+ ├─ Key versions (first 2K)                         2,000  months             not found  * 
+ ├─ Key versions (over 2K)                          3,000  months             not found  * 
+ └─ Operations                                          1  10k operations     not found  * 
+                                                                                           
+ google_kms_crypto_key.with_rotate_withUsage                                               
+ ├─ Key versions                                    25.92  months             not found  * 
+ └─ Operations                                          1  10k operations     not found  * 
+                                                                                           
+ google_kms_crypto_key.my_keys                                                             
+ ├─ Key versions                              not found                                    
+ └─ Operations                                not found                                    
+                                                                                           
+ OVERALL TOTAL                                                                    $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+3 cloud resources were detected:
+∙ 3 were estimated
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛

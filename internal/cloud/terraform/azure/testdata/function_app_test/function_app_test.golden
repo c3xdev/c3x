@@ -1,0 +1,76 @@
+
+ Name                                                                  Monthly Qty  Unit              Monthly Cost    
+                                                                                                                      
+ azurerm_function_app.elasticFunctionWithUsage                                                                        
+ ├─ vCPU (EP2)                                                                   4  vCPU                   $505.16    
+ └─ Memory (EP2)                                                                14  GB                     $125.71    
+                                                                                                                      
+ azurerm_function_app.elasticFunction                                                                                 
+ ├─ vCPU (EP2)                                                                   2  vCPU                   $252.58    
+ └─ Memory (EP2)                                                                 7  GB                      $62.85    
+                                                                                                                      
+ azurerm_function_app.elasticPremiumFunction                                                                          
+ ├─ vCPU (EP1)                                                                   1  vCPU                   $126.29    
+ └─ Memory (EP1)                                                               3.5  GB                      $31.43    
+                                                                                                                      
+ azurerm_function_app.functionAppNoAvailableServicePlanButHasUsage                                                    
+ ├─ Execution time                                                    876,180.4425  GB-seconds           not found  * 
+ └─ Executions                                                              3.5401  1M requests          not found  * 
+                                                                                                                      
+ azurerm_function_app.functionAppWithAllUsage                                                                         
+ ├─ Execution time                                                    876,180.4425  GB-seconds           not found  * 
+ └─ Executions                                                              3.5401  1M requests          not found  * 
+                                                                                                                      
+ azurerm_function_app.functionAppWithLessThanMins                                                                     
+ ├─ Execution time                                                          37,500  GB-seconds           not found  * 
+ └─ Executions                                                                   3  1M requests          not found  * 
+                                                                                                                      
+ azurerm_function_app.functionAppWithOnlyExecutions                                                                   
+ ├─ Execution time                                                  not found                                         
+ └─ Executions                                                                 0.1  1M requests          not found  * 
+                                                                                                                      
+ azurerm_function_app.functionApp                                                                                     
+ ├─ Execution time                                                  not found                                         
+ └─ Executions                                                      not found                                         
+                                                                                                                      
+ azurerm_function_app.functionAppNoAvailableServicePlan                                                               
+ ├─ Execution time                                                  not found                                         
+ └─ Executions                                                      not found                                         
+                                                                                                                      
+ azurerm_function_app.functionAppWithMissingExecutions                                                                
+ ├─ Execution time                                                  not found                                         
+ └─ Executions                                                      not found                                         
+                                                                                                                      
+ azurerm_storage_account.example                                                                                      
+ └─ Early deletion                                                  Monthly cost depends on usage: $0.0152 per GB     
+                                                                                                                      
+ OVERALL TOTAL                                                                                           $1,104.02 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+16 cloud resources were detected:
+∙ 12 were estimated
+∙ 4 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃        $1,104 ┃           - ┃     $1,104 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+Logs:
+
+WARN [1mNo products found for azurerm_function_app.functionApp Execution time. Product filter: {"vendorName":"azure","service":"Functions","productFamily":"Compute","region":"eastus","attributeFilters":[{"key":"meterName","value_regex":"/Execution Time$/i"},{"key":"skuName","value":"Standard"}]} Price filter:{"purchaseOption":"Consumption","startUsageAmount":"400000"}[0m
+WARN [1mNo products found for azurerm_function_app.functionApp Executions. Product filter: {"vendorName":"azure","service":"Functions","productFamily":"Compute","region":"eastus","attributeFilters":[{"key":"meterName","value_regex":"/Total Executions$/i"},{"key":"skuName","value":"Standard"}]} Price filter:{"purchaseOption":"Consumption","startUsageAmount":"100000"}[0m
+WARN [1mNo products found for azurerm_function_app.functionAppNoAvailableServicePlan Execution time. Product filter: {"vendorName":"azure","service":"Functions","productFamily":"Compute","region":"eastus","attributeFilters":[{"key":"meterName","value_regex":"/Execution Time$/i"},{"key":"skuName","value":"Standard"}]} Price filter:{"purchaseOption":"Consumption","startUsageAmount":"400000"}[0m
+WARN [1mNo products found for azurerm_function_app.functionAppNoAvailableServicePlan Executions. Product filter: {"vendorName":"azure","service":"Functions","productFamily":"Compute","region":"eastus","attributeFilters":[{"key":"meterName","value_regex":"/Total Executions$/i"},{"key":"skuName","value":"Standard"}]} Price filter:{"purchaseOption":"Consumption","startUsageAmount":"100000"}[0m
+WARN [1mNo products found for azurerm_function_app.functionAppNoAvailableServicePlanButHasUsage Execution time. Product filter: {"vendorName":"azure","service":"Functions","productFamily":"Compute","region":"eastus","attributeFilters":[{"key":"meterName","value_regex":"/Execution Time$/i"},{"key":"skuName","value":"Standard"}]} Price filter:{"purchaseOption":"Consumption","startUsageAmount":"400000"}[0m
+WARN [1mNo products found for azurerm_function_app.functionAppNoAvailableServicePlanButHasUsage Executions. Product filter: {"vendorName":"azure","service":"Functions","productFamily":"Compute","region":"eastus","attributeFilters":[{"key":"meterName","value_regex":"/Total Executions$/i"},{"key":"skuName","value":"Standard"}]} Price filter:{"purchaseOption":"Consumption","startUsageAmount":"100000"}[0m
+WARN [1mNo products found for azurerm_function_app.functionAppWithAllUsage Execution time. Product filter: {"vendorName":"azure","service":"Functions","productFamily":"Compute","region":"eastus","attributeFilters":[{"key":"meterName","value_regex":"/Execution Time$/i"},{"key":"skuName","value":"Standard"}]} Price filter:{"purchaseOption":"Consumption","startUsageAmount":"400000"}[0m
+WARN [1mNo products found for azurerm_function_app.functionAppWithAllUsage Executions. Product filter: {"vendorName":"azure","service":"Functions","productFamily":"Compute","region":"eastus","attributeFilters":[{"key":"meterName","value_regex":"/Total Executions$/i"},{"key":"skuName","value":"Standard"}]} Price filter:{"purchaseOption":"Consumption","startUsageAmount":"100000"}[0m
+WARN [1mNo products found for azurerm_function_app.functionAppWithLessThanMins Execution time. Product filter: {"vendorName":"azure","service":"Functions","productFamily":"Compute","region":"eastus","attributeFilters":[{"key":"meterName","value_regex":"/Execution Time$/i"},{"key":"skuName","value":"Standard"}]} Price filter:{"purchaseOption":"Consumption","startUsageAmount":"400000"}[0m
+WARN [1mNo products found for azurerm_function_app.functionAppWithLessThanMins Executions. Product filter: {"vendorName":"azure","service":"Functions","productFamily":"Compute","region":"eastus","attributeFilters":[{"key":"meterName","value_regex":"/Total Executions$/i"},{"key":"skuName","value":"Standard"}]} Price filter:{"purchaseOption":"Consumption","startUsageAmount":"100000"}[0m
+WARN [1mNo products found for azurerm_function_app.functionAppWithMissingExecutions Execution time. Product filter: {"vendorName":"azure","service":"Functions","productFamily":"Compute","region":"eastus","attributeFilters":[{"key":"meterName","value_regex":"/Execution Time$/i"},{"key":"skuName","value":"Standard"}]} Price filter:{"purchaseOption":"Consumption","startUsageAmount":"400000"}[0m
+WARN [1mNo products found for azurerm_function_app.functionAppWithMissingExecutions Executions. Product filter: {"vendorName":"azure","service":"Functions","productFamily":"Compute","region":"eastus","attributeFilters":[{"key":"meterName","value_regex":"/Total Executions$/i"},{"key":"skuName","value":"Standard"}]} Price filter:{"purchaseOption":"Consumption","startUsageAmount":"100000"}[0m
+WARN [1mNo products found for azurerm_function_app.functionAppWithOnlyExecutions Execution time. Product filter: {"vendorName":"azure","service":"Functions","productFamily":"Compute","region":"eastus","attributeFilters":[{"key":"meterName","value_regex":"/Execution Time$/i"},{"key":"skuName","value":"Standard"}]} Price filter:{"purchaseOption":"Consumption","startUsageAmount":"400000"}[0m
+WARN [1mNo products found for azurerm_function_app.functionAppWithOnlyExecutions Executions. Product filter: {"vendorName":"azure","service":"Functions","productFamily":"Compute","region":"eastus","attributeFilters":[{"key":"meterName","value_regex":"/Total Executions$/i"},{"key":"skuName","value":"Standard"}]} Price filter:{"purchaseOption":"Consumption","startUsageAmount":"100000"}[0m

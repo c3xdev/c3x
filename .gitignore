@@ -1,0 +1,50 @@
+# IDE
+.vscode/
+.idea/
+*.suo
+*.wsuo
+VSWorkspaceState.json
+
+# OS
+**/.DS_Store
+
+# Build artifacts
+/build
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Local
+.env.local
+vendor/
+
+# Terraform artifacts
+.terraform.lock.hcl
+**/.terraform/**
+**/.terragrunt-cache/**
+examples/*/plan.save
+examples/*/tfplan.binary
+examples/*/plan.json
+examples/*/example.json
+examples/*/example.save
+
+# C3X artifacts
+**/.c3x
+
+# Test artifacts
+.test_cache
+
+# Script generated files
+scripts/price_explorer/tmp-*
+scripts/price_explorer/index.json
+
+# Generated docs
+docs/generated/
+
+# Debug files
+c3x-debug-report.json
+
+cmd/c3x/__debug_*

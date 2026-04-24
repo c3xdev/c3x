@@ -1,0 +1,47 @@
+
+ Name                                                             Monthly Qty  Unit                  Monthly Cost   
+                                                                                                                    
+ azurerm_synapse_sql_pool.default                                                                                   
+ ├─ DWU blocks (DW200c)                                                   730  hours                    not found   
+ ├─ Storage                                                  not found                                              
+ └─ Geo-redundant disaster recovery                          not found                                              
+                                                                                                                    
+ azurerm_synapse_sql_pool.no_backup                                                                                 
+ ├─ DWU blocks (DW200c)                                                   730  hours                    not found   
+ └─ Storage                                                                 1  TB                       not found   
+                                                                                                                    
+ azurerm_synapse_sql_pool.storage                                                                                   
+ ├─ DWU blocks (DW200c)                                                   730  hours                    not found   
+ ├─ Storage                                                                 1  TB                       not found   
+ └─ Geo-redundant disaster recovery                                         1  TB                       not found   
+                                                                                                                    
+ azurerm_synapse_workspace.example                                                                                  
+ ├─ Serverless SQL pool size                                               11  TB                       not found   
+ ├─ Data flow (basic)                                        Monthly cost depends on usage: $0.27 per vCore-hours   
+ ├─ Data flow (standard)                                     Monthly cost depends on usage: $0.35 per vCore-hours   
+ ├─ Data pipeline azure hosted activity runs                 not found                                              
+ ├─ Data pipeline azure hosted data integration units        not found                                              
+ ├─ Data pipeline azure hosted integration runtime           not found                                              
+ ├─ Data pipeline azure hosted external integration runtime  not found                                              
+ ├─ Data pipeline self hosted activity runs                  not found                                              
+ ├─ Data pipeline self hosted data movement                  not found                                              
+ ├─ Data pipeline self hosted integration runtime            not found                                              
+ └─ Data pipeline self hosted external integration runtime   not found                                              
+                                                                                                                    
+ azurerm_storage_account.example                                                                                    
+ └─ Early deletion                                           Monthly cost depends on usage: $0.01 per GB            
+                                                                                                                    
+ OVERALL TOTAL                                                                                             $0.00 
+
+*Usage costs can be estimated by updating C3X Cloud settings, see docs for other options.
+
+──────────────────────────────────
+7 cloud resources were detected:
+∙ 5 were estimated
+∙ 2 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃         $0.00 ┃           - ┃      $0.00 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
