@@ -307,13 +307,7 @@ func loadCloudSettings(ctx *settings.Session) {
 }
 
 func checkAPIKey(apiKey string, apiEndpoint string, defaultEndpoint string) error {
-	if apiEndpoint == defaultEndpoint && apiKey == "" {
-		return fmt.Errorf(
-			"No C3X_API_KEY environment variable is set.\nWe run a free Cloud Pricing API, to get an API key run %s",
-			ui.PrimaryString("c3x auth login"),
-		)
-	}
-
+	// The default C3X pricing endpoint does not require an API key.
 	return nil
 }
 

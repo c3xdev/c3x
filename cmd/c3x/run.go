@@ -1067,7 +1067,10 @@ func checkAPIKeyIsValid(ctx *settings.Session, next runCommandFunc) runCommandFu
 			selfHosted = true
 		}
 
-		if ctx.Config.APIKey == "" && !selfHosted {
+		// The default C3X pricing endpoint does not require an API key.
+		defaultEndpoint := strings.Contains(ctx.Config.DefaultPricingAPIEndpoint, "c3x.dev")
+
+		if ctx.Config.APIKey == "" && !selfHosted && !defaultEndpoint {
 			return fmt.Errorf("%s %s %s %s %s\n%s %s.\n%s %s %s",
 				ui.PrimaryString("C3X_API_KEY"),
 				"is not set but is required, check your",
