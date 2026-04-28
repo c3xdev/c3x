@@ -1,5 +1,5 @@
 <p align="center">
-<a href="https://www.c3x.dev"><img src=".github/assets/logo.png" alt="C3X" width="120" /></a>
+<a href="https://c3x.dev"><img src=".github/assets/logo.png" alt="C3X" width="120" /></a>
 </p>
 
 # C3X
@@ -7,7 +7,7 @@
 Cloud cost estimation for Terraform, Terragrunt, and CloudFormation. Includes optimization recommendations, budget guardrails, what-if analysis, and fully offline mode. No API key required.
 
 <p>
-<a href="https://www.c3x.dev/docs/"><img alt="Docs" src="https://img.shields.io/badge/docs-get%20started-brightgreen"/></a>
+<a href="https://c3x.dev/docs/"><img alt="Docs" src="https://img.shields.io/badge/docs-get%20started-brightgreen"/></a>
 <a href="https://github.com/c3xdev/c3x/releases"><img alt="Release" src="https://img.shields.io/github/v/release/c3xdev/c3x"/></a>
 <a href="https://github.com/c3xdev/c3x/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/c3xdev/c3x"/></a>
 </p>
@@ -29,7 +29,7 @@ docker pull c3xdev/c3x
 docker run --rm -v $(pwd):/workspace c3xdev/c3x estimate --path /workspace
 ```
 
-See the [quick start guide](https://www.c3x.dev/docs/quickstart) for more details.
+See the [quick start guide](https://c3x.dev/docs/quickstart) for more details.
 
 ## Cost estimates
 
@@ -144,14 +144,13 @@ c3x estimate --path . --offline
 Run your own [pricing API](https://github.com/c3xdev/c3x-pricing-api) that scrapes directly from AWS, Azure, and GCP.
 
 ```sh
-export C3X_SELF_HOSTED=true
 export C3X_PRICING_API_ENDPOINT=http://localhost:4000
 c3x estimate --path .
 ```
 
 ## Supported resources
 
-Over 1,100 Terraform resources across [AWS](https://www.c3x.dev/docs/supported-resources), [Azure](https://www.c3x.dev/docs/supported-resources), and [Google Cloud](https://www.c3x.dev/docs/supported-resources). Usage-based resources (Lambda, S3, data transfer) are supported via [usage files](https://www.c3x.dev/docs/usage-file).
+Over 1,100 Terraform resources across [AWS](https://c3x.dev/docs/supported-resources), [Azure](https://c3x.dev/docs/supported-resources), and [Google Cloud](https://c3x.dev/docs/supported-resources). Usage-based resources (Lambda, S3, data transfer) are supported via [usage files](https://c3x.dev/docs/usage-file).
 
 ## Roadmap
 
