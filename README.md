@@ -119,15 +119,16 @@ c3x estimate --path . --what-if 'aws_db_instance.main.multi_az=true'
 
 ## PR comments
 
-Post cost estimates in pull requests using the [setup action](https://github.com/c3xdev/setup-c3x). Install the [C3X Cloud](https://github.com/apps/c3x-cloud) app for branded comments.
+Post cost estimates in pull requests. Two steps, no secrets.
 
 ```yaml
+- uses: actions/checkout@v4
 - uses: c3xdev/setup-c3x@v1
-  id: c3x
-- run: c3x comment github --path . --github-token ${{ steps.c3x.outputs.token }}
+  with:
+    path: .
 ```
 
-Supports GitHub, GitLab, Bitbucket, Azure Repos, Atlantis, and Spacelift.
+Install the [C3X Cloud](https://github.com/apps/c3x-cloud) app for branded comments with the C3X logo. Also supports GitLab, Bitbucket, Azure Repos, Atlantis, and Spacelift.
 
 ## Offline mode
 
