@@ -125,7 +125,7 @@ require (
 	github.com/turbot/terraform-components v0.0.0-20231213122222-1f3526cab7a7
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/withfig/autocomplete-tools/packages/cobra v1.2.0
-	github.com/xanzy/go-gitlab v0.86.0
+	github.com/xanzy/go-gitlab v0.115.0
 	go.mozilla.org/sops/v3 v3.7.3
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
 	golang.org/x/oauth2 v0.35.0
