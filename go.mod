@@ -15,7 +15,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.251.2
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.88.1
 	github.com/awslabs/goformation/v7 v7.13.1
-	github.com/dave/dst v0.27.2
+	github.com/dave/dst v0.27.4
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.18.0
 	github.com/google/go-cmp v0.7.0
