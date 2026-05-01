@@ -128,7 +128,7 @@ require (
 	github.com/xanzy/go-gitlab v0.86.0
 	go.mozilla.org/sops/v3 v3.7.3
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
-	golang.org/x/oauth2 v0.35.0
+	golang.org/x/oauth2 v0.36.0
 	k8s.io/apimachinery v0.34.1
 	modernc.org/sqlite v1.48.2
 )
