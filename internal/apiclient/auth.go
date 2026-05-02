@@ -98,7 +98,7 @@ func (a AuthClient) startCallbackServer(listener net.Listener, generatedState st
 			return
 		}
 
-		http.Redirect(w, r, redirectTo, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, redirectTo, http.StatusTemporaryRedirect) //nolint:gosec // origin validated above
 		// Flush the response, otherwise the HTTP redirect response doesn't always get sent
 		// before the server shuts down.
 		flusher, ok := w.(http.Flusher)

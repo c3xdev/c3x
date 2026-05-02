@@ -918,7 +918,7 @@ func (f *metadataFetcher) getGitlabPullRequestAuthor() string {
 		return author
 	}
 
-	client, err := gitlab.NewClient(os.Getenv("GITLAB_TOKEN"), f.gitlabClientOps()...)
+	client, err := gitlab.NewClient(os.Getenv("GITLAB_TOKEN"), f.gitlabClientOps()...) //nolint:staticcheck // migration to gitlab.com/gitlab-org/api/client-go is a separate task
 	if err != nil {
 		logging.Logger.Debug().Err(err).Msg("failed to init gitlab client, returning commit author")
 		return author
