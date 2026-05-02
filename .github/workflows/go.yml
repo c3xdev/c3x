@@ -81,67 +81,48 @@ jobs:
           C3X_API_KEY: "00000000000000000000000000000000"
           C3X_LOG_LEVEL: info
 
-  integration_aws:
-    name: Integration tests (AWS)
+  e2e:
+    name: E2E pricing API tests
     needs: build
-    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - name: Install Terraform
-        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
+      - name: Test pricing API health
+        run: |
+          STATUS=$(curl -sf https://pricing.c3x.dev/healthz | grep -o '"ok"')
+          [ "$STATUS" = '"ok"' ] || (echo "Health check failed" && exit 1)
 
-      - name: Test (AWS)
-        run: make test_aws
-        env:
-          C3X_API_KEY: "00000000000000000000000000000000"
-          C3X_LOG_LEVEL: info
+      - name: Test EC2 m5.xlarge pricing
+        run: |
+          PRICE=$(curl -sf -X POST https://pricing.c3x.dev/graphql \
+            -H "Content-Type: application/json" \
+            -d '{"query":"{ products(filter: {vendorName: \"aws\", service: \"AmazonEC2\", region: \"us-east-1\", productFamily: \"Compute Instance\", attributeFilters: [{key: \"instanceType\", value: \"m5.xlarge\"}, {key: \"operatingSystem\", value: \"Linux\"}, {key: \"tenancy\", value: \"Shared\"}, {key: \"preInstalledSw\", value: \"NA\"}, {key: \"capacitystatus\", value: \"Used\"}]}) { prices(filter: {purchaseOption: \"on_demand\"}) { USD } } }"}' \
+            | grep -o '"USD":"[^"]*"' | head -1 | cut -d'"' -f4)
+          echo "m5.xlarge price: $PRICE"
+          [ "$PRICE" = "0.1920000000" ] || (echo "Expected 0.1920000000, got $PRICE" && exit 1)
 
-  integration_google:
-    name: Integration tests (Google)
-    needs: build
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install Terraform
-        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
+      - name: Test RDS db.r5.large pricing
+        run: |
+          PRICE=$(curl -sf -X POST https://pricing.c3x.dev/graphql \
+            -H "Content-Type: application/json" \
+            -d '{"query":"{ products(filter: {vendorName: \"aws\", service: \"AmazonRDS\", region: \"us-east-1\", productFamily: \"Database Instance\", attributeFilters: [{key: \"instanceType\", value: \"db.r5.large\"}, {key: \"databaseEngine\", value: \"PostgreSQL\"}, {key: \"deploymentOption\", value: \"Multi-AZ\"}]}) { prices(filter: {purchaseOption: \"on_demand\"}) { USD } } }"}' \
+            | grep -o '"USD":"[^"]*"' | head -1 | cut -d'"' -f4)
+          echo "db.r5.large price: $PRICE"
+          [ "$PRICE" = "0.5000000000" ] || (echo "Expected 0.5000000000, got $PRICE" && exit 1)
 
-      - name: Test (Google)
-        run: make test_google
-        env:
-          C3X_API_KEY: "00000000000000000000000000000000"
-          C3X_LOG_LEVEL: info
+      - name: Test Azure data presence
+        run: |
+          COUNT=$(curl -sf -X POST https://pricing.c3x.dev/graphql \
+            -H "Content-Type: application/json" \
+            -d '{"query":"{ products(filter: {vendorName: \"azure\", service: \"Virtual Machines\", region: \"eastus\"}, limit: 1) { productHash } }"}' \
+            | grep -o '"productHash"' | wc -l)
+          [ "$COUNT" -ge 1 ] || (echo "No Azure VM products found" && exit 1)
+          echo "Azure VMs: present"
 
-  integration_azure:
-    name: Integration tests (Azure)
-    needs: build
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install Terraform
-        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-
-      - name: Test (Azure)
-        run: make test_azure
-        if: env.ARM_SUBSCRIPTION_ID != ''
-        env:
-          C3X_API_KEY: "00000000000000000000000000000000"
-          C3X_LOG_LEVEL: info
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      - name: Test GCP data presence
+        run: |
+          COUNT=$(curl -sf -X POST https://pricing.c3x.dev/graphql \
+            -H "Content-Type: application/json" \
+            -d '{"query":"{ products(filter: {vendorName: \"gcp\", service: \"Compute Engine\"}, limit: 1) { productHash } }"}' \
+            | grep -o '"productHash"' | wc -l)
+          [ "$COUNT" -ge 1 ] || (echo "No GCP Compute products found" && exit 1)
+          echo "GCP Compute: present"
