@@ -128,7 +128,7 @@ Post cost estimates in pull requests. Two steps, no secrets.
     path: .
 ```
 
-Install the [C3X Cloud](https://github.com/apps/c3x-cloud) app for branded comments with the C3X logo. Also supports GitLab, Bitbucket, Azure Repos, Atlantis, and Spacelift.
+Install the [C3X Cloud](https://github.com/apps/c3x-cloud) app for branded comments with the C3X logo. [See a live example](https://github.com/c3xdev/c3x-demo/pull/1). Also supports GitLab, Bitbucket, Azure Repos, Atlantis, and Spacelift.
 
 ## Offline mode
 
