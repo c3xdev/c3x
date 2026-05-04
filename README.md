@@ -12,6 +12,10 @@ Cloud cost estimation for Terraform, Terragrunt, and CloudFormation. Includes op
 <a href="https://github.com/c3xdev/c3x/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/c3xdev/c3x"/></a>
 </p>
 
+<p align="center">
+<img src=".github/demo.png" alt="C3X cost estimate output" width="800" />
+</p>
+
 ## Get started
 
 ```sh
