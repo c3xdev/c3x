@@ -17,7 +17,7 @@ require (
 	github.com/awslabs/goformation/v7 v7.13.1
 	github.com/dave/dst v0.27.4
 	github.com/dustin/go-humanize v1.0.1
-	github.com/fatih/color v1.18.0
+	github.com/fatih/color v1.19.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/huandu/xstrings v1.4.0 // indirect
