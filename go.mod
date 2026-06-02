@@ -96,6 +96,7 @@ require (
 	github.com/channelmeter/iso8601duration v0.0.0-20150204201828-8da3af7a2a61
 	github.com/creack/pty v1.1.11
 	github.com/fatih/camelcase v1.0.0
+	github.com/fxamacker/cbor/v2 v2.9.0
 	github.com/go-errors/errors v1.4.2
 	github.com/go-git/go-git/v5 v5.17.1
 	github.com/google/go-github/v41 v41.0.0
@@ -188,7 +189,6 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v1.3.0 // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.8.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect

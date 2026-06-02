@@ -1,8 +1,8 @@
 package aws_test
 
 import (
-	"fmt"
 	"testing"
+	"time"
 
 	resources "github.com/c3xdev/c3x/internal/catalog/aws"
 	"github.com/stretchr/testify/assert"
@@ -38,51 +38,48 @@ func stubListBucketMetricsConfigurationsNoMatching(stub *stubbedAWS) {
 }
 
 func stubStorageClassBytes(stub *stubbedAWS, storageClass string, bytes int) {
-	stub.WhenBody(fmt.Sprintf("Value=%s", storageClass), "MetricName=BucketSizeBytes", "Statistics.member.1=Average", "Unit=Bytes").Then(200, fmt.Sprintf(`
-	<GetMetricStatisticsResponse xmlns="http://monitoring.amazonaws.com/doc/2010-08-01/">
-		<GetMetricStatisticsResult>
-			<Label>BucketSizeBytes</Label>
-			<Datapoints>
-				<member>
-					<Unit>Bytes</Unit>
-					<Average>%d</Average>
-					<Timestamp>1970-01-01T00:00:00Z</Timestamp>
-				</member>
-			</Datapoints>
-		</GetMetricStatisticsResult>
-	</GetMetricStatisticsResponse>`, bytes))
+	stub.WhenBody(storageClass, "BucketSizeBytes", "Average", "Bytes").
+		OnPathPrefix(cloudWatchSmithyPathPrefix + "GetMetricStatistics").
+		ThenCBOR(200, map[string]interface{}{
+			"Label": "BucketSizeBytes",
+			"Datapoints": []interface{}{
+				map[string]interface{}{
+					"Unit":      "Bytes",
+					"Average":   float64(bytes),
+					"Timestamp": time.Unix(0, 0).UTC(),
+				},
+			},
+		})
 }
 
 func stubRequestCounts(stub *stubbedAWS, metric string, count int) {
-	stub.WhenBody("Value=c3x", fmt.Sprintf("MetricName=%s", metric), "Statistics.member.1=Sum", "Unit=Count").Then(200, fmt.Sprintf(`
-	<GetMetricStatisticsResponse xmlns="http://monitoring.amazonaws.com/doc/2010-08-01/">
-		<GetMetricStatisticsResult>
-			<Label>%s</Label>
-			<Datapoints>
-				<member>
-					<Unit>Count</Unit>
-					<Sum>%d</Sum>
-					<Timestamp>1970-01-01T00:00:00Z</Timestamp>
-				</member>
-			</Datapoints>
-		</GetMetricStatisticsResult>
-	</GetMetricStatisticsResponse>`, metric, count))
+	stub.WhenBody("c3x", metric, "Sum", "Count").
+		OnPathPrefix(cloudWatchSmithyPathPrefix + "GetMetricStatistics").
+		ThenCBOR(200, map[string]interface{}{
+			"Label": metric,
+			"Datapoints": []interface{}{
+				map[string]interface{}{
+					"Unit":      "Count",
+					"Sum":       float64(count),
+					"Timestamp": time.Unix(0, 0).UTC(),
+				},
+			},
+		})
 }
 
 func stubDataBytes(stub *stubbedAWS, metric string, bytes int) {
-	stub.WhenBody("Value=c3x", fmt.Sprintf("MetricName=%s", metric), "Statistics.member.1=Sum", "Unit=Bytes").Then(200, fmt.Sprintf(`
-	<GetMetricStatisticsResponse xmlns="http://monitoring.amazonaws.com/doc/2010-08-01/">
-		<GetMetricStatisticsResult>
-			<Label>%s</Label>
-			<Datapoints>
-				<member>
-					<Unit>Bytes</Unit>
-					<Sum>%d</Sum>
-					<Timestamp>1970-01-01T00:00:00Z</Timestamp>
-				</member>
-			</Datapoints>
-		</GetMetricStatisticsResult>
-	</GetMetricStatisticsResponse>`, metric, bytes))
+	stub.WhenBody("c3x", metric, "Sum", "Bytes").
+		OnPathPrefix(cloudWatchSmithyPathPrefix + "GetMetricStatistics").
+		ThenCBOR(200, map[string]interface{}{
+			"Label": metric,
+			"Datapoints": []interface{}{
+				map[string]interface{}{
+					"Unit":      "Bytes",
+					"Sum":       float64(bytes),
+					"Timestamp": time.Unix(0, 0).UTC(),
+				},
+			},
+		})
 }
 
 func TestS3Bucket(t *testing.T) {

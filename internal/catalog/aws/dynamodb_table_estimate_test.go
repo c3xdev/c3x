@@ -2,6 +2,7 @@ package aws_test
 
 import (
 	"testing"
+	"time"
 
 	resources "github.com/c3xdev/c3x/internal/catalog/aws"
 	"github.com/stretchr/testify/assert"
@@ -44,32 +45,30 @@ func TestDynamoDBPayPerRequest(t *testing.T) {
 	stub := stubAWS(t)
 	defer stub.Close()
 	stubDynamoDBDescribeTable(stub)
-	stub.WhenBody("MetricName=ConsumedReadCapacityUnits", "Statistics.member.1=Sum", "Unit=Count").Then(200, `
-	<GetMetricStatisticsResponse xmlns="http://monitoring.amazonaws.com/doc/2010-08-01/">
-	  <GetMetricStatisticsResult>
-			<Label>ConsumedReadCapacityUnits</Label>
-			<Datapoints>
-	      <member>
-	        <Unit>Count</Unit>
-	        <Sum>122.6</Sum>
-	        <Timestamp>1970-01-01T00:00:00Z</Timestamp>
-	      </member>
-	    </Datapoints>
-	  </GetMetricStatisticsResult>
-	</GetMetricStatisticsResponse>`)
-	stub.WhenBody("MetricName=ConsumedWriteCapacityUnits", "Statistics.member.1=Sum", "Unit=Count").Then(200, `
-	<GetMetricStatisticsResponse xmlns="http://monitoring.amazonaws.com/doc/2010-08-01/">
-	  <GetMetricStatisticsResult>
-			<Label>ConsumedWriteCapacityUnits</Label>
-			<Datapoints>
-	      <member>
-	        <Unit>Count</Unit>
-	        <Sum>455.9</Sum>
-	        <Timestamp>1970-01-01T00:00:00Z</Timestamp>
-	      </member>
-	    </Datapoints>
-	  </GetMetricStatisticsResult>
-	</GetMetricStatisticsResponse>`)
+	stub.WhenBody("ConsumedReadCapacityUnits", "Sum", "Count").
+		OnPathPrefix(cloudWatchSmithyPathPrefix + "GetMetricStatistics").
+		ThenCBOR(200, map[string]interface{}{
+			"Label": "ConsumedReadCapacityUnits",
+			"Datapoints": []interface{}{
+				map[string]interface{}{
+					"Unit":      "Count",
+					"Sum":       122.6,
+					"Timestamp": time.Unix(0, 0).UTC(),
+				},
+			},
+		})
+	stub.WhenBody("ConsumedWriteCapacityUnits", "Sum", "Count").
+		OnPathPrefix(cloudWatchSmithyPathPrefix + "GetMetricStatistics").
+		ThenCBOR(200, map[string]interface{}{
+			"Label": "ConsumedWriteCapacityUnits",
+			"Datapoints": []interface{}{
+				map[string]interface{}{
+					"Unit":      "Count",
+					"Sum":       455.9,
+					"Timestamp": time.Unix(0, 0).UTC(),
+				},
+			},
+		})
 
 	args := resources.DynamoDBTable{
 		BillingMode: "PAY_PER_REQUEST",

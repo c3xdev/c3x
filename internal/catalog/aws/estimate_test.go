@@ -12,7 +12,34 @@ import (
 
 	"github.com/c3xdev/c3x/internal/engine"
 	awsusage "github.com/c3xdev/c3x/internal/usage/aws"
+	"github.com/fxamacker/cbor/v2"
 )
+
+// cborSmithyPrefix is the URL path prefix used by AWS services that have
+// migrated to the Smithy RPCv2 CBOR protocol (e.g. CloudWatch since
+// service/cloudwatch v1.52+). The full path is:
+//
+//	/service/<ServiceVersion>/operation/<OperationName>
+//
+// where ServiceVersion is the Smithy-generated service ID and OperationName
+// is the API operation. For CloudWatch the ServiceVersion is
+// GraniteServiceVersion20100801; tests reference operations as needed.
+const cloudWatchSmithyPathPrefix = "/service/GraniteServiceVersion20100801/operation/"
+
+// cborEncMode encodes time.Time as CBOR tag 1 (Unix epoch with fractional
+// seconds), which is what AWS Smithy clients expect for timestamp fields.
+var cborEncMode cbor.EncMode
+
+func init() {
+	em, err := cbor.EncOptions{
+		Time:    cbor.TimeUnixDynamic,
+		TimeTag: cbor.EncTagRequired,
+	}.EncMode()
+	if err != nil {
+		panic(err)
+	}
+	cborEncMode = em
+}
 
 type estimates struct {
 	t     *testing.T
@@ -69,14 +96,37 @@ func newEstimates(ctx context.Context, t *testing.T, resource *engine.Estimate) 
 
 type stubbedRequest struct {
 	fullPath       *string
+	pathPrefix     *string
 	bodyFragments  []string
-	response       string
+	response       []byte
 	responseStatus int
+	contentType    string
 }
 
 func (sr *stubbedRequest) Then(status int, response string) {
 	sr.responseStatus = status
-	sr.response = response
+	sr.response = []byte(response)
+	sr.contentType = ""
+}
+
+// ThenCBOR encodes value as CBOR (Smithy RPCv2 CBOR protocol) and configures
+// the stub to return it with the correct Content-Type. Use for AWS services
+// that have migrated to the rpc-v2-cbor protocol (currently CloudWatch).
+func (sr *stubbedRequest) ThenCBOR(status int, value interface{}) {
+	body, err := cborEncMode.Marshal(value)
+	if err != nil {
+		panic(fmt.Sprintf("ThenCBOR: marshal failed: %s", err))
+	}
+	sr.responseStatus = status
+	sr.response = body
+	sr.contentType = "application/cbor"
+}
+
+// OnPathPrefix restricts the stub to match requests whose URL path starts
+// with prefix. Combined with body fragments to disambiguate operations.
+func (sr *stubbedRequest) OnPathPrefix(prefix string) *stubbedRequest {
+	sr.pathPrefix = &prefix
+	return sr
 }
 
 type stubbedAWS struct {
@@ -86,15 +136,22 @@ type stubbedAWS struct {
 	requests []*stubbedRequest
 }
 
-func (sa *stubbedAWS) writeResponse(w http.ResponseWriter, status int, body string) {
+func (sa *stubbedAWS) writeResponse(w http.ResponseWriter, sr *stubbedRequest) {
+	if sr.contentType != "" {
+		w.Header().Set("Content-Type", sr.contentType)
+	}
+	// Smithy RPCv2 CBOR clients (CloudWatch et al.) require this header on
+	// successful responses; without it the SDK errors with "unexpected
+	// smithy-protocol response header ''".
+	if sr.contentType == "application/cbor" {
+		w.Header().Set("smithy-protocol", "rpc-v2-cbor")
+	}
 	hash := crc32.NewIEEE()
-	hash.Write([]byte(body))
-	crc32 := hash.Sum32()
-	w.Header().Set("X-Amz-Crc32", fmt.Sprintf("%d", crc32))
-	w.WriteHeader(status)
+	hash.Write(sr.response)
+	w.Header().Set("X-Amz-Crc32", fmt.Sprintf("%d", hash.Sum32()))
+	w.WriteHeader(sr.responseStatus)
 
-	_, err := w.Write([]byte(body))
-	if err != nil {
+	if _, err := w.Write(sr.response); err != nil {
 		sa.t.Fatalf("Cannot write stubbed HTTP response: %s", err)
 	}
 }
@@ -112,12 +169,16 @@ func (sa *stubbedAWS) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			match = false
 		}
 
+		if sr.pathPrefix != nil && !strings.HasPrefix(r.URL.Path, *sr.pathPrefix) {
+			match = false
+		}
+
 		for _, fragment := range sr.bodyFragments {
 			match = match && strings.Contains(body, fragment)
 		}
 
 		if match {
-			sa.writeResponse(w, sr.responseStatus, sr.response)
+			sa.writeResponse(w, sr)
 			return
 		}
 	}
