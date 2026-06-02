@@ -1,35 +1,33 @@
 package aws_test
 
 import (
-	"fmt"
 	"testing"
+	"time"
 
 	resources "github.com/c3xdev/c3x/internal/catalog/aws"
 	"github.com/stretchr/testify/assert"
 )
 
+// stubCloudWatchASGQuery stubs a CloudWatch GetMetricStatistics call for the
+// GroupTotalInstances metric on the named AutoScalingGroup. CloudWatch uses
+// Smithy RPCv2 CBOR since service/cloudwatch v1.52+, so we match on the
+// Smithy operation path and an ASG name fragment present in the CBOR body
+// (text strings appear literally in CBOR-encoded bytes).
 func stubCloudWatchASGQuery(stub *stubbedAWS, name string, value float64) {
-	var datapoints string
-
+	datapoints := []interface{}{}
 	if value > 0 {
-		datapoints = fmt.Sprintf(`
-			<member>
-				<Average>%f</Average>
-				<Unit>None</Unit>
-				<Timestamp>1970-01-01T00:00:00Z</Timestamp>
-			</member>
-		`, value)
+		datapoints = append(datapoints, map[string]interface{}{
+			"Average":   value,
+			"Unit":      "None",
+			"Timestamp": time.Unix(0, 0).UTC(),
+		})
 	}
-	stub.WhenBody("Action=GetMetricStatistics&Dimensions.member.1.Name=AutoScalingGroupName&Dimensions.member.1.Value="+name).Then(200, `
-		<GetMetricStatisticsResponse xmlns="http://monitoring.amazonaws.com/doc/2010-08-01/">
-	  <GetMetricStatisticsResult>
-	    <Datapoints>`+datapoints+`
-
-	    </Datapoints>
-	    <Label>GroupTotalInstances</Label>
-	  </GetMetricStatisticsResult>
-	</GetMetricStatisticsResponse>
-	`)
+	stub.WhenBody(name, "AutoScalingGroupName", "GroupTotalInstances").
+		OnPathPrefix(cloudWatchSmithyPathPrefix+"GetMetricStatistics").
+		ThenCBOR(200, map[string]interface{}{
+			"Datapoints": datapoints,
+			"Label":      "GroupTotalInstances",
+		})
 }
 
 func stubEC2DescribeAutoscalingGroups(stub *stubbedAWS, name string, count int64) {
