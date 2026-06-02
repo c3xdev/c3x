@@ -155,7 +155,7 @@ func (r *DataTransfer) outboundInternetCostComponents() []*engine.LineItem {
 	for i, usageFilter := range usageFiltersData {
 		quantity := tiers[i]
 
-		if quantity.Equals(decimal.Zero) {
+		if quantity.Equal(decimal.Zero) {
 			break
 		}
 
