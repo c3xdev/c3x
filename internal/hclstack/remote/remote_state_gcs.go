@@ -11,6 +11,7 @@ import (
 
 	"google.golang.org/api/impersonate"
 
+	"cloud.google.com/go/auth/credentials"
 	"cloud.google.com/go/storage"
 	"github.com/c3xdev/c3x/internal/hclstack/errtrace"
 	"github.com/c3xdev/c3x/internal/hclstack/options"
@@ -430,7 +431,21 @@ func CreateGCSClient(gcsConfigRemote RemoteStateConfigGCS) (*storage.Client, err
 	var opts []option.ClientOption
 
 	if gcsConfigRemote.Credentials != "" {
-		opts = append(opts, option.WithCredentialsFile(gcsConfigRemote.Credentials))
+		// option.WithCredentialsFile and google.CredentialsFromJSON are both deprecated.
+		// The non-deprecated path is cloud.google.com/go/auth/credentials with
+		// DetectDefault(CredentialsJSON: ...) bridged via option.WithAuthCredentials.
+		contents, err := os.ReadFile(gcsConfigRemote.Credentials)
+		if err != nil {
+			return nil, fmt.Errorf("Error reading credentials file %q: %s", gcsConfigRemote.Credentials, err)
+		}
+		creds, err := credentials.DetectDefault(&credentials.DetectOptions{
+			CredentialsJSON: contents,
+			Scopes:          []string{storage.ScopeFullControl},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("Error parsing credentials file %q: %s", gcsConfigRemote.Credentials, err)
+		}
+		opts = append(opts, option.WithAuthCredentials(creds))
 	} else if gcsConfigRemote.AccessToken != "" {
 		tokenSource := oauth2.StaticTokenSource(&oauth2.Token{
 			AccessToken: gcsConfigRemote.AccessToken,
