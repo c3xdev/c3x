@@ -109,7 +109,7 @@ require (
 	github.com/hashicorp/terraform-svchost v0.2.1
 	github.com/huandu/go-clone v1.7.3
 	github.com/maruel/panicparse/v2 v2.5.0
-	github.com/mattn/go-zglob v0.0.3
+	github.com/mattn/go-zglob v0.0.6
 	github.com/mholt/archives v0.1.5
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/mitchellh/mapstructure v1.5.0
