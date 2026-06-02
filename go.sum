@@ -388,8 +388,8 @@ github.com/aws/aws-sdk-go-v2/service/sts v1.42.0 h1:ks8KBcZPh3PYISr5dAiXCM5/Thcu
 github.com/aws/aws-sdk-go-v2/service/sts v1.42.0/go.mod h1:pFw33T0WLvXU3rw1WBkpMlkgIn54eCB5FYLhjDc9Foo=
 github.com/aws/smithy-go v1.25.1 h1:J8ERsGSU7d+aCmdQur5Txg6bVoYelvQJgtZehD12GkI=
 github.com/aws/smithy-go v1.25.1/go.mod h1:YE2RhdIuDbA5E5bTdciG9KrW3+TiEONeUWCqxX9i1Fc=
-github.com/awslabs/goformation/v7 v7.13.1 h1:QlPn8qwNCqYhrb4GW8kLjT4j1J49n5Qh/anpurCHxUA=
-github.com/awslabs/goformation/v7 v7.13.1/go.mod h1:FTCFMNesubEX0LAd6kIR+YkDD1U+5UaMbXtgPUgsck0=
+github.com/awslabs/goformation/v7 v7.14.9 h1:sZjjpTqXrcBDz4Fi07JWTT7zKM68XsQkW/7iLAJbA/M=
+github.com/awslabs/goformation/v7 v7.14.9/go.mod h1:7obldQ8NQ/AkMsgL5K3l4lRMDFB6kCGUloz5dURcXIs=
 github.com/baiyubin/aliyun-sts-go-sdk v0.0.0-20180326062324-cfa1a18b161f/go.mod h1:AuiFmCCPBSrqvVMvuqFuk0qogytodnVFVSN5CeJB8Gc=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
