@@ -19,6 +19,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 	"google.golang.org/api/option"
 )
@@ -430,7 +431,17 @@ func CreateGCSClient(gcsConfigRemote RemoteStateConfigGCS) (*storage.Client, err
 	var opts []option.ClientOption
 
 	if gcsConfigRemote.Credentials != "" {
-		opts = append(opts, option.WithCredentialsFile(gcsConfigRemote.Credentials))
+		// option.WithCredentialsFile is deprecated; load and parse the file ourselves
+		// and pass the resulting *google.Credentials via option.WithCredentials.
+		contents, err := os.ReadFile(gcsConfigRemote.Credentials)
+		if err != nil {
+			return nil, fmt.Errorf("Error reading credentials file %q: %s", gcsConfigRemote.Credentials, err)
+		}
+		creds, err := google.CredentialsFromJSON(ctx, contents, storage.ScopeFullControl)
+		if err != nil {
+			return nil, fmt.Errorf("Error parsing credentials file %q: %s", gcsConfigRemote.Credentials, err)
+		}
+		opts = append(opts, option.WithCredentials(creds))
 	} else if gcsConfigRemote.AccessToken != "" {
 		tokenSource := oauth2.StaticTokenSource(&oauth2.Token{
 			AccessToken: gcsConfigRemote.AccessToken,
