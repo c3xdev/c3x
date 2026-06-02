@@ -91,6 +91,7 @@ require (
 )
 
 require (
+	cloud.google.com/go/auth v0.19.0
 	github.com/alecthomas/jsonschema v0.0.0-20211209230136-e2b41affa5c1
 	github.com/chainguard-dev/git-urls v1.0.2
 	github.com/channelmeter/iso8601duration v0.0.0-20150204201828-8da3af7a2a61
@@ -136,7 +137,6 @@ require (
 
 require (
 	cel.dev/expr v0.25.1 // indirect
-	cloud.google.com/go/auth v0.19.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	cloud.google.com/go/iam v1.7.0 // indirect
