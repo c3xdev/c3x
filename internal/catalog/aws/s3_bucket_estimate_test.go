@@ -39,7 +39,7 @@ func stubListBucketMetricsConfigurationsNoMatching(stub *stubbedAWS) {
 
 func stubStorageClassBytes(stub *stubbedAWS, storageClass string, bytes int) {
 	stub.WhenBody(storageClass, "BucketSizeBytes", "Average", "Bytes").
-		OnPathPrefix(cloudWatchSmithyPathPrefix + "GetMetricStatistics").
+		OnPathPrefix(cloudWatchSmithyPathPrefix+"GetMetricStatistics").
 		ThenCBOR(200, map[string]interface{}{
 			"Label": "BucketSizeBytes",
 			"Datapoints": []interface{}{
@@ -54,7 +54,7 @@ func stubStorageClassBytes(stub *stubbedAWS, storageClass string, bytes int) {
 
 func stubRequestCounts(stub *stubbedAWS, metric string, count int) {
 	stub.WhenBody("c3x", metric, "Sum", "Count").
-		OnPathPrefix(cloudWatchSmithyPathPrefix + "GetMetricStatistics").
+		OnPathPrefix(cloudWatchSmithyPathPrefix+"GetMetricStatistics").
 		ThenCBOR(200, map[string]interface{}{
 			"Label": metric,
 			"Datapoints": []interface{}{
@@ -69,7 +69,7 @@ func stubRequestCounts(stub *stubbedAWS, metric string, count int) {
 
 func stubDataBytes(stub *stubbedAWS, metric string, bytes int) {
 	stub.WhenBody("c3x", metric, "Sum", "Bytes").
-		OnPathPrefix(cloudWatchSmithyPathPrefix + "GetMetricStatistics").
+		OnPathPrefix(cloudWatchSmithyPathPrefix+"GetMetricStatistics").
 		ThenCBOR(200, map[string]interface{}{
 			"Label": metric,
 			"Datapoints": []interface{}{

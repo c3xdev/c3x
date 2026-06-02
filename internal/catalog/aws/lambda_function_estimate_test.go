@@ -13,7 +13,7 @@ func TestLambda(t *testing.T) {
 	defer stub.Close()
 
 	stub.WhenBody("Invocations", "Sum").
-		OnPathPrefix(cloudWatchSmithyPathPrefix + "GetMetricStatistics").
+		OnPathPrefix(cloudWatchSmithyPathPrefix+"GetMetricStatistics").
 		ThenCBOR(200, map[string]interface{}{
 			"Label": "Invocations",
 			"Datapoints": []interface{}{
@@ -25,7 +25,7 @@ func TestLambda(t *testing.T) {
 			},
 		})
 	stub.WhenBody("Duration", "Average").
-		OnPathPrefix(cloudWatchSmithyPathPrefix + "GetMetricStatistics").
+		OnPathPrefix(cloudWatchSmithyPathPrefix+"GetMetricStatistics").
 		ThenCBOR(200, map[string]interface{}{
 			"Label": "Duration",
 			"Datapoints": []interface{}{

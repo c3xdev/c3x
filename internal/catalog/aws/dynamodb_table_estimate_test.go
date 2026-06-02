@@ -46,7 +46,7 @@ func TestDynamoDBPayPerRequest(t *testing.T) {
 	defer stub.Close()
 	stubDynamoDBDescribeTable(stub)
 	stub.WhenBody("ConsumedReadCapacityUnits", "Sum", "Count").
-		OnPathPrefix(cloudWatchSmithyPathPrefix + "GetMetricStatistics").
+		OnPathPrefix(cloudWatchSmithyPathPrefix+"GetMetricStatistics").
 		ThenCBOR(200, map[string]interface{}{
 			"Label": "ConsumedReadCapacityUnits",
 			"Datapoints": []interface{}{
@@ -58,7 +58,7 @@ func TestDynamoDBPayPerRequest(t *testing.T) {
 			},
 		})
 	stub.WhenBody("ConsumedWriteCapacityUnits", "Sum", "Count").
-		OnPathPrefix(cloudWatchSmithyPathPrefix + "GetMetricStatistics").
+		OnPathPrefix(cloudWatchSmithyPathPrefix+"GetMetricStatistics").
 		ThenCBOR(200, map[string]interface{}{
 			"Label": "ConsumedWriteCapacityUnits",
 			"Datapoints": []interface{}{

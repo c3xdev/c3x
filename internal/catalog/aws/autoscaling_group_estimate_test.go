@@ -23,7 +23,7 @@ func stubCloudWatchASGQuery(stub *stubbedAWS, name string, value float64) {
 		})
 	}
 	stub.WhenBody(name, "AutoScalingGroupName", "GroupTotalInstances").
-		OnPathPrefix(cloudWatchSmithyPathPrefix + "GetMetricStatistics").
+		OnPathPrefix(cloudWatchSmithyPathPrefix+"GetMetricStatistics").
 		ThenCBOR(200, map[string]interface{}{
 			"Datapoints": datapoints,
 			"Label":      "GroupTotalInstances",
