@@ -16,6 +16,13 @@ Cloud cost estimation for Terraform, Terragrunt, and CloudFormation. Includes op
 <img src=".github/demo.png" alt="C3X cost estimate output" width="800" />
 </p>
 
+## Background
+
+C3X began in 2024 as a fork of [Infracost](https://github.com/infracost/infracost),
+which created the open-source Terraform cost-estimation category. Both projects ship
+under Apache 2.0. We're grateful to the Infracost team for the foundation —
+see [`NOTICE`](./NOTICE) for the attribution required by §4 of the license.
+
 ## Get started
 
 ```sh
