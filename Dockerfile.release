@@ -1,7 +1,11 @@
 # Release image — goreleaser copies the prebuilt static binary into
 # the build context, so this is a pure packaging Dockerfile (no Go
-# toolchain, no source). Built as a native multi-arch manifest by the dockers_v2 stanza.
+# toolchain, no source). Built as a native multi-arch manifest by the
+# dockers_v2 stanza, which lays binaries out per platform
+# (linux/amd64/c3x, linux/arm64/c3x), so the COPY uses $TARGETPLATFORM.
 FROM alpine:3.21
+
+ARG TARGETPLATFORM
 
 RUN apk --no-cache add ca-certificates git && \
     addgroup -S c3x && adduser -S -u 1000 c3x -G c3x
@@ -9,7 +13,7 @@ RUN apk --no-cache add ca-certificates git && \
 # git is included because the module fetcher shells out to it for
 # `source = "git::..."` Terraform modules.
 
-COPY c3x /usr/local/bin/c3x
+COPY $TARGETPLATFORM/c3x /usr/local/bin/c3x
 
 USER 1000
 WORKDIR /workspace

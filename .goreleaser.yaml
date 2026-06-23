@@ -89,6 +89,8 @@ homebrew_casks:
 # (no per-arch image + manifest stitching needed).
 dockers_v2:
   - id: c3x
+    ids:
+      - c3x
     images:
       - "ghcr.io/c3xdev/c3x"
     tags:
