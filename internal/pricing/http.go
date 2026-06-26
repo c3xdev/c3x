@@ -312,6 +312,69 @@ func pickNonZeroPrice(data *graphqlData) (decimal.Decimal, error) {
 	return maxNonZero, nil
 }
 
+// PriceSpread describes the distribution of non-zero USD prices a query
+// matched. A wide spread (Max ≫ MinNonZero) on a Count>1 query is the
+// signature of an under-specified mapping: the max-non-zero picker is
+// likely selecting a premium SKU (provisioned, Multi-AZ, IO-optimized)
+// rather than the intended one. Used by the `verify_catalog --audit`
+// sweep, not the estimate hot path.
+type PriceSpread struct {
+	MinNonZero decimal.Decimal
+	Max        decimal.Decimal
+	Count      int // distinct non-zero prices matched
+}
+
+// Spread runs the same GraphQL query as [HTTPSource.Lookup] but reports
+// the full distribution of matching non-zero prices instead of just the
+// max. It exists for catalog auditing.
+func (s *HTTPSource) Spread(ctx context.Context, q Query) (PriceSpread, error) {
+	body := buildQuery(q)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.endpoint,
+		bytes.NewReader([]byte(`{"query":`+jsonQuote(body)+`}`)))
+	if err != nil {
+		return PriceSpread{}, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "c3x/dev (+https://github.com/c3xdev/c3x)")
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return PriceSpread{}, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return PriceSpread{}, fmt.Errorf("upstream %d", resp.StatusCode)
+	}
+	var decoded graphqlResponse
+	if err := json.NewDecoder(resp.Body).Decode(&decoded); err != nil {
+		return PriceSpread{}, err
+	}
+	var sp PriceSpread
+	seen := map[string]bool{}
+	if decoded.Data != nil {
+		for _, p := range decoded.Data.Products {
+			for _, price := range p.Prices {
+				if price.USD == "" || seen[price.USD] {
+					continue
+				}
+				d, derr := decimal.NewFromString(price.USD)
+				if derr != nil || d.IsZero() {
+					continue
+				}
+				seen[price.USD] = true
+				if sp.Count == 0 || d.LessThan(sp.MinNonZero) {
+					sp.MinNonZero = d
+				}
+				if d.GreaterThan(sp.Max) {
+					sp.Max = d
+				}
+				sp.Count++
+			}
+		}
+	}
+	return sp, nil
+}
+
 // GraphQL response shape. We only declare the fields we read so the
 // JSON decoder is forgiving about additions on the server side.
 type graphqlResponse struct {

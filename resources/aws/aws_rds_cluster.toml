@@ -14,6 +14,7 @@ attribute_filters = [
       pick(default(engine, "aurora-postgresql") == "aurora-mysql", "Aurora MySQL",
       "Aurora PostgreSQL")
   ''' },
+  { key = "volumeType", const = "General Purpose-Aurora" },
 ]
 
 [mappings.io_requests]
@@ -48,6 +49,6 @@ rate     = 'price("io_requests")'
 
 [fixture]
 attributes = { engine = "aurora-postgresql", monthly_io_requests = 10_000_000, monthly_storage_gb = 100 }
-expected_monthly_cost = 22.6
+expected_monthly_cost = 10.0
 tolerance = 0.05
 

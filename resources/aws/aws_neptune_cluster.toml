@@ -5,7 +5,9 @@ provider     = "aws"
 [mappings.storage]
 service        = "AmazonNeptune"
 product_family = "Database Storage"
-attribute_filters = []
+attribute_filters = [
+  { key = "volumeType", const = "General Purpose" },
+]
 
 [mappings.io]
 service        = "AmazonNeptune"
@@ -28,6 +30,6 @@ rate     = 'price("io")'
 
 [fixture]
 attributes = { monthly_io_requests = 100_000, monthly_storage_gb = 10 }
-expected_monthly_cost = 2.25
+expected_monthly_cost = 1.0
 tolerance = 0.05
 

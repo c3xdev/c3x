@@ -17,6 +17,12 @@ provider     = "aws"
 [mappings.gateway]
 service        = "AmazonEC2"
 product_family = "NAT Gateway"
+# unit "Hrs" is required: the NGW:NatGateway group also contains the
+# provisioned-bandwidth SKU (NatGateway-Prvd-Gbps) priced per Gbps-hr at
+# ~$1.076, which the max-non-zero price picker would otherwise select —
+# inflating the hourly gateway charge ~24x. Pinning unit to Hrs selects
+# only the per-gateway hourly product (~$0.045/hr).
+unit           = "Hrs"
 attribute_filters = [
   { key = "group", const = "NGW:NatGateway" },
 ]
@@ -24,8 +30,13 @@ attribute_filters = [
 [mappings.data_processing]
 service        = "AmazonEC2"
 product_family = "NAT Gateway"
+# The upstream has no "NGW:DataProcessing" group — the per-GB data
+# charge lives under NGW:NatGateway with unit GB (usagetype
+# NatGateway-Bytes, ~$0.045/GB). Filtering on the old group returned
+# zero products, so data processing was silently $0.
+unit           = "GB"
 attribute_filters = [
-  { key = "group", const = "NGW:DataProcessing" },
+  { key = "group", const = "NGW:NatGateway" },
 ]
 
 [[dimensions]]
@@ -60,6 +71,7 @@ when     = "default(monthly_inter_az_gb, 0) > 0"
 
 [fixture]
 attributes = { monthly_data_processed_gb = 100 }
-expected_monthly_cost = 785.48
+# 730h x $0.045 gateway ($32.85) + 100 GB x $0.045 data ($4.50).
+expected_monthly_cost = 37.35
 tolerance = 0.05
 

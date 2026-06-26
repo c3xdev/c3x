@@ -49,6 +49,7 @@ attribute_filters = [
       pick(default(storage_type, "gp2") == "io2",   "Provisioned IOPS-IO2",
       "General Purpose"))))
   ''' },
+  { key = "deploymentOption", expr = 'pick(default(multi_az, false), "Multi-AZ", "Single-AZ")' },
 ]
 
 [mappings.backup]
@@ -106,6 +107,6 @@ rate     = 'price("backup")'
 
 [fixture]
 attributes = { allocated_storage = 100, engine = "postgres", instance_class = "db.t3.medium", multi_az = false, storage_type = "gp3" }
-expected_monthly_cost = 87.06
+expected_monthly_cost = 64.06
 tolerance = 0.05
 

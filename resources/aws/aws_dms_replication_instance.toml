@@ -30,7 +30,9 @@ attribute_filters = [
 [mappings.storage]
 service        = "AWSDatabaseMigrationSvc"
 product_family = "Replication Storage"
-attribute_filters = []
+attribute_filters = [
+  { key = "deploymentOption", expr = 'pick(default(multi_az, false), "Multi-AZ", "Single-AZ")' },
+]
 
 [[dimensions]]
 id       = "instance_hours"
@@ -48,6 +50,6 @@ rate     = 'price("storage")'
 
 [fixture]
 attributes = { allocated_storage = 50, multi_az = false, replication_instance_class = "dms.t3.micro" }
-expected_monthly_cost = 25.08
+expected_monthly_cost = 13.58
 tolerance = 0.05
 

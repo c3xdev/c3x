@@ -8,7 +8,9 @@ provider     = "aws"
 [mappings.storage]
 service        = "AmazonDocDB"
 product_family = "Database Storage"
-attribute_filters = []
+attribute_filters = [
+  { key = "usagetype", const = "StorageUsage" },
+]
 
 [mappings.io]
 service        = "AmazonDocDB"
@@ -31,6 +33,6 @@ rate     = 'price("io")'
 
 [fixture]
 attributes = { monthly_io_requests = 100_000, monthly_storage_gb = 10 }
-expected_monthly_cost = 3
+expected_monthly_cost = 1.0
 tolerance = 0.05
 

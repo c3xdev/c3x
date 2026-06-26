@@ -25,6 +25,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"sort"
@@ -35,6 +36,7 @@ import (
 	"github.com/c3xdev/c3x/internal/catalog"
 	"github.com/c3xdev/c3x/internal/domain"
 	"github.com/c3xdev/c3x/internal/pricing"
+	"github.com/shopspring/decimal"
 )
 
 func main() {
@@ -42,6 +44,8 @@ func main() {
 	verbose := flag.Bool("verbose", false, "print per-line-item detail for ZERO/DRIFT results")
 	endpoint := flag.String("endpoint", pricing.DefaultEndpoint, "pricing GraphQL endpoint")
 	strict := flag.Bool("strict", false, "fail on DRIFT or NOFIX as well as ZERO/ERR")
+	auditFlag := flag.Bool("audit", false, "report price-spread findings (under-specified mappings)")
+	auditRatio := flag.Float64("audit-ratio", 1.5, "flag queries whose max/min non-zero price exceeds this ratio")
 	flag.Parse()
 
 	reg, err := catalog.Load()
@@ -51,10 +55,16 @@ func main() {
 	}
 
 	var prices pricing.Source
+	var auditor *auditSource
 	if *offline {
 		prices = pricing.NewStub()
 	} else {
-		prices = pricing.NewMemoCache(pricing.NewHTTPSource(pricing.WithEndpoint(*endpoint)))
+		hs := pricing.NewHTTPSource(pricing.WithEndpoint(*endpoint))
+		prices = pricing.NewMemoCache(hs)
+		if *auditFlag {
+			auditor = &auditSource{inner: prices, http: hs, ratio: *auditRatio}
+			prices = auditor
+		}
 	}
 
 	engine := calculator.New(calculator.Options{
@@ -88,6 +98,9 @@ func main() {
 			continue
 		}
 
+		if auditor != nil {
+			auditor.currentKind = kind
+		}
 		resource := fixtureResource(kind, def.Fixture)
 		est, err := engine.Estimate(ctx, []domain.Resource{resource})
 		if err != nil {
@@ -137,6 +150,10 @@ func main() {
 		counts.ok, counts.static, counts.free, counts.zero, counts.drift, counts.nofix, counts.stale, counts.errs,
 		counts.ok+counts.static+counts.free+counts.zero+counts.drift+counts.nofix+counts.errs)
 
+	if auditor != nil {
+		auditor.report(os.Stdout)
+	}
+
 	bad := counts.errs > 0 || counts.zero > 0
 	if *strict {
 		bad = bad || counts.drift > 0 || counts.nofix > 0 || counts.stale > 0
@@ -145,6 +162,69 @@ func main() {
 	if bad {
 		os.Exit(1)
 	}
+}
+
+// auditSource wraps a Source to flag under-specified mappings: when a
+// query matches several non-zero prices with a wide spread, the
+// max-non-zero picker is probably selecting a premium SKU (provisioned,
+// Multi-AZ, IO-optimised) rather than the intended one.
+type auditSource struct {
+	inner       pricing.Source
+	http        *pricing.HTTPSource
+	ratio       float64
+	currentKind string
+	findings    []auditFinding
+}
+
+type auditFinding struct {
+	kind   string
+	query  string
+	min    float64
+	max    float64
+	chosen float64
+	count  int
+}
+
+func (a *auditSource) Lookup(ctx context.Context, q pricing.Query) (decimal.Decimal, string, error) {
+	rate, src, err := a.inner.Lookup(ctx, q)
+	if err == nil && a.http != nil {
+		if sp, serr := a.http.Spread(ctx, q); serr == nil && sp.Count > 1 {
+			mn, _ := sp.MinNonZero.Float64()
+			mx, _ := sp.Max.Float64()
+			if mn > 0 && mx/mn >= a.ratio {
+				ch, _ := rate.Float64()
+				a.findings = append(a.findings, auditFinding{
+					kind: a.currentKind, query: auditQuerySummary(q),
+					min: mn, max: mx, chosen: ch, count: sp.Count,
+				})
+			}
+		}
+	}
+	return rate, src, err
+}
+
+func (a *auditSource) report(w io.Writer) {
+	sort.Slice(a.findings, func(i, j int) bool {
+		return a.findings[i].max/a.findings[i].min > a.findings[j].max/a.findings[j].min
+	})
+	fmt.Fprintf(w, "\n=== AUDIT: %d under-specified queries (max/min non-zero ≥ %.2gx) ===\n",
+		len(a.findings), a.ratio)
+	for _, f := range a.findings {
+		mark := ""
+		if f.chosen >= f.max-1e-9 {
+			mark = "  <- picking MAX"
+		}
+		fmt.Fprintf(w, "%6.1fx  %-28s %-40s min=%.4f max=%.4f (%d SKUs) chosen=%.4f%s\n",
+			f.max/f.min, f.kind, f.query, f.min, f.max, f.count, f.chosen, mark)
+	}
+}
+
+func auditQuerySummary(q pricing.Query) string {
+	s := q.Service
+	if q.ProductFamily != "" {
+		s += "/" + q.ProductFamily
+	}
+	return s
 }
 
 // isStale reports whether a STATIC fixture's last_verified date is
