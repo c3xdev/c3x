@@ -177,6 +177,14 @@ func FormatComment(est domain.Estimate) (string, error) {
 	return render.Render(est, render.FormatMarkdown)
 }
 
+// FormatCommentDiff renders a Diff as the body c3x will post when a
+// baseline is supplied — a per-PR cost delta ("Total: $894/mo →
+// $1,038/mo +$144") instead of an absolute estimate. Markdown is
+// hard-pinned for the same reason as [FormatComment].
+func FormatCommentDiff(d domain.Diff) (string, error) {
+	return render.RenderDiff(d, render.FormatMarkdown)
+}
+
 // SetClientBaseURL redirects a poster's GitHub client to the given
 // URL. Exported only for tests that stub api.github.com via
 // httptest. Production code constructs the client with the default

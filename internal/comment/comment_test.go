@@ -15,7 +15,9 @@ import (
 	"testing"
 
 	"github.com/c3xdev/c3x/internal/comment"
+	"github.com/c3xdev/c3x/internal/domain"
 	"github.com/google/go-github/v84/github"
+	"github.com/shopspring/decimal"
 )
 
 func TestAutoDetectFromGitHubActionsEnv(t *testing.T) {
@@ -159,4 +161,38 @@ func newPosterWithBaseURL(t *testing.T, baseURL string) *comment.GitHubPoster {
 		t.Fatalf("SetClientBaseURL: %v", err)
 	}
 	return p
+}
+
+// TestFormatCommentDiffRendersDelta verifies the baseline path renders a
+// markdown cost diff (the "+$X this PR" body) rather than an absolute
+// estimate, including the signed total-delta line.
+func TestFormatCommentDiffRendersDelta(t *testing.T) {
+	base := domain.Estimate{
+		ProjectTotal: decimal.RequireFromString("894.32"),
+		Currency:     domain.CurrencyUSD,
+		Costs: []domain.Cost{{
+			Resource:        domain.Reference{Kind: "aws_instance", Name: "web"},
+			MonthlySubtotal: decimal.RequireFromString("894.32"),
+			Currency:        domain.CurrencyUSD,
+		}},
+	}
+	current := domain.Estimate{
+		ProjectTotal: decimal.RequireFromString("1038.32"),
+		Currency:     domain.CurrencyUSD,
+		Costs: []domain.Cost{{
+			Resource:        domain.Reference{Kind: "aws_instance", Name: "web"},
+			MonthlySubtotal: decimal.RequireFromString("1038.32"),
+			Currency:        domain.CurrencyUSD,
+		}},
+	}
+
+	body, err := comment.FormatCommentDiff(domain.ComputeDiff(base, current))
+	if err != nil {
+		t.Fatalf("FormatCommentDiff: %v", err)
+	}
+	for _, want := range []string{"c3x diff", "894.32", "1038.32", "144"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("diff comment body missing %q\n---\n%s", want, body)
+		}
+	}
 }

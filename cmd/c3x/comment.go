@@ -1,14 +1,42 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 
 	"github.com/c3xdev/c3x/internal/comment"
 	"github.com/c3xdev/c3x/internal/config"
+	"github.com/c3xdev/c3x/internal/domain"
 	"github.com/spf13/cobra"
 )
+
+// commentBody computes the markdown body for a PR/MR comment. With no
+// baseline it's an absolute estimate; when baselinePath is set it's a
+// cost diff against that saved baseline — the per-PR delta ("+$144
+// this PR") rather than the project total. Shared by every forge
+// subcommand so they stay identical.
+func commentBody(
+	ctx context.Context,
+	rawPath string,
+	resolved config.Resolved,
+	varFiles, vars []string,
+	baselinePath string,
+) (string, error) {
+	current, err := computeCurrent(ctx, rawPath, resolved, varFiles, vars)
+	if err != nil {
+		return "", err
+	}
+	if baselinePath == "" {
+		return comment.FormatComment(current)
+	}
+	baseline, err := loadBaseline(baselinePath)
+	if err != nil {
+		return "", fmt.Errorf("loading baseline %s: %w", baselinePath, err)
+	}
+	return comment.FormatCommentDiff(domain.ComputeDiff(baseline, current))
+}
 
 // newCommentCmd assembles `c3x comment <forge>` for GitHub, GitLab,
 // and Bitbucket, each plugged into the same dispatcher.
@@ -26,16 +54,17 @@ func newCommentCmd() *cobra.Command {
 
 func newCommentAzureDevOpsCmd() *cobra.Command {
 	var (
-		path     string
-		token    string
-		org      string
-		project  string
-		repo     string
-		pr       int
-		baseURL  string
-		offline  bool
-		varFiles []string
-		vars     []string
+		path         string
+		token        string
+		org          string
+		project      string
+		repo         string
+		pr           int
+		baseURL      string
+		offline      bool
+		varFiles     []string
+		vars         []string
+		baselinePath string
 	)
 	cmd := &cobra.Command{
 		Use:     "azuredevops",
@@ -82,11 +111,7 @@ token reads from AZURE_DEVOPS_TOKEN or SYSTEM_ACCESSTOKEN.`,
 				return fmt.Errorf("resolving config: %w", err)
 			}
 
-			est, err := computeCurrent(cmd.Context(), path, resolved, varFiles, vars)
-			if err != nil {
-				return err
-			}
-			body, err := comment.FormatComment(est)
+			body, err := commentBody(cmd.Context(), path, resolved, varFiles, vars, baselinePath)
 			if err != nil {
 				return err
 			}
@@ -111,6 +136,8 @@ token reads from AZURE_DEVOPS_TOKEN or SYSTEM_ACCESSTOKEN.`,
 	cmd.Flags().BoolVar(&offline, "offline", false, "use the offline pricing stub")
 	cmd.Flags().StringArrayVar(&varFiles, "var-file", nil, "tfvars file (repeatable)")
 	cmd.Flags().StringArrayVar(&vars, "var", nil, "variable override name=value (repeatable)")
+	cmd.Flags().StringVar(&baselinePath, "baseline", "",
+		"saved baseline JSON (from `c3x estimate --save-baseline`); posts a cost delta instead of an absolute estimate")
 	return cmd
 }
 
@@ -144,16 +171,17 @@ func resolveAzureDevOpsTarget(org, project, repo string, pr int) (comment.AzureD
 
 func newCommentBitbucketCmd() *cobra.Command {
 	var (
-		path      string
-		user      string
-		password  string
-		workspace string
-		repo      string
-		pr        int
-		baseURL   string
-		offline   bool
-		varFiles  []string
-		vars      []string
+		path         string
+		user         string
+		password     string
+		workspace    string
+		repo         string
+		pr           int
+		baseURL      string
+		offline      bool
+		varFiles     []string
+		vars         []string
+		baselinePath string
 	)
 	cmd := &cobra.Command{
 		Use:   "bitbucket",
@@ -199,11 +227,7 @@ by a dedicated implementation.`,
 				return fmt.Errorf("resolving config: %w", err)
 			}
 
-			est, err := computeCurrent(cmd.Context(), path, resolved, varFiles, vars)
-			if err != nil {
-				return err
-			}
-			body, err := comment.FormatComment(est)
+			body, err := commentBody(cmd.Context(), path, resolved, varFiles, vars, baselinePath)
 			if err != nil {
 				return err
 			}
@@ -228,6 +252,8 @@ by a dedicated implementation.`,
 	cmd.Flags().BoolVar(&offline, "offline", false, "use the offline pricing stub")
 	cmd.Flags().StringArrayVar(&varFiles, "var-file", nil, "tfvars file (repeatable)")
 	cmd.Flags().StringArrayVar(&vars, "var", nil, "variable override name=value (repeatable)")
+	cmd.Flags().StringVar(&baselinePath, "baseline", "",
+		"saved baseline JSON (from `c3x estimate --save-baseline`); posts a cost delta instead of an absolute estimate")
 	return cmd
 }
 
@@ -256,14 +282,15 @@ func resolveBitbucketTarget(workspace, repo string, pr int) (comment.BitbucketTa
 
 func newCommentGitLabCmd() *cobra.Command {
 	var (
-		path     string
-		token    string
-		project  string
-		baseURL  string
-		mr       int
-		offline  bool
-		varFiles []string
-		vars     []string
+		path         string
+		token        string
+		project      string
+		baseURL      string
+		mr           int
+		offline      bool
+		varFiles     []string
+		vars         []string
+		baselinePath string
 	)
 	cmd := &cobra.Command{
 		Use:   "gitlab",
@@ -309,11 +336,7 @@ or CI_JOB_TOKEN, or pass --token.`,
 				return fmt.Errorf("resolving config: %w", err)
 			}
 
-			est, err := computeCurrent(cmd.Context(), path, resolved, varFiles, vars)
-			if err != nil {
-				return err
-			}
-			body, err := comment.FormatComment(est)
+			body, err := commentBody(cmd.Context(), path, resolved, varFiles, vars, baselinePath)
 			if err != nil {
 				return err
 			}
@@ -336,6 +359,8 @@ or CI_JOB_TOKEN, or pass --token.`,
 	cmd.Flags().BoolVar(&offline, "offline", false, "use the offline pricing stub")
 	cmd.Flags().StringArrayVar(&varFiles, "var-file", nil, "tfvars file (repeatable)")
 	cmd.Flags().StringArrayVar(&vars, "var", nil, "variable override name=value (repeatable)")
+	cmd.Flags().StringVar(&baselinePath, "baseline", "",
+		"saved baseline JSON (from `c3x estimate --save-baseline`); posts a cost delta instead of an absolute estimate")
 	return cmd
 }
 
@@ -364,14 +389,15 @@ func resolveGitLabTarget(project string, mr int) (comment.GitLabTarget, string, 
 
 func newCommentGitHubCmd() *cobra.Command {
 	var (
-		path     string
-		token    string
-		owner    string
-		repo     string
-		pr       int
-		offline  bool
-		varFiles []string
-		vars     []string
+		path         string
+		token        string
+		owner        string
+		repo         string
+		pr           int
+		offline      bool
+		varFiles     []string
+		vars         []string
+		baselinePath string
 	)
 	cmd := &cobra.Command{
 		Use:   "github",
@@ -410,11 +436,7 @@ The token reads from GITHUB_TOKEN (set automatically by Actions) or
 				return fmt.Errorf("resolving config: %w", err)
 			}
 
-			est, err := computeCurrent(cmd.Context(), path, resolved, varFiles, vars)
-			if err != nil {
-				return err
-			}
-			body, err := comment.FormatComment(est)
+			body, err := commentBody(cmd.Context(), path, resolved, varFiles, vars, baselinePath)
 			if err != nil {
 				return err
 			}
@@ -435,6 +457,8 @@ The token reads from GITHUB_TOKEN (set automatically by Actions) or
 	cmd.Flags().BoolVar(&offline, "offline", false, "use the offline pricing stub")
 	cmd.Flags().StringArrayVar(&varFiles, "var-file", nil, "tfvars file (repeatable)")
 	cmd.Flags().StringArrayVar(&vars, "var", nil, "variable override name=value (repeatable)")
+	cmd.Flags().StringVar(&baselinePath, "baseline", "",
+		"saved baseline JSON (from `c3x estimate --save-baseline`); posts a cost delta instead of an absolute estimate")
 	return cmd
 }
 

@@ -63,6 +63,11 @@ inputs:
   budget:
     description: Fail when the monthly total exceeds this amount (0 disables).
     default: "0"
+  budget-delta:
+    description: >-
+      Fail when this PR *increases* the monthly total by more than this
+      amount versus the base branch (0 disables). Independent of budget.
+    default: "0"
   format:
     description: Output format for the workflow log (text, markdown, json, junit, html, csv, sarif).
     default: text
@@ -103,6 +108,41 @@ runs:
         fi
         c3x "${ARGS[@]}"
 
+    - name: Base-branch baseline
+      id: baseline
+      if: inputs.install-only != 'true' && github.event_name == 'pull_request' && (inputs.comment == 'true' || inputs.budget-delta != '0')
+      shell: bash
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      run: |
+        # Estimate the PR's BASE branch so the comment / gate can report
+        # the delta this PR introduces ("+$144 vs main") rather than the
+        # absolute total. Best-effort: any failure leaves the baseline
+        # output empty and the comment falls back to the absolute estimate.
+        set -uo pipefail
+        out=/tmp/c3x-base.json
+        if git fetch --no-tags --depth=1 origin "$BASE_SHA" >/dev/null 2>&1 \
+           && git worktree add --detach /tmp/c3x-base "$BASE_SHA" >/dev/null 2>&1; then
+          if c3x estimate --path "/tmp/c3x-base/${{ inputs.path }}" --save-baseline "$out" >/dev/null 2>&1; then
+            echo "baseline=$out" >> "$GITHUB_OUTPUT"
+            echo "Computed cost baseline from base $BASE_SHA"
+          else
+            echo "::notice::base-branch estimate failed; comment will show the absolute total"
+          fi
+          git worktree remove --force /tmp/c3x-base >/dev/null 2>&1 || true
+        else
+          echo "::notice::could not check out base branch; comment will show the absolute total"
+        fi
+
+    - name: Budget delta gate
+      if: inputs.install-only != 'true' && inputs.budget-delta != '0' && steps.baseline.outputs.baseline != ''
+      shell: bash
+      run: |
+        set -euo pipefail
+        c3x diff --path "${{ inputs.path }}" \
+          --baseline "${{ steps.baseline.outputs.baseline }}" \
+          --budget-delta "${{ inputs.budget-delta }}"
+
     - name: PR comment
       if: inputs.install-only != 'true' && inputs.comment == 'true' && github.event_name == 'pull_request'
       shell: bash
@@ -142,4 +182,9 @@ runs:
             echo "::warning::branded comment unavailable (${err:-unknown}); posting as github-actions instead"
           fi
         fi
-        GITHUB_TOKEN="$TOKEN" c3x comment github --path "${{ inputs.path }}"
+        ARGS=(comment github --path "${{ inputs.path }}")
+        if [ -n "${{ steps.baseline.outputs.baseline }}" ]; then
+          # A baseline was computed from the base branch — post the delta.
+          ARGS+=(--baseline "${{ steps.baseline.outputs.baseline }}")
+        fi
+        GITHUB_TOKEN="$TOKEN" c3x "${ARGS[@]}"
