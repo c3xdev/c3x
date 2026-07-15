@@ -32,6 +32,7 @@ func Resolve(projectDir string, flags map[string]any) (Resolved, error) {
 	v.SetDefault("currency", d.Currency.String())
 	v.SetDefault("format", d.Format)
 	v.SetDefault("offline", d.Offline)
+	v.SetDefault("no_remote_modules", d.NoRemoteModules)
 	v.SetDefault("no_cache", d.NoCache)
 	v.SetDefault("cache_path", d.CachePath)
 	v.SetDefault("usage_path", d.UsagePath)
@@ -86,6 +87,7 @@ func Resolve(projectDir string, flags map[string]any) (Resolved, error) {
 		Format:          v.GetString("format"),
 		PricingEndpoint: v.GetString("pricing.endpoint"),
 		Offline:         v.GetBool("offline"),
+		NoRemoteModules: v.GetBool("no_remote_modules"),
 		NoCache:         v.GetBool("no_cache"),
 		CachePath:       v.GetString("cache_path"),
 		UsagePath:       v.GetString("usage_path"),
