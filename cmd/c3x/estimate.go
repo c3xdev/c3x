@@ -36,6 +36,7 @@ func newEstimateCmd() *cobra.Command {
 		usagePath       string
 		whatIfs         []string
 		offline         bool
+		noRemoteModules bool
 		noCache         bool
 		cachePath       string
 		pricingEndpoint string
@@ -73,6 +74,9 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 			if offline {
 				flags["offline"] = true
 			}
+			if noRemoteModules {
+				flags["no_remote_modules"] = true
+			}
 			if noCache {
 				flags["no_cache"] = true
 			}
@@ -109,6 +113,8 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 		"variable override `name=value` (repeatable; HCL or bare string accepted)")
 	cmd.Flags().BoolVar(&offline, "offline", false,
 		"skip the network and use the offline pricing stub (subtotals will be $0 for most resources)")
+	cmd.Flags().BoolVar(&noRemoteModules, "no-remote-modules", false,
+		"disable network module fetching (Registry/Git/HTTP) while keeping live pricing; use when parsing untrusted Terraform")
 	cmd.Flags().BoolVar(&noCache, "no-cache", false,
 		"bypass the on-disk price cache (every lookup goes to pricing.c3x.dev)")
 	cmd.Flags().StringVar(&cachePath, "cache-path", "",
@@ -157,7 +163,10 @@ func runEstimate(
 	parsed, err := parser.Parse(rawPath, parser.Options{
 		VarFiles: varFiles,
 		Vars:     varMap,
-		Offline:  resolved.Offline,
+		// Disable remote module fetching when pricing is offline OR when the
+		// caller opted into untrusted-input mode (--no-remote-modules). The
+		// pricing chain below still honors resolved.Offline independently.
+		Offline: resolved.Offline || resolved.NoRemoteModules,
 	})
 	if err != nil {
 		return fmt.Errorf("parsing %s: %w", rawPath, err)

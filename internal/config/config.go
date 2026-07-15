@@ -26,6 +26,14 @@ type Resolved struct {
 	// Offline forces the calculator to use the offline stub price source.
 	Offline bool
 
+	// NoRemoteModules disables network module fetching (Terraform Registry,
+	// Git, HTTP archives) while keeping live pricing. Set it when parsing
+	// UNTRUSTED input (e.g. user-uploaded Terraform on a server): a crafted
+	// `module { source = ... }` would otherwise cause the fetcher to shell
+	// out to git or hit an arbitrary URL — an SSRF / metadata-exfiltration
+	// vector. Distinct from Offline, which also stubs pricing.
+	NoRemoteModules bool
+
 	// NoCache disables the on-disk SQLite cache for this run.
 	NoCache bool
 
