@@ -5,7 +5,8 @@ provider     = "gcp"
 # Cost components:
 #   compute — db-custom-V-M tiers decompose into vCPU + RAM SKUs
 #             (Zonal or Regional by settings.availability_type);
-#             db-f1-micro keeps its dedicated SKU.
+#             the shared-core tiers db-f1-micro and db-g1-small each keep
+#             their own dedicated SKU (Micro / Small instance).
 #   storage — Zonal/Regional standard storage per GB-month
 #             (settings.disk_size, default 10 GB).
 #
@@ -47,6 +48,13 @@ attribute_filters = [
   { key = "description", const = "Cloud SQL for PostgreSQL: Zonal - Micro instance in Americas" },
 ]
 
+[mappings.small]
+service        = "Cloud SQL"
+product_family = "ApplicationServices"
+attribute_filters = [
+  { key = "description", const = "Cloud SQL for PostgreSQL: Zonal - Small instance in Americas" },
+]
+
 [mappings.storage]
 service        = "Cloud SQL"
 product_family = "ApplicationServices"
@@ -68,6 +76,14 @@ unit     = "hours"
 when     = 'default(default(settings_tier, tier), "db-f1-micro") == "db-f1-micro"'
 quantity = "monthly_hours()"
 rate     = 'price("micro")'
+
+[[dimensions]]
+id       = "compute_small"
+label    = "Database compute (g1-small)"
+unit     = "hours"
+when     = 'default(default(settings_tier, tier), "db-f1-micro") == "db-g1-small"'
+quantity = "monthly_hours()"
+rate     = 'price("small")'
 
 [[dimensions]]
 id       = "vcpu"
