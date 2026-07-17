@@ -223,14 +223,27 @@ func runEstimate(
 		return err
 	}
 
-	if showSkipped && len(est.Skipped) > 0 {
+	if len(est.Skipped) > 0 {
 		// Print to stderr so machine-readable formats (--format json,
 		// --format csv) on stdout stay parseable.
-		fmt.Fprintf(cmd.ErrOrStderr(),
-			"\n%d resource(s) were detected but not priced:\n", len(est.Skipped))
-		for _, s := range est.Skipped {
-			fmt.Fprintf(cmd.ErrOrStderr(), "  - %s.%s: %s\n",
-				s.Resource.Kind, s.Resource.Name, s.Reason)
+		if showSkipped {
+			fmt.Fprintf(cmd.ErrOrStderr(),
+				"\n%d resource(s) were detected but not priced:\n", len(est.Skipped))
+			for _, s := range est.Skipped {
+				fmt.Fprintf(cmd.ErrOrStderr(), "  - %s.%s: %s\n",
+					s.Resource.Kind, s.Resource.Name, s.Reason)
+			}
+		} else {
+			// Warn by default: a resource that couldn't be priced must
+			// not be silently dropped, or users assume it's free.
+			verb := "resources were"
+			if len(est.Skipped) == 1 {
+				verb = "resource was"
+			}
+			fmt.Fprintf(cmd.ErrOrStderr(),
+				"\nwarning: %d %s detected but not priced and excluded from the "+
+					"total; re-run with --show-skipped for details.\n",
+				len(est.Skipped), verb)
 		}
 	}
 

@@ -61,6 +61,46 @@ func TestEstimateAgainstRealTerraform(t *testing.T) {
 	}
 }
 
+// TestEstimateWarnsOnUnpricedResource is the regression guard for #48:
+// a resource that is parsed but matches no pricing dimension must be
+// surfaced with a warning by default, not silently dropped from the
+// output (which would let users assume it's free).
+func TestEstimateWarnsOnUnpricedResource(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	dir := t.TempDir()
+	// db-n1-standard-1 is a legacy Cloud SQL tier with no catalog
+	// mapping, so every compute dimension guards out and the instance
+	// cannot be priced. The aws_instance keeps the estimate non-empty.
+	if err := os.WriteFile(filepath.Join(dir, "main.tf"), []byte(`
+		provider "aws" { region = "us-east-1" }
+		resource "aws_instance" "web" {
+		  ami           = "ami-x"
+		  instance_type = "t3.micro"
+		}
+		resource "google_sql_database_instance" "legacy" {
+		  database_version = "POSTGRES_15"
+		  region           = "us-central1"
+		  settings {
+		    tier = "db-n1-standard-1"
+		  }
+		}
+	`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := newRootCmd()
+	out := &bytes.Buffer{}
+	cmd.SetOut(out)
+	cmd.SetErr(out)
+	cmd.SetArgs([]string{"estimate", "--path", dir})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("estimate failed: %v", err)
+	}
+	if got := out.String(); !strings.Contains(got, "not priced") {
+		t.Errorf("expected an unpriced-resource warning by default, got:\n%s", got)
+	}
+}
+
 // TestEstimateAcceptsVarFlag wires up --var=name=value end-to-end.
 func TestEstimateAcceptsVarFlag(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
