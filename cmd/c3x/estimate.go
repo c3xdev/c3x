@@ -54,6 +54,11 @@ func newEstimateCmd() *cobra.Command {
 supported resource against pricing.c3x.dev, and prints a per-resource
 breakdown.
 
+For a plan JSON input, the estimate covers the full post-apply state —
+every resource that will exist after the plan is applied, the same as
+estimating the .tf — not only the resources this plan changes. --budget
+therefore gates the full projected total.
+
 Variables can be supplied via .tfvars files (auto-loaded from the
 project directory), --var-file flags, or --var name=value pairs. The
 precedence matches Terraform's: defaults < auto.tfvars < --var-file <

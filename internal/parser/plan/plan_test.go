@@ -127,3 +127,90 @@ func TestRejectsInvalidJson(t *testing.T) {
 		t.Errorf("error message lacks context: %v", err)
 	}
 }
+
+// TestPlannedValues_IncludesUnchangedResources is the core of the
+// full-fleet decision (#51): estimating a plan prices every resource in
+// the post-apply state, including unchanged (no-op) ones, not just the
+// ones this plan changes.
+func TestPlannedValues_IncludesUnchangedResources(t *testing.T) {
+	t.Parallel()
+	raw := `{
+		"resource_changes": [
+			{ "address": "aws_instance.new", "type": "aws_instance", "name": "new",
+			  "change": { "actions": ["create"] } },
+			{ "address": "aws_instance.existing", "type": "aws_instance", "name": "existing",
+			  "change": { "actions": ["no-op"] } }
+		],
+		"planned_values": {
+			"root_module": {
+				"resources": [
+					{ "address": "aws_instance.new", "mode": "managed", "type": "aws_instance", "name": "new", "values": { "instance_type": "t3.micro" } },
+					{ "address": "aws_instance.existing", "mode": "managed", "type": "aws_instance", "name": "existing", "values": { "instance_type": "t3.large" } }
+				]
+			}
+		}
+	}`
+	got, err := plan.ParseBytes([]byte(raw), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("expected 2 resources (unchanged included), got %d", len(got))
+	}
+}
+
+// TestPlannedValues_WalksChildModulesSafely covers the module tree walk:
+// child modules are recursed, data sources are skipped, and a null
+// child_modules element (untrusted plan JSON) does not panic.
+func TestPlannedValues_WalksChildModulesSafely(t *testing.T) {
+	t.Parallel()
+	raw := `{
+		"planned_values": {
+			"root_module": {
+				"resources": [
+					{ "address": "data.aws_ami.x", "mode": "data", "type": "aws_ami", "name": "x", "values": {} }
+				],
+				"child_modules": [
+					null,
+					{ "address": "module.db",
+					  "resources": [ { "address": "module.db.aws_db_instance.main", "mode": "managed", "type": "aws_db_instance", "name": "main", "values": { "instance_class": "db.t3.micro" } } ] }
+				]
+			}
+		}
+	}`
+	got, err := plan.ParseBytes([]byte(raw), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("expected 1 managed resource (data + null child skipped), got %d", len(got))
+	}
+	if got[0].Ref.Kind != "aws_db_instance" {
+		t.Errorf("expected the child-module db instance, got %s", got[0].Ref.Kind)
+	}
+}
+
+// TestFallback_KeepsNoOpExcludesDeleteOnly checks the older-format path
+// (no planned_values): unchanged resources are kept (they exist
+// post-apply); resources scheduled only for destruction are dropped.
+func TestFallback_KeepsNoOpExcludesDeleteOnly(t *testing.T) {
+	t.Parallel()
+	raw := `{
+		"resource_changes": [
+			{ "address": "aws_instance.keep", "type": "aws_instance", "name": "keep",
+			  "change": { "actions": ["no-op"], "after": { "instance_type": "t3.micro" } } },
+			{ "address": "aws_instance.gone", "type": "aws_instance", "name": "gone",
+			  "change": { "actions": ["delete"], "after": null } }
+		]
+	}`
+	got, err := plan.ParseBytes([]byte(raw), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("expected 1 resource (no-op kept, delete excluded), got %d", len(got))
+	}
+	if got[0].Ref.Name != "keep" {
+		t.Errorf("expected the no-op resource, got %s", got[0].Ref.Name)
+	}
+}

@@ -15,8 +15,10 @@ import (
 )
 
 // ParseFile reads a plan.json file and returns the resources it
-// describes. Resources scheduled only for `delete` or `no-op` are
-// filtered out — the calculator should price the post-apply state.
+// describes. The estimate reflects the post-apply state: every resource
+// that will exist after the plan is applied, priced as a whole (the same
+// meaning as estimating the .tf), not just the resources this plan
+// changes. Use `--show-delta` / `c3x diff` for the change-only view.
 func ParseFile(path string, logger *slog.Logger) ([]domain.Resource, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -27,6 +29,13 @@ func ParseFile(path string, logger *slog.Logger) ([]domain.Resource, error) {
 
 // ParseBytes parses an in-memory plan JSON document. Exported so tests
 // and pipes can drive the parser without a temp file.
+//
+// The resource set comes from planned_values (the complete post-apply
+// state) so unchanged resources are priced too — a plan where nothing
+// changes still reports the full cost of the infrastructure it
+// describes. Older plan formats that omit planned_values fall back to
+// resource_changes, excluding resources scheduled purely for destruction
+// (they won't exist post-apply).
 func ParseBytes(raw []byte, logger *slog.Logger) ([]domain.Resource, error) {
 	if logger == nil {
 		logger = slog.Default()
@@ -37,26 +46,61 @@ func ParseBytes(raw []byte, logger *slog.Logger) ([]domain.Resource, error) {
 	}
 
 	region := defaultRegion(doc.Configuration)
-
 	out := make([]domain.Resource, 0, len(doc.ResourceChanges))
-	for _, rc := range doc.ResourceChanges {
-		if shouldSkip(rc.Change.Actions) {
+
+	// Primary: planned_values is the full desired (post-apply) state.
+	if doc.PlannedValues != nil {
+		collectPlanned(doc.PlannedValues.RootModule, region, &out)
+	}
+
+	// Fallback for plan formats that omit planned_values.
+	if len(out) == 0 {
+		for _, rc := range doc.ResourceChanges {
+			if isDeleteOnly(rc.Change.Actions) {
+				continue
+			}
+			attrs, _ := rc.Change.After.(map[string]any)
+			r := domain.Resource{
+				Ref:        domain.Reference{Kind: rc.Type, Name: nameFromAddress(rc.Address, rc.Name)},
+				Attributes: attrs,
+			}
+			if region != "" {
+				rgn := region
+				r.Region = &rgn
+			}
+			out = append(out, r)
+		}
+	}
+
+	logger.Debug("plan parsed", "resources", len(out), "region", region)
+	return out, nil
+}
+
+// collectPlanned walks a planned_values module tree, appending every
+// managed resource. Data sources and null child-module entries (which
+// untrusted plan JSON can contain) are skipped rather than dereferenced.
+func collectPlanned(mod *plannedModule, region string, out *[]domain.Resource) {
+	if mod == nil {
+		return
+	}
+	for _, pr := range mod.Resources {
+		if pr.Mode != "managed" {
 			continue
 		}
-		attrs, _ := rc.Change.After.(map[string]any)
-		ref := domain.Reference{Kind: rc.Type, Name: nameFromAddress(rc.Address, rc.Name)}
+		attrs, _ := pr.Values.(map[string]any)
 		r := domain.Resource{
-			Ref:        ref,
+			Ref:        domain.Reference{Kind: pr.Type, Name: nameFromAddress(pr.Address, pr.Name)},
 			Attributes: attrs,
 		}
 		if region != "" {
 			rgn := region
 			r.Region = &rgn
 		}
-		out = append(out, r)
+		*out = append(*out, r)
 	}
-	logger.Debug("plan parsed", "resources", len(out), "region", region)
-	return out, nil
+	for _, child := range mod.ChildModules {
+		collectPlanned(child, region, out)
+	}
 }
 
 // nameFromAddress reconstructs the resource name preserving any
@@ -85,12 +129,15 @@ func nameFromAddress(address, fallback string) string {
 	return parts[len(parts)-1]
 }
 
-func shouldSkip(actions []string) bool {
+// isDeleteOnly reports whether a resource_changes entry is scheduled
+// purely for destruction, so it won't exist post-apply. Replaces
+// (delete+create) and no-op resources are kept.
+func isDeleteOnly(actions []string) bool {
 	if len(actions) == 0 {
 		return false
 	}
 	for _, a := range actions {
-		if a != "delete" && a != "no-op" {
+		if a != "delete" {
 			return false
 		}
 	}
@@ -131,8 +178,27 @@ func defaultRegion(cfg *configuration) string {
 // planFile mirrors the fields we care about from `terraform show -json`.
 // Anything not declared here is ignored at decode time.
 type planFile struct {
+	PlannedValues   *plannedValues   `json:"planned_values"`
 	ResourceChanges []resourceChange `json:"resource_changes"`
 	Configuration   *configuration   `json:"configuration"`
+}
+
+// plannedValues is the projected post-apply state.
+type plannedValues struct {
+	RootModule *plannedModule `json:"root_module"`
+}
+
+type plannedModule struct {
+	Resources    []plannedResource `json:"resources"`
+	ChildModules []*plannedModule  `json:"child_modules"`
+}
+
+type plannedResource struct {
+	Address string `json:"address"`
+	Mode    string `json:"mode"`
+	Type    string `json:"type"`
+	Name    string `json:"name"`
+	Values  any    `json:"values"`
 }
 
 type resourceChange struct {
