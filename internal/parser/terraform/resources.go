@@ -211,11 +211,14 @@ func extractAttributesLevel(body *hclsyntax.Body, ctx *hcl.EvalContext, topLevel
 		}
 		val, diags := attr.Expr.Value(ctx)
 		if diags.HasErrors() {
-			// Best-effort fallback: keep the raw source range as a
-			// stringified placeholder so downstream code (e.g. catalog
-			// expressions doing literal-string comparisons) still sees
-			// something useful rather than an error.
-			out[attr.Name] = attr.Expr.Range().String()
+			// Attribute couldn't be resolved (e.g. optional() defaults
+			// in module variables that aren't supplied by the caller).
+			// Store nil so catalog expressions' `default(x, fallback)`
+			// correctly falls through to the fallback value. Storing a
+			// non-nil placeholder (like the source range string) would
+			// bypass the default() logic and trigger type-mismatch
+			// errors in numeric comparisons.
+			out[attr.Name] = nil
 			continue
 		}
 		out[attr.Name] = ctyToAny(val)

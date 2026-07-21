@@ -154,6 +154,13 @@ func expandModules(
 				childVars[k] = v
 			}
 
+			// Fill in optional() defaults from the variable type
+			// constraints. This bridges the gap between Terraform's
+			// runtime type-system and c3x's static parsing: attributes
+			// like `os_disk = optional(object({disk_size_gb = optional(number, 64)}), {})`
+			// get their defaults applied to the caller-supplied values.
+			applyOptionalDefaults(childSources, childVars)
+
 			childData := collectDataBlocks(childSources)
 			childLocals := resolveLocals(childSources, childVars, childData)
 			childRegion := findDefaultRegion(childSources, childVars, childLocals, childData, logger)
