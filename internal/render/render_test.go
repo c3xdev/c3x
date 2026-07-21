@@ -207,3 +207,125 @@ func TestDiffRenderText(t *testing.T) {
 		t.Errorf("expected +$4 delta:\n%s", out)
 	}
 }
+
+func TestRenderTextDelta_ShowsOnlyChangedResources(t *testing.T) {
+	t.Parallel()
+
+	est := domain.NewEstimate([]domain.Cost{
+		{
+			Resource: domain.Reference{Kind: "aws_instance", Name: "new_server"},
+			LineItems: []domain.LineItem{{
+				Dimension: "compute", Description: "Instance",
+				Unit: "hours", Quantity: dec("730"), UnitRate: dec("0.1"),
+				MonthlyCost: dec("73"), PriceSource: domain.PriceSourceLive,
+			}},
+			MonthlySubtotal: dec("73"),
+			Currency:        domain.CurrencyUSD,
+			Action:          domain.PlanActionCreate,
+		},
+		{
+			Resource: domain.Reference{Kind: "aws_instance", Name: "updated_server"},
+			LineItems: []domain.LineItem{{
+				Dimension: "compute", Description: "Instance",
+				Unit: "hours", Quantity: dec("730"), UnitRate: dec("0.2"),
+				MonthlyCost: dec("146"), PriceSource: domain.PriceSourceLive,
+			}},
+			MonthlySubtotal: dec("146"),
+			Currency:        domain.CurrencyUSD,
+			Action:          domain.PlanActionUpdate,
+		},
+		{
+			Resource: domain.Reference{Kind: "aws_instance", Name: "unchanged_1"},
+			LineItems: []domain.LineItem{{
+				Dimension: "compute", Description: "Instance",
+				Unit: "hours", Quantity: dec("730"), UnitRate: dec("0.05"),
+				MonthlyCost: dec("36.5"), PriceSource: domain.PriceSourceLive,
+			}},
+			MonthlySubtotal: dec("36.5"),
+			Currency:        domain.CurrencyUSD,
+			Action:          domain.PlanActionNoOp,
+		},
+		{
+			Resource: domain.Reference{Kind: "aws_instance", Name: "unchanged_2"},
+			LineItems: []domain.LineItem{{
+				Dimension: "compute", Description: "Instance",
+				Unit: "hours", Quantity: dec("730"), UnitRate: dec("0.05"),
+				MonthlyCost: dec("36.5"), PriceSource: domain.PriceSourceLive,
+			}},
+			MonthlySubtotal: dec("36.5"),
+			Currency:        domain.CurrencyUSD,
+			Action:          domain.PlanActionNoOp,
+		},
+	}, domain.CurrencyUSD, time.Unix(1700000000, 0).UTC())
+
+	out := render.RenderTextDelta(est)
+
+	if !strings.Contains(out, "plan changes") {
+		t.Errorf("expected 'plan changes' header, got:\n%s", out)
+	}
+	if !strings.Contains(out, "+ aws_instance.new_server") {
+		t.Errorf("expected '+ aws_instance.new_server', got:\n%s", out)
+	}
+	if !strings.Contains(out, "~ aws_instance.updated_server") {
+		t.Errorf("expected '~ aws_instance.updated_server', got:\n%s", out)
+	}
+	if strings.Contains(out, "aws_instance.unchanged_1") {
+		t.Errorf("unchanged resource should not appear individually:\n%s", out)
+	}
+	if !strings.Contains(out, "2 unchanged resources") {
+		t.Errorf("expected unchanged summary, got:\n%s", out)
+	}
+	if !strings.Contains(out, "PROJECT TOTAL") {
+		t.Errorf("expected PROJECT TOTAL, got:\n%s", out)
+	}
+}
+
+func TestRenderTextDelta_DeletedResource(t *testing.T) {
+	t.Parallel()
+
+	est := domain.NewEstimate([]domain.Cost{
+		{
+			Resource: domain.Reference{Kind: "aws_instance", Name: "doomed"},
+			LineItems: []domain.LineItem{{
+				Dimension: "compute", Description: "Instance",
+				Unit: "hours", Quantity: dec("730"), UnitRate: dec("0.1"),
+				MonthlyCost: dec("73"), PriceSource: domain.PriceSourceLive,
+			}},
+			MonthlySubtotal: dec("73"),
+			Currency:        domain.CurrencyUSD,
+			Action:          domain.PlanActionDelete,
+		},
+	}, domain.CurrencyUSD, time.Unix(1700000000, 0).UTC())
+
+	out := render.RenderTextDelta(est)
+
+	if !strings.Contains(out, "- aws_instance.doomed") {
+		t.Errorf("expected '- aws_instance.doomed', got:\n%s", out)
+	}
+}
+
+func TestRenderDeltaDispatch_FallsBackForNonText(t *testing.T) {
+	t.Parallel()
+
+	est := domain.NewEstimate([]domain.Cost{
+		{
+			Resource: domain.Reference{Kind: "aws_instance", Name: "web"},
+			LineItems: []domain.LineItem{{
+				Dimension: "compute", Description: "Instance",
+				Unit: "hours", Quantity: dec("730"), UnitRate: dec("0.1"),
+				MonthlyCost: dec("73"), PriceSource: domain.PriceSourceLive,
+			}},
+			MonthlySubtotal: dec("73"),
+			Currency:        domain.CurrencyUSD,
+			Action:          domain.PlanActionCreate,
+		},
+	}, domain.CurrencyUSD, time.Unix(1700000000, 0).UTC())
+
+	out, err := render.RenderDelta(est, render.FormatJSON)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, `"project_total"`) {
+		t.Errorf("expected JSON output from fallback, got:\n%s", out)
+	}
+}

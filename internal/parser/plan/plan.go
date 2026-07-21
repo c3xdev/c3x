@@ -48,9 +48,13 @@ func ParseBytes(raw []byte, logger *slog.Logger) ([]domain.Resource, error) {
 	region := defaultRegion(doc.Configuration)
 	out := make([]domain.Resource, 0, len(doc.ResourceChanges))
 
+	// Build action lookup from resource_changes so we can annotate
+	// each resource with what Terraform intends to do with it.
+	actions := buildActionMap(doc.ResourceChanges)
+
 	// Primary: planned_values is the full desired (post-apply) state.
 	if doc.PlannedValues != nil {
-		collectPlanned(doc.PlannedValues.RootModule, region, &out)
+		collectPlanned(doc.PlannedValues.RootModule, region, actions, &out)
 	}
 
 	// Fallback for plan formats that omit planned_values.
@@ -63,6 +67,27 @@ func ParseBytes(raw []byte, logger *slog.Logger) ([]domain.Resource, error) {
 			r := domain.Resource{
 				Ref:        domain.Reference{Kind: rc.Type, Name: nameFromAddress(rc.Address, rc.Name)},
 				Attributes: attrs,
+				Action:     classifyActions(rc.Change.Actions),
+			}
+			if region != "" {
+				rgn := region
+				r.Region = &rgn
+			}
+			out = append(out, r)
+		}
+	}
+
+	// Append resources scheduled for pure deletion. These don't exist
+	// in planned_values (they won't be in the post-apply state) but
+	// the delta renderer needs them to show what's being removed.
+	// We use the "before" attributes so the calculator can price them.
+	for _, rc := range doc.ResourceChanges {
+		if isDeleteOnly(rc.Change.Actions) {
+			attrs, _ := rc.Change.Before.(map[string]any)
+			r := domain.Resource{
+				Ref:        domain.Reference{Kind: rc.Type, Name: nameFromAddress(rc.Address, rc.Name)},
+				Attributes: attrs,
+				Action:     domain.PlanActionDelete,
 			}
 			if region != "" {
 				rgn := region
@@ -79,7 +104,8 @@ func ParseBytes(raw []byte, logger *slog.Logger) ([]domain.Resource, error) {
 // collectPlanned walks a planned_values module tree, appending every
 // managed resource. Data sources and null child-module entries (which
 // untrusted plan JSON can contain) are skipped rather than dereferenced.
-func collectPlanned(mod *plannedModule, region string, out *[]domain.Resource) {
+// Each resource is annotated with its PlanAction from the actions map.
+func collectPlanned(mod *plannedModule, region string, actions map[string]domain.PlanAction, out *[]domain.Resource) {
 	if mod == nil {
 		return
 	}
@@ -91,6 +117,7 @@ func collectPlanned(mod *plannedModule, region string, out *[]domain.Resource) {
 		r := domain.Resource{
 			Ref:        domain.Reference{Kind: pr.Type, Name: nameFromAddress(pr.Address, pr.Name)},
 			Attributes: attrs,
+			Action:     actions[pr.Address],
 		}
 		if region != "" {
 			rgn := region
@@ -99,8 +126,48 @@ func collectPlanned(mod *plannedModule, region string, out *[]domain.Resource) {
 		*out = append(*out, r)
 	}
 	for _, child := range mod.ChildModules {
-		collectPlanned(child, region, out)
+		collectPlanned(child, region, actions, out)
 	}
+}
+
+// buildActionMap creates an address → PlanAction lookup from
+// resource_changes. This lets planned_values resources carry the
+// intent metadata (create/update/no-op) without losing completeness.
+func buildActionMap(changes []resourceChange) map[string]domain.PlanAction {
+	m := make(map[string]domain.PlanAction, len(changes))
+	for _, rc := range changes {
+		m[rc.Address] = classifyActions(rc.Change.Actions)
+	}
+	return m
+}
+
+// classifyActions reduces Terraform's actions array to a single
+// PlanAction. Terraform uses combinations like ["delete","create"] for
+// replacements; we collapse those to the most relevant single action.
+func classifyActions(actions []string) domain.PlanAction {
+	if len(actions) == 0 {
+		return domain.PlanActionNoOp
+	}
+	if len(actions) == 1 {
+		switch actions[0] {
+		case "create":
+			return domain.PlanActionCreate
+		case "delete":
+			return domain.PlanActionDelete
+		case "update":
+			return domain.PlanActionUpdate
+		case "no-op", "read":
+			return domain.PlanActionNoOp
+		}
+	}
+	// Multi-action: ["delete","create"] = replace, ["create","delete"] = replace
+	// Treat any combo containing "create" or "update" as an update.
+	for _, a := range actions {
+		if a == "create" || a == "update" {
+			return domain.PlanActionUpdate
+		}
+	}
+	return domain.PlanActionNoOp
 }
 
 // nameFromAddress reconstructs the resource name preserving any
@@ -162,7 +229,11 @@ func defaultRegion(cfg *configuration) string {
 		if !ok {
 			continue
 		}
-		expr, ok := pc.Expressions[p.Attr]
+		raw, ok := pc.Expressions[p.Attr]
+		if !ok {
+			continue
+		}
+		expr, ok := parseExpression(raw)
 		if !ok {
 			continue
 		}
@@ -210,6 +281,7 @@ type resourceChange struct {
 
 type change struct {
 	Actions []string `json:"actions"`
+	Before  any      `json:"before"`
 	After   any      `json:"after"`
 }
 
@@ -218,7 +290,7 @@ type configuration struct {
 }
 
 type providerConfig struct {
-	Expressions map[string]expression `json:"expressions"`
+	Expressions map[string]json.RawMessage `json:"expressions"`
 }
 
 // expression is the loose shape Terraform uses for both constants and
@@ -226,4 +298,16 @@ type providerConfig struct {
 // references stay unresolved.
 type expression struct {
 	ConstantValue any `json:"constant_value"`
+}
+
+// parseExpression attempts to decode a raw JSON value as an expression
+// object. Terraform's plan JSON can store expressions as either objects
+// ({"constant_value": ...}) or arrays (e.g. the `features` block in
+// azurerm). We only care about the object form with constant_value.
+func parseExpression(raw json.RawMessage) (expression, bool) {
+	var expr expression
+	if err := json.Unmarshal(raw, &expr); err != nil {
+		return expression{}, false
+	}
+	return expr, true
 }

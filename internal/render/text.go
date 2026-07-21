@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/c3xdev/c3x/internal/domain"
+	"github.com/shopspring/decimal"
 )
 
 // RenderText formats an Estimate as a terminal-friendly breakdown. The
@@ -14,25 +15,69 @@ import (
 // Static-rate items get a `(static)` annotation so users see at a
 // glance which line items don't track upstream price changes.
 func RenderText(est domain.Estimate) string {
+	return renderTextEstimate(est, false)
+}
+
+// RenderTextDelta formats an Estimate showing only resources with plan
+// actions (create/update/delete), annotated with +/~/- markers. Resources
+// with no-op action are summarized in a footer line. This gives a
+// diff-like view from plan JSON without requiring a baseline file.
+func RenderTextDelta(est domain.Estimate) string {
+	return renderTextEstimate(est, true)
+}
+
+func renderTextEstimate(est domain.Estimate, deltaOnly bool) string {
 	if len(est.Costs) == 0 {
 		return "c3x: no resources to estimate.\n"
 	}
 	var b strings.Builder
 	cur := est.Currency
-	fmt.Fprintf(&b, "── c3x estimate · %s ─────────────────────────────────────────\n\n", cur)
+
+	header := "estimate"
+	if deltaOnly {
+		header = "plan changes"
+	}
+	fmt.Fprintf(&b, "── c3x %s · %s ─────────────────────────────────────────\n\n", header, cur)
 
 	priced := 0
+	unchangedCount := 0
+	unchangedCost := decimal.Zero
+	deltaCost := decimal.Zero
+
 	for _, c := range est.Costs {
 		if len(c.LineItems) == 0 {
 			continue
 		}
+
+		// In delta mode, group no-op resources into a summary.
+		if deltaOnly && (c.Action == domain.PlanActionNoOp || c.Action == domain.PlanActionNone) {
+			unchangedCount++
+			unchangedCost = unchangedCost.Add(c.MonthlySubtotal)
+			continue
+		}
+
 		priced++
 		label := c.Resource.Label()
+		marker := actionMarker(c.Action)
 		annot := ""
 		if c.HasStaticRate() {
 			annot = "  (some line items use static rates)"
 		}
-		fmt.Fprintf(&b, "  %s%s\n", label, annot)
+		if marker != "" {
+			fmt.Fprintf(&b, "  %s %s%s\n", marker, label, annot)
+		} else {
+			fmt.Fprintf(&b, "  %s%s\n", label, annot)
+		}
+
+		// Track delta cost: deletions subtract, creates/updates add.
+		if deltaOnly {
+			if c.Action == domain.PlanActionDelete {
+				deltaCost = deltaCost.Sub(c.MonthlySubtotal)
+			} else {
+				deltaCost = deltaCost.Add(c.MonthlySubtotal)
+			}
+		}
+
 		for _, li := range c.LineItems {
 			src := ""
 			if li.PriceSource == domain.PriceSourceStatic {
@@ -48,16 +93,58 @@ func RenderText(est domain.Estimate) string {
 		fmt.Fprintf(&b, "    %s subtotal: %s%s/mo\n\n", label, cur.Symbol(), c.MonthlySubtotal)
 	}
 
-	if priced == 0 {
+	if deltaOnly && unchangedCount > 0 {
+		fmt.Fprintf(&b, "  ... %d unchanged resources: %s%s/mo\n\n",
+			unchangedCount, cur.Symbol(), unchangedCost.Round(2))
+	}
+
+	if priced == 0 && !deltaOnly {
 		fmt.Fprintf(&b, "  %d resources parsed; none priced.\n", len(est.Costs))
 		fmt.Fprintln(&b, "  This usually means --offline, an unknown resource kind,")
 		fmt.Fprintln(&b, "  or that pricing.c3x.dev returned no matching products.")
 		return b.String()
 	}
 
+	if deltaOnly && priced == 0 {
+		fmt.Fprintf(&b, "  No cost-affecting changes in this plan.\n")
+		fmt.Fprintf(&b, "  %d resources unchanged at %s%s/mo\n",
+			unchangedCount, cur.Symbol(), unchangedCost.Round(2))
+		return b.String()
+	}
+
 	b.WriteString("  ────────────────────────────────────────────────────────────\n")
-	fmt.Fprintf(&b, "  PROJECT TOTAL: %s%s/mo\n", cur.Symbol(), est.ProjectTotal)
+	if deltaOnly {
+		fmt.Fprintf(&b, "  DELTA: %s/mo (changed resources)\n", signedDelta(cur.Symbol(), deltaCost.Round(2)))
+		fmt.Fprintf(&b, "  PROJECT TOTAL: %s%s/mo\n", cur.Symbol(), est.ProjectTotal)
+	} else {
+		fmt.Fprintf(&b, "  PROJECT TOTAL: %s%s/mo\n", cur.Symbol(), est.ProjectTotal)
+	}
 	return b.String()
+}
+
+// actionMarker returns a visual prefix for plan actions.
+func actionMarker(a domain.PlanAction) string {
+	switch a {
+	case domain.PlanActionCreate:
+		return "+"
+	case domain.PlanActionUpdate:
+		return "~"
+	case domain.PlanActionDelete:
+		return "-"
+	default:
+		return ""
+	}
+}
+
+// signedDelta renders a decimal as a signed cost delta string.
+func signedDelta(sym string, d decimal.Decimal) string {
+	if d.IsZero() {
+		return sym + "0.00"
+	}
+	if d.IsNegative() {
+		return "-" + sym + d.Neg().String()
+	}
+	return "+" + sym + d.String()
 }
 
 // RenderTextDiff formats a Diff in the same visual idiom as

@@ -51,8 +51,9 @@ func TestParsesPlanWithModuleAddresses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 2 {
-		t.Fatalf("expected 2 resources (delete filtered), got %d", len(got))
+	// 2 created + 1 deleted (surfaced for delta renderer) = 3
+	if len(got) != 3 {
+		t.Fatalf("expected 3 resources, got %d", len(got))
 	}
 	if got[0].Ref.Name != "module.frontend.web" {
 		t.Errorf("module-prefixed name lost: %q", got[0].Ref.Name)
@@ -62,6 +63,9 @@ func TestParsesPlanWithModuleAddresses(t *testing.T) {
 	}
 	if got[0].Region == nil || *got[0].Region != "us-east-2" {
 		t.Errorf("region not picked up from provider_config: %v", got[0].Region)
+	}
+	if string(got[2].Action) != "delete" {
+		t.Errorf("deleted resource action = %q, want 'delete'", got[2].Action)
 	}
 }
 
@@ -192,7 +196,8 @@ func TestPlannedValues_WalksChildModulesSafely(t *testing.T) {
 
 // TestFallback_KeepsNoOpExcludesDeleteOnly checks the older-format path
 // (no planned_values): unchanged resources are kept (they exist
-// post-apply); resources scheduled only for destruction are dropped.
+// post-apply); resources scheduled only for destruction are surfaced
+// with PlanActionDelete for the delta renderer.
 func TestFallback_KeepsNoOpExcludesDeleteOnly(t *testing.T) {
 	t.Parallel()
 	raw := `{
@@ -207,10 +212,142 @@ func TestFallback_KeepsNoOpExcludesDeleteOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 1 {
-		t.Fatalf("expected 1 resource (no-op kept, delete excluded), got %d", len(got))
+	// 1 from fallback (no-op kept) + 1 appended delete = 2
+	if len(got) != 2 {
+		t.Fatalf("expected 2 resources (no-op + delete surfaced), got %d", len(got))
 	}
 	if got[0].Ref.Name != "keep" {
-		t.Errorf("expected the no-op resource, got %s", got[0].Ref.Name)
+		t.Errorf("expected the no-op resource first, got %s", got[0].Ref.Name)
+	}
+	if string(got[1].Action) != "delete" {
+		t.Errorf("expected delete action on second resource, got %q", got[1].Action)
+	}
+}
+
+func TestPlannedValues_AnnotatesWithPlanAction(t *testing.T) {
+	t.Parallel()
+
+	raw := `{
+		"resource_changes": [
+			{
+				"address": "aws_instance.created",
+				"type": "aws_instance",
+				"name": "created",
+				"change": {"actions": ["create"], "after": {"instance_type": "t3.micro"}}
+			},
+			{
+				"address": "aws_instance.updated",
+				"type": "aws_instance",
+				"name": "updated",
+				"change": {"actions": ["update"], "after": {"instance_type": "t3.large"}}
+			},
+			{
+				"address": "aws_instance.unchanged",
+				"type": "aws_instance",
+				"name": "unchanged",
+				"change": {"actions": ["no-op"], "after": {"instance_type": "t3.small"}}
+			}
+		],
+		"planned_values": {
+			"root_module": {
+				"resources": [
+					{
+						"address": "aws_instance.created",
+						"mode": "managed",
+						"type": "aws_instance",
+						"name": "created",
+						"values": {"instance_type": "t3.micro"}
+					},
+					{
+						"address": "aws_instance.updated",
+						"mode": "managed",
+						"type": "aws_instance",
+						"name": "updated",
+						"values": {"instance_type": "t3.large"}
+					},
+					{
+						"address": "aws_instance.unchanged",
+						"mode": "managed",
+						"type": "aws_instance",
+						"name": "unchanged",
+						"values": {"instance_type": "t3.small"}
+					}
+				]
+			}
+		}
+	}`
+
+	got, err := plan.ParseBytes([]byte(raw), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 3 {
+		t.Fatalf("expected 3 resources, got %d", len(got))
+	}
+
+	actionByName := map[string]string{}
+	for _, r := range got {
+		actionByName[r.Ref.Name] = string(r.Action)
+	}
+
+	if actionByName["created"] != "create" {
+		t.Errorf("created action = %q, want 'create'", actionByName["created"])
+	}
+	if actionByName["updated"] != "update" {
+		t.Errorf("updated action = %q, want 'update'", actionByName["updated"])
+	}
+	if actionByName["unchanged"] != "no-op" {
+		t.Errorf("unchanged action = %q, want 'no-op'", actionByName["unchanged"])
+	}
+}
+
+func TestArrayExpressionsHandledGracefully(t *testing.T) {
+	t.Parallel()
+
+	// Terraform 4.x azurerm emits features as an array in expressions.
+	// The parser must not crash on this.
+	raw := `{
+		"resource_changes": [
+			{
+				"address": "azurerm_resource_group.rg",
+				"type": "azurerm_resource_group",
+				"name": "rg",
+				"change": {"actions": ["create"], "after": {"name": "my-rg", "location": "westeurope"}}
+			}
+		],
+		"planned_values": {
+			"root_module": {
+				"resources": [
+					{
+						"address": "azurerm_resource_group.rg",
+						"mode": "managed",
+						"type": "azurerm_resource_group",
+						"name": "rg",
+						"values": {"name": "my-rg", "location": "westeurope"}
+					}
+				]
+			}
+		},
+		"configuration": {
+			"provider_config": {
+				"azurerm": {
+					"expressions": {
+						"features": [{}],
+						"location": {"constant_value": "westeurope"}
+					}
+				}
+			}
+		}
+	}`
+
+	got, err := plan.ParseBytes([]byte(raw), nil)
+	if err != nil {
+		t.Fatalf("should not fail on array expressions: %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("expected 1 resource, got %d", len(got))
+	}
+	if got[0].Region == nil || *got[0].Region != "westeurope" {
+		t.Errorf("region should be westeurope despite array expression, got %v", got[0].Region)
 	}
 }

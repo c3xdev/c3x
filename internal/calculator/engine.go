@@ -140,6 +140,7 @@ func (e *Engine) costFor(ctx context.Context, r domain.Resource) (domain.Cost, s
 		return domain.Cost{
 			Resource: r.Ref,
 			Currency: e.currency,
+			Action:   r.Action,
 		}, "unsupported kind (no catalog entry)", nil
 	}
 
@@ -212,6 +213,7 @@ func (e *Engine) costFor(ctx context.Context, r domain.Resource) (domain.Cost, s
 		LineItems:       items,
 		MonthlySubtotal: subtotal.Round(2),
 		Currency:        e.currency,
+		Action:          r.Action,
 	}, skipReason, nil
 }
 
