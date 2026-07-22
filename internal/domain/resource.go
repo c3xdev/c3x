@@ -31,11 +31,29 @@ func (r Reference) String() string { return r.Label() }
 // Region is the cloud region this resource will deploy to, when
 // determinable from the IaC source. A nil value means the calculator
 // should fall back to the configured default region.
+//
+// Action is populated only when parsing plan JSON; it carries the
+// Terraform-determined action for this resource (create, update, no-op).
+// Consumers like the delta renderer can use it to show per-resource
+// deltas without requiring a separate baseline file.
 type Resource struct {
 	Ref        Reference
 	Attributes map[string]any
 	Region     *string
+	Action     PlanAction
 }
+
+// PlanAction describes what Terraform intends to do with a resource.
+// Empty when the resource was parsed from HCL (no plan context).
+type PlanAction string
+
+const (
+	PlanActionNone   PlanAction = ""       // HCL-parsed or unknown
+	PlanActionNoOp   PlanAction = "no-op"  // unchanged
+	PlanActionCreate PlanAction = "create" // new resource
+	PlanActionUpdate PlanAction = "update" // in-place or with replacement
+	PlanActionDelete PlanAction = "delete" // scheduled for removal
+)
 
 // AttrString reads an attribute as a string, returning ok=false if it's
 // missing or not a string. Centralizing the type-assertions here keeps

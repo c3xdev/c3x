@@ -58,6 +58,11 @@ type Cost struct {
 	LineItems       []LineItem
 	MonthlySubtotal decimal.Decimal
 	Currency        Currency
+	// Action carries the Terraform plan action (create/update/no-op)
+	// when the estimate was produced from plan JSON. Empty for HCL
+	// estimates. Renderers use this to annotate resources with their
+	// change type without requiring a separate baseline.
+	Action PlanAction
 }
 
 // HasStaticRate reports whether any LineItem in this Cost relies on an

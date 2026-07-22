@@ -45,6 +45,7 @@ func newEstimateCmd() *cobra.Command {
 		inlineDemo      bool
 		currency        string
 		showSkipped     bool
+		showDelta       bool
 	)
 
 	cmd := &cobra.Command{
@@ -105,7 +106,7 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 			}
 
 			_ = projectDir // resolved.* already carries the project config
-			return runEstimate(cmd, path, resolved, varFiles, vars, usagePath, whatIfs, saveBaseline, budget, showSkipped)
+			return runEstimate(cmd, path, resolved, varFiles, vars, usagePath, whatIfs, saveBaseline, budget, showSkipped, showDelta)
 		},
 	}
 
@@ -139,6 +140,8 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 		"display currency (USD, EUR, GBP, JPY, CAD, AUD, …); USD-priced rates are converted via Frankfurter")
 	cmd.Flags().BoolVar(&showSkipped, "show-skipped", false,
 		"after the breakdown, list resources we parsed but couldn't price, with the reason")
+	cmd.Flags().BoolVar(&showDelta, "show-delta", false,
+		"show only resources that change in this plan (create/update/delete) with cost delta; summarize unchanged resources in a footer (plan JSON only)")
 
 	cmd.Flags().BoolVar(&inlineDemo, "inline-demo", false,
 		"drive the calculator against a hand-crafted aws_instance (dev surface)")
@@ -160,6 +163,7 @@ func runEstimate(
 	saveBaseline string,
 	budget float64,
 	showSkipped bool,
+	showDelta bool,
 ) error {
 	varMap, err := parseVarFlags(rawVars)
 	if err != nil {
@@ -224,7 +228,7 @@ func runEstimate(
 		return fmt.Errorf("estimating: %w", err)
 	}
 
-	if err := writeRendered(cmd, est, resolved.Format); err != nil {
+	if err := writeRendered(cmd, est, resolved.Format, showDelta); err != nil {
 		return err
 	}
 
@@ -333,17 +337,43 @@ func applyUsageAndWhatIf(cmd *cobra.Command, resources []domain.Resource, usageP
 // writeRendered routes the estimate through the appropriate renderer
 // and writes to the command's stdout. Returning the render error lets
 // the CLI surface a clean diagnostic if marshalling fails.
-func writeRendered(cmd *cobra.Command, est domain.Estimate, formatName string) error {
+func writeRendered(cmd *cobra.Command, est domain.Estimate, formatName string, delta bool) error {
 	f, err := render.ParseFormat(formatName)
 	if err != nil {
 		return fmt.Errorf("format: %w", err)
 	}
-	out, err := render.Render(est, f)
+
+	// Guard: --show-delta only makes sense for plan JSON input where
+	// resources carry action annotations. HCL-parsed resources have
+	// PlanActionNone and would all collapse into the "unchanged" bucket.
+	if delta && !estimateHasPlanContext(est) {
+		fmt.Fprintln(cmd.ErrOrStderr(),
+			"warning: --show-delta is only meaningful for plan JSON input; falling back to standard view")
+		delta = false
+	}
+
+	var out string
+	if delta {
+		out, err = render.RenderDelta(est, f)
+	} else {
+		out, err = render.Render(est, f)
+	}
 	if err != nil {
 		return fmt.Errorf("rendering: %w", err)
 	}
 	_, _ = cmd.OutOrStdout().Write([]byte(out))
 	return nil
+}
+
+// estimateHasPlanContext returns true if at least one Cost has a non-empty
+// plan action, indicating the estimate was produced from plan JSON.
+func estimateHasPlanContext(est domain.Estimate) bool {
+	for _, c := range est.Costs {
+		if c.Action != "" && c.Action != domain.PlanActionNone {
+			return true
+		}
+	}
+	return false
 }
 
 // parseVarFlags turns `--var name=value` repeats into a map.
@@ -400,7 +430,7 @@ func runInlineDemo(cmd *cobra.Command, resolved config.Resolved, budget float64)
 	if err != nil {
 		return fmt.Errorf("estimating: %w", err)
 	}
-	if err := writeRendered(cmd, est, resolved.Format); err != nil {
+	if err := writeRendered(cmd, est, resolved.Format, false); err != nil {
 		return err
 	}
 	return enforceBudget(cmd, est, budget)

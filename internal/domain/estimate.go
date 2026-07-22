@@ -35,9 +35,17 @@ type SkippedResource struct {
 // NewEstimate builds an Estimate, summing per-Cost subtotals at full
 // precision and rounding the ProjectTotal to 2dp at the boundary so the
 // number a user sees matches the sum of the displayed line items.
+//
+// Costs with PlanActionDelete are excluded from ProjectTotal — they
+// represent resources scheduled for removal that won't exist post-apply.
+// They remain in the Costs slice so the delta renderer can display them
+// with a `-` marker and subtract their cost in the DELTA line.
 func NewEstimate(costs []Cost, currency Currency, generatedAt time.Time) Estimate {
 	total := decimal.Zero
 	for _, c := range costs {
+		if c.Action == PlanActionDelete {
+			continue
+		}
 		total = total.Add(c.MonthlySubtotal)
 	}
 	return Estimate{

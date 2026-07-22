@@ -4,6 +4,32 @@ All notable changes to c3x are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project
 uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `--show-delta` flag for `c3x estimate`: shows only resources with
+  plan actions (create/update/delete) annotated with `+`/`~`/`-`
+  markers, summarizes unchanged resources in a footer, and displays a
+  cost delta line. Only meaningful for plan JSON input; warns and falls
+  back to the standard view when used with `.tf` files.
+- `optional()` type-constraint defaults are now resolved for both root
+  and child module variables, matching Terraform's runtime behavior.
+  Previously, attributes using `optional(type, default)` could resolve
+  to nil or a source-range string, causing type mismatches in catalog
+  expressions.
+
+### Fixed
+
+- Plan parser: `provider_config.expressions` no longer panics on
+  array-valued expressions (e.g. azurerm `features` block in
+  Terraform 4.x). Uses `json.RawMessage` with graceful skip.
+- `optional_defaults.go`: no longer panics on zero-arg `object()` type
+  constraints in HCL.
+- `optional(object({...}))` without an explicit default no longer
+  synthesizes a phantom object from child defaults — matching
+  Terraform's behavior of leaving the attribute null.
+
 ## [0.1.0] - 2026-06-22
 
 First public release.
