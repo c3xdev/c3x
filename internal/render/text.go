@@ -49,6 +49,12 @@ func renderTextEstimate(est domain.Estimate, deltaOnly bool) string {
 			continue
 		}
 
+		// In non-delta mode, skip deleted resources entirely — they
+		// won't exist post-apply and shouldn't appear in the standard view.
+		if !deltaOnly && c.Action == domain.PlanActionDelete {
+			continue
+		}
+
 		// In delta mode, group no-op resources into a summary.
 		if deltaOnly && (c.Action == domain.PlanActionNoOp || c.Action == domain.PlanActionNone) {
 			unchangedCount++
@@ -58,13 +64,17 @@ func renderTextEstimate(est domain.Estimate, deltaOnly bool) string {
 
 		priced++
 		label := c.Resource.Label()
-		marker := actionMarker(c.Action)
 		annot := ""
 		if c.HasStaticRate() {
 			annot = "  (some line items use static rates)"
 		}
-		if marker != "" {
-			fmt.Fprintf(&b, "  %s %s%s\n", marker, label, annot)
+		if deltaOnly {
+			marker := actionMarker(c.Action)
+			if marker != "" {
+				fmt.Fprintf(&b, "  %s %s%s\n", marker, label, annot)
+			} else {
+				fmt.Fprintf(&b, "  %s%s\n", label, annot)
+			}
 		} else {
 			fmt.Fprintf(&b, "  %s%s\n", label, annot)
 		}
