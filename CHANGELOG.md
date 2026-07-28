@@ -6,6 +6,8 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-28
+
 ### Added
 
 - `--show-delta` flag for `c3x estimate`: shows only resources with
@@ -14,21 +16,26 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   cost delta line. Only meaningful for plan JSON input; warns and falls
   back to the standard view when used with `.tf` files.
 - `optional()` type-constraint defaults are now resolved for both root
-  and child module variables, matching Terraform's runtime behavior.
-  Previously, attributes using `optional(type, default)` could resolve
-  to nil or a source-range string, causing type mismatches in catalog
-  expressions.
+  and child module variables through Terraform's own `typeexpr` type
+  system. Explicit `optional(type, default)` defaults are applied, bare
+  `optional(type)` attributes materialize as null, and `map`/`list` of
+  `object(...)` wrappers are handled — matching Terraform's runtime
+  behavior instead of bespoke, partial extraction.
 
 ### Fixed
 
 - Plan parser: `provider_config.expressions` no longer panics on
   array-valued expressions (e.g. azurerm `features` block in
   Terraform 4.x). Uses `json.RawMessage` with graceful skip.
-- `optional_defaults.go`: no longer panics on zero-arg `object()` type
-  constraints in HCL.
-- `optional(object({...}))` without an explicit default no longer
-  synthesizes a phantom object from child defaults — matching
-  Terraform's behavior of leaving the attribute null.
+- Registry modules that assign an attribute through an `optional()`
+  object input now reflect the real value instead of silently falling
+  back to the catalogue default. Previously an input typed
+  `map(object({ instance_class = optional(string) }))` left the
+  attribute absent, so an expression like
+  `try(coalesce(each.value.instance_class, var.cluster_instance_class),
+  null)` errored on the missing attribute, `try()` swallowed it to null,
+  and the resource priced at the default class — the delta column missed
+  the change entirely (e.g. terraform-aws-modules/rds-aurora). (#53)
 
 ## [0.1.0] - 2026-06-22
 
