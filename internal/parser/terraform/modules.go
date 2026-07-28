@@ -153,13 +153,15 @@ func expandModules(
 			for k, v := range childInputs {
 				childVars[k] = v
 			}
-
-			// Fill in optional() defaults from the variable type
-			// constraints. This bridges the gap between Terraform's
-			// runtime type-system and c3x's static parsing: attributes
-			// like `os_disk = optional(object({disk_size_gb = optional(number, 64)}), {})`
-			// get their defaults applied to the caller-supplied values.
-			applyOptionalDefaults(childSources, childVars)
+			// Normalise the child's inputs (and defaults) to the child's
+			// declared `type` constraints, filling optional() attribute
+			// defaults. This bridges Terraform's runtime type-system and
+			// c3x's static parsing: it applies explicit `optional(t, def)`
+			// defaults and materialises bare `optional(t)` as null, so a
+			// caller value like `instances = { one = {} }` exposes
+			// `each.value.instance_class` instead of erroring inside the
+			// module's expressions.
+			applyVariableTypes(childVars, collectVariableTypes(childSources))
 
 			childData := collectDataBlocks(childSources)
 			childLocals := resolveLocals(childSources, childVars, childData)

@@ -1,6 +1,7 @@
 package terraform_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -67,6 +68,138 @@ func TestResolvesVariableReferencesInAttributes(t *testing.T) {
 	}
 	if got[0].Attributes["instance_type"] != "m5.large" {
 		t.Errorf("instance_type = %v, want m5.large", got[0].Attributes["instance_type"])
+	}
+}
+
+// TestOptionalObjectAttributeMaterialisesAsNull guards the fix for the
+// terraform-aws-modules/rds-aurora indirection (issue #53): a variable
+// typed `map(object({ instance_class = optional(string) }))` with a value
+// of `{ one = {} }` must expose `each.value.instance_class` as null — not
+// error — so `coalesce(each.value.instance_class, var.class)` falls through
+// to the module variable instead of being swallowed by try() to null (which
+// would let the resource drop back to the catalogue default class).
+func TestOptionalObjectAttributeMaterialisesAsNull(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	write(t, dir, "main.tf", `
+		variable "cluster_instance_class" {
+		  type    = string
+		  default = "db.r6g.large"
+		}
+		variable "instances" {
+		  type    = map(object({ instance_class = optional(string) }))
+		  default = { one = {} }
+		}
+		provider "aws" { region = "us-east-1" }
+		resource "aws_rds_cluster_instance" "this" {
+		  for_each       = var.instances
+		  instance_class = try(coalesce(each.value.instance_class, var.cluster_instance_class), null)
+		  engine         = "aurora-postgresql"
+		}
+	`)
+	got, err := terraform.ParseDirectory(dir, terraform.Options{
+		Vars: map[string]string{"cluster_instance_class": "db.r7g.2xlarge"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("expected 1 resource, got %d", len(got))
+	}
+	if got[0].Attributes["instance_class"] != "db.r7g.2xlarge" {
+		t.Errorf("instance_class = %v, want db.r7g.2xlarge (coalesce fell through the optional attribute)",
+			got[0].Attributes["instance_class"])
+	}
+}
+
+// TestExplicitOptionalDefaultsAndNesting covers the other side of the type
+// constraint: `optional(t, default)` with an explicit default, nested inside
+// another optional object. The caller supplies only a partial value, and the
+// declared defaults (including the nested one) must fill in.
+func TestExplicitOptionalDefaultsAndNesting(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	write(t, dir, "main.tf", `
+		variable "node" {
+		  type = object({
+		    size    = optional(string, "t3.large")
+		    root    = optional(object({
+		      volume_size = optional(number, 100)
+		    }), {})
+		  })
+		  default = {}
+		}
+		provider "aws" { region = "us-east-1" }
+		resource "aws_instance" "web" {
+		  instance_type = var.node.size
+		  root_block_device {
+		    volume_size = var.node.root.volume_size
+		  }
+		  ami = "ami-x"
+		}
+	`)
+	got, err := terraform.ParseDirectory(dir, terraform.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got[0].Attributes["instance_type"] != "t3.large" {
+		t.Errorf("instance_type = %v, want t3.large (explicit optional default)",
+			got[0].Attributes["instance_type"])
+	}
+	rbd, ok := got[0].Attributes["root_block_device"].(map[string]any)
+	if !ok {
+		t.Fatalf("root_block_device = %#v, want nested map", got[0].Attributes["root_block_device"])
+	}
+	// volume_size flows through cty as a number; compare stringified to
+	// avoid coupling to the exact numeric type the parser emits.
+	if fmt.Sprintf("%v", rbd["volume_size"]) != "100" {
+		t.Errorf("root volume_size = %v, want 100 (nested optional default)", rbd["volume_size"])
+	}
+}
+
+// TestModuleInputNormalisedToDeclaredType proves the same optional()
+// materialisation happens for values passed into a child module, not just
+// root-level defaults — the actual shape of the rds-aurora report.
+func TestModuleInputNormalisedToDeclaredType(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	modDir := filepath.Join(dir, "mod")
+	if err := os.MkdirAll(modDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	write(t, modDir, "main.tf", `
+		variable "cluster_instance_class" {
+		  type    = string
+		  default = "db.r6g.large"
+		}
+		variable "instances" {
+		  type    = map(object({ instance_class = optional(string) }))
+		  default = {}
+		}
+		resource "aws_rds_cluster_instance" "this" {
+		  for_each       = var.instances
+		  instance_class = try(coalesce(each.value.instance_class, var.cluster_instance_class), null)
+		  engine         = "aurora-postgresql"
+		}
+	`)
+	write(t, dir, "main.tf", `
+		provider "aws" { region = "us-east-1" }
+		module "db" {
+		  source                 = "./mod"
+		  cluster_instance_class = "db.r7g.2xlarge"
+		  instances              = { one = {} }
+		}
+	`)
+	got, err := terraform.ParseDirectory(dir, terraform.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("expected 1 resource, got %d", len(got))
+	}
+	if got[0].Attributes["instance_class"] != "db.r7g.2xlarge" {
+		t.Errorf("instance_class = %v, want db.r7g.2xlarge (module input not normalised to declared type)",
+			got[0].Attributes["instance_class"])
 	}
 }
 

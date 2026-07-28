@@ -125,10 +125,13 @@ func parseSources(sources []sourceFile, baseDir string, opts Options) ([]domain.
 		variables[k] = parseCLIVar(v)
 	}
 
-	// Stage 2b: apply optional() defaults from variable type constraints.
-	// This fills in attributes like `optional(string, "default")` for
-	// root-module variables, matching Terraform's runtime behavior.
-	applyOptionalDefaults(sources, variables)
+	// Stage 2b: normalise each variable to its declared `type` constraint,
+	// filling optional() object-attribute defaults the way Terraform does
+	// before anything reads the value. This covers both `optional(t, def)`
+	// (explicit default) and bare `optional(t)` (materialised as null), so
+	// downstream traversals like `each.value.x` resolve instead of erroring
+	// and being swallowed by try().
+	applyVariableTypes(variables, collectVariableTypes(sources))
 
 	// Stage 3: data-block placeholders for `data.kind.name.attr` traversals.
 	data := collectDataBlocks(sources)
