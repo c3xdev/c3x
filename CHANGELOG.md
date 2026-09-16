@@ -6,24 +6,36 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-16
+
 ### Added
 
 - `c3x comment <forge>` gained `--comment-tag` (all forges): namespaces
-  the comment marker so multiple runs on one PR/MR — one per
-  environment or Terraform directory in a monorepo — keep independent
-  comments instead of overwriting each other. Falls back to
-  `$C3X_COMMENT_TAG`. Restores the pre-rewrite per-directory comment
-  workflow. (#55)
+  the comment marker so multiple runs on one PR/MR (one per environment
+  or Terraform directory in a monorepo) keep independent comments
+  instead of overwriting each other. Falls back to `$C3X_COMMENT_TAG`.
+  Restores the pre-rewrite per-directory comment workflow. (#55, #56)
 - `c3x comment <forge>` gained `--recreate` (all forges): deletes the
   previous c3x comment and posts a fresh one at the bottom of the
-  thread instead of updating it in place — for busy PRs where "newest
-  at the bottom" reads better. (#55)
+  thread instead of updating it in place, for busy PRs where the newest
+  estimate reads better at the bottom. (#55, #56)
 - Pricing API authentication: set `C3X_PRICING_TOKEN` (or `pricing.token`
   in config) and c3x sends `Authorization: Bearer <token>` on every
   pricing request, including `c3x pricing sync` and `c3x doctor`. This
   lets the CLI talk to a self-hosted `c3x-pricing-api` that has
   `API_KEY` enabled (the server also accepts `X-Api-Key`). Empty by
-  default, so the public endpoint is unaffected. (#55)
+  default, so the public endpoint is unaffected. (#55, #56)
+- `COMPATIBILITY.md` documents the pre-1.0 stability policy: no silent
+  removals of flags, env vars, or config keys, a deprecation cycle for
+  any removal, and the criteria for 1.0. Enforced by a CLI-surface
+  snapshot test (`TestCLISurface`) that fails CI when a flag is removed
+  or renamed without going through the policy.
+
+### Fixed
+
+- CLI estimate tests no longer reach the live pricing API; they run
+  with the offline stub, removing a class of CI flakes (context
+  deadline exceeded) that had nothing to do with the change under test.
 
 ## [0.2.1] - 2026-07-28
 

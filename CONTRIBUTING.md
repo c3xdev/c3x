@@ -156,6 +156,21 @@ prices change. When you see drift:
    roadmap).
 4. Commit with a message like `catalog: refresh aws_eks rate`.
 
+## Changing the CLI surface (flags, env vars, config keys)
+
+The public CLI surface is a contract. See `COMPATIBILITY.md` for the
+full policy; the short version:
+
+- Adding a flag: fine. Regenerate the surface golden with
+  `UPDATE_CLI_SURFACE=1 go test ./cmd/c3x/ -run TestCLISurface` and
+  commit the one-line diff.
+- Removing or renaming a flag: never silently. Deprecate it first
+  (`cmd.Flags().MarkDeprecated(...)`), note it in the CHANGELOG, and
+  remove it no sooner than the next minor release.
+
+`TestCLISurface` fails CI on any un-regenerated surface change, so a
+removal shows up as a golden deletion in review.
+
 ## Commit conventions
 
 Single-purpose commits. Conventional Commits style preferred:
