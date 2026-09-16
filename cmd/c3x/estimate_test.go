@@ -47,15 +47,19 @@ func TestEstimateAgainstRealTerraform(t *testing.T) {
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
 	cmd.SetErr(out)
-	cmd.SetArgs([]string{"estimate", "--path", dir})
+	// --offline uses the local stub price source, so this test exercises
+	// the real parse-to-estimate pipeline without reaching the live
+	// pricing API. It previously hit pricing.c3x.dev and flaked in CI on
+	// any network hiccup (context deadline exceeded); the assertion only
+	// cares that the resource flows through, not about the price.
+	cmd.SetArgs([]string{"estimate", "--path", dir, "--offline"})
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("estimate failed: %v", err)
 	}
 	got := out.String()
-	// Either we see priced output (stub matched the canonical query —
-	// it won't in default config) or we see the "parsed, none priced"
-	// fallback. Either way the resource must have flowed through.
+	// The resource must have flowed through, whether priced from a warm
+	// cache or $0 from the bare stub.
 	if !strings.Contains(got, "resources parsed") && !strings.Contains(got, "aws_instance.web") {
 		t.Errorf("expected resource flow indicator, got:\n%s", got)
 	}
@@ -92,7 +96,10 @@ func TestEstimateWarnsOnUnpricedResource(t *testing.T) {
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
 	cmd.SetErr(out)
-	cmd.SetArgs([]string{"estimate", "--path", dir})
+	// --offline keeps this deterministic and off the network; the
+	// unpriced warning comes from the catalog guarding out the legacy
+	// tier, independent of the price source.
+	cmd.SetArgs([]string{"estimate", "--path", dir, "--offline"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("estimate failed: %v", err)
 	}
@@ -120,7 +127,7 @@ func TestEstimateAcceptsVarFlag(t *testing.T) {
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
 	cmd.SetErr(out)
-	cmd.SetArgs([]string{"estimate", "--path", dir, "--var", `env="prod"`})
+	cmd.SetArgs([]string{"estimate", "--path", dir, "--var", `env="prod"`, "--offline"})
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("estimate failed: %v", err)
@@ -146,7 +153,7 @@ func TestEstimateRespectsFormatFlag(t *testing.T) {
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
 	cmd.SetErr(out)
-	cmd.SetArgs([]string{"estimate", "--path", dir, "--format", "json"})
+	cmd.SetArgs([]string{"estimate", "--path", dir, "--format", "json", "--offline"})
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("estimate failed: %v", err)
