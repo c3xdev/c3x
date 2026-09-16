@@ -6,6 +6,8 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-16
+
 ### Added
 
 - `--pricing-token` flag on `estimate`, `diff`, `recommend`, and
