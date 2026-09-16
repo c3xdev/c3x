@@ -32,6 +32,7 @@ func newDiffCmd() *cobra.Command {
 		noCache         bool
 		cachePath       string
 		pricingEndpoint string
+		pricingToken    string
 		budgetDelta     float64
 	)
 
@@ -71,6 +72,9 @@ monthly spend by more than the configured amount fail the job.`,
 			}
 			if pricingEndpoint != "" {
 				flags["pricing.endpoint"] = pricingEndpoint
+			}
+			if pricingToken != "" {
+				flags["pricing.token"] = pricingToken
 			}
 			resolved, err := config.Resolve(projectDir, flags)
 			if err != nil {
@@ -112,6 +116,7 @@ monthly spend by more than the configured amount fail the job.`,
 	cmd.Flags().BoolVar(&noCache, "no-cache", false, "bypass the on-disk price cache")
 	cmd.Flags().StringVar(&cachePath, "cache-path", "", "override the cache file path")
 	cmd.Flags().StringVar(&pricingEndpoint, "pricing-endpoint", "", "override the pricing GraphQL endpoint")
+	cmd.Flags().StringVar(&pricingToken, "pricing-token", "", "bearer token for a self-hosted pricing API (default: $C3X_PRICING_TOKEN)")
 	cmd.Flags().Float64Var(&budgetDelta, "budget-delta", 0,
 		"fail with exit code 1 when the project delta exceeds this monthly amount (0 disables the gate)")
 

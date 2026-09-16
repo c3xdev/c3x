@@ -34,6 +34,7 @@ func newRecommendCmd() *cobra.Command {
 		noCache         bool
 		cachePath       string
 		pricingEndpoint string
+		pricingToken    string
 	)
 	cmd := &cobra.Command{
 		Use:   "recommend",
@@ -68,6 +69,9 @@ non-prod, GCP pd-standard → pd-balanced.`,
 			}
 			if pricingEndpoint != "" {
 				flags["pricing.endpoint"] = pricingEndpoint
+			}
+			if pricingToken != "" {
+				flags["pricing.token"] = pricingToken
 			}
 			resolved, err := config.Resolve(projectDir, flags)
 			if err != nil {
@@ -155,6 +159,7 @@ non-prod, GCP pd-standard → pd-balanced.`,
 	cmd.Flags().BoolVar(&noCache, "no-cache", false, "bypass the on-disk price cache")
 	cmd.Flags().StringVar(&cachePath, "cache-path", "", "override the cache file path")
 	cmd.Flags().StringVar(&pricingEndpoint, "pricing-endpoint", "", "override the GraphQL endpoint")
+	cmd.Flags().StringVar(&pricingToken, "pricing-token", "", "bearer token for a self-hosted pricing API (default: $C3X_PRICING_TOKEN)")
 	return cmd
 }
 

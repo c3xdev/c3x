@@ -5,16 +5,16 @@ c3x comment bitbucket: --base-url --baseline --comment-tag --offline --path --pr
 c3x comment github: --baseline --comment-tag --offline --owner --path --pr --recreate --repo --token --var --var-file
 c3x comment gitlab: --base-url --baseline --comment-tag --mr --offline --path --project --recreate --token --var --var-file
 c3x configure: --non-interactive
-c3x diff: --baseline --budget-delta --cache-path --format --no-cache --offline --path --pricing-endpoint --region --var --var-file
+c3x diff: --baseline --budget-delta --cache-path --format --no-cache --offline --path --pricing-endpoint --pricing-token --region --var --var-file
 c3x doctor: --quiet
-c3x estimate: --budget --cache-path --currency --format --inline-demo --no-cache --no-remote-modules --offline --path --pricing-endpoint --region --save-baseline --show-delta --show-skipped --usage --var --var-file --what-if
+c3x estimate: --budget --cache-path --currency --format --inline-demo --no-cache --no-remote-modules --offline --path --pricing-endpoint --pricing-token --region --save-baseline --show-delta --show-skipped --usage --var --var-file --what-if
 c3x policy: 
 c3x policy eval: --baseline --estimate --offline --path --policy --var --var-file
 c3x pricing: 
 c3x pricing clear: --cache-path
 c3x pricing stats: --cache-path
-c3x pricing sync: --cache-path --concurrency --pricing-endpoint --providers --regions
+c3x pricing sync: --cache-path --concurrency --pricing-endpoint --pricing-token --providers --regions
 c3x pricing where: --cache-path
-c3x recommend: --cache-path --format --no-cache --offline --path --pricing-endpoint --region --usage --var --var-file --what-if
+c3x recommend: --cache-path --format --no-cache --offline --path --pricing-endpoint --pricing-token --region --usage --var --var-file --what-if
 c3x supported-resources: --format --provider --status
 c3x version: 

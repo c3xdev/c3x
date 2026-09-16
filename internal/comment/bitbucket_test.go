@@ -83,6 +83,48 @@ func TestBitbucketPostCreatesWhenNoneExists(t *testing.T) {
 	}
 }
 
+// TestBitbucketRecreateDeletesThenCreates verifies --recreate on
+// Bitbucket: the marked comment is DELETEd and a fresh one POSTed, not
+// PUT in place.
+func TestBitbucketRecreateDeletesThenCreates(t *testing.T) {
+	var deleted, created, put bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			payload := map[string]any{
+				"values": []map[string]any{
+					{"id": 42, "content": map[string]string{"raw": comment.Marker + "\n(old)"}},
+				},
+				"next": "",
+			}
+			_ = json.NewEncoder(w).Encode(payload)
+		case http.MethodDelete:
+			deleted = true
+			w.WriteHeader(http.StatusNoContent)
+		case http.MethodPost:
+			created = true
+			w.WriteHeader(http.StatusCreated)
+			_, _ = io.WriteString(w, `{"id":43}`)
+		case http.MethodPut:
+			put = true
+			w.WriteHeader(http.StatusOK)
+		}
+	}))
+	defer srv.Close()
+	p, _ := comment.NewBitbucketPoster("u", "pw", srv.URL,
+		comment.BitbucketTarget{Workspace: "w", Repo: "r", PR: 1},
+		comment.Options{Recreate: true})
+	if err := p.Post(context.Background(), "fresh"); err != nil {
+		t.Fatal(err)
+	}
+	if !deleted || !created {
+		t.Errorf("recreate should DELETE then POST; deleted=%v created=%v", deleted, created)
+	}
+	if put {
+		t.Error("recreate must not PUT in place")
+	}
+}
+
 func TestBitbucketPostUpdatesMarkedComment(t *testing.T) {
 	var put bool
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

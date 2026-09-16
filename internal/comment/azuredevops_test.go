@@ -89,6 +89,52 @@ func TestAzureDevOpsCreatesThreadWhenNoneExists(t *testing.T) {
 	}
 }
 
+// TestAzureDevOpsRecreateDeletesThenCreates verifies --recreate on
+// Azure DevOps: the marked thread's root comment is DELETEd (removing
+// the thread) and a fresh thread POSTed, not PATCHed in place.
+func TestAzureDevOpsRecreateDeletesThenCreates(t *testing.T) {
+	var deleted, created, patched bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			payload := map[string]any{
+				"value": []map[string]any{
+					{
+						"id": 99,
+						"comments": []map[string]any{
+							{"id": 11, "content": comment.Marker + "\n(old)"},
+						},
+					},
+				},
+			}
+			_ = json.NewEncoder(w).Encode(payload)
+		case http.MethodDelete:
+			deleted = true
+			w.WriteHeader(http.StatusNoContent)
+		case http.MethodPost:
+			created = true
+			w.WriteHeader(http.StatusOK)
+			_, _ = io.WriteString(w, `{"id":100}`)
+		case http.MethodPatch:
+			patched = true
+			w.WriteHeader(http.StatusOK)
+		}
+	}))
+	defer srv.Close()
+	p, _ := comment.NewAzureDevOpsPoster("pat", srv.URL,
+		comment.AzureDevOpsTarget{Org: "o", Project: "p", Repo: "r", PR: 1},
+		comment.Options{Recreate: true})
+	if err := p.Post(context.Background(), "fresh"); err != nil {
+		t.Fatal(err)
+	}
+	if !deleted || !created {
+		t.Errorf("recreate should DELETE then POST; deleted=%v created=%v", deleted, created)
+	}
+	if patched {
+		t.Error("recreate must not PATCH in place")
+	}
+}
+
 func TestAzureDevOpsEditsExistingMarkedComment(t *testing.T) {
 	var patched bool
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
