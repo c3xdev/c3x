@@ -66,16 +66,18 @@ func AutoDetectGitLab() (GitLabTarget, string, error) {
 // GitLabPoster talks to gitlab.com (or self-hosted). Construct with
 // [NewGitLabPoster]; the zero value is not usable.
 type GitLabPoster struct {
-	client  *http.Client
-	baseURL string
-	token   string
-	target  GitLabTarget
+	client   *http.Client
+	baseURL  string
+	token    string
+	target   GitLabTarget
+	marker   string
+	recreate bool
 }
 
 // NewGitLabPoster takes a personal-access or CI job token plus the
 // MR target. baseURL defaults to gitlab.com — pass a self-hosted
 // instance's `CI_API_V4_URL` for on-prem.
-func NewGitLabPoster(token, baseURL string, target GitLabTarget) (*GitLabPoster, error) {
+func NewGitLabPoster(token, baseURL string, target GitLabTarget, opts ...Options) (*GitLabPoster, error) {
 	if token == "" {
 		return nil, errors.New("gitlab token is empty (set GITLAB_TOKEN, CI_JOB_TOKEN, or pass --token)")
 	}
@@ -85,11 +87,14 @@ func NewGitLabPoster(token, baseURL string, target GitLabTarget) (*GitLabPoster,
 	if baseURL == "" {
 		baseURL = DefaultGitLabBaseURL
 	}
+	o := resolveOptions(opts)
 	return &GitLabPoster{
-		client:  &http.Client{Timeout: DefaultHTTPTimeout},
-		baseURL: strings.TrimRight(baseURL, "/"),
-		token:   token,
-		target:  target,
+		client:   &http.Client{Timeout: DefaultHTTPTimeout},
+		baseURL:  strings.TrimRight(baseURL, "/"),
+		token:    token,
+		target:   target,
+		marker:   MarkerFor(o.Tag),
+		recreate: o.Recreate,
 	}, nil
 }
 
@@ -100,8 +105,16 @@ func (p *GitLabPoster) Post(ctx context.Context, body string) error {
 	if err != nil {
 		return fmt.Errorf("looking up existing note: %w", err)
 	}
-	fullBody := Marker + "\n" + body
+	fullBody := p.marker + "\n" + body
 	if existingID == 0 {
+		return p.createNote(ctx, fullBody)
+	}
+	// Recreate: delete the old note and post a fresh one so the latest
+	// estimate lands at the bottom of the MR discussion.
+	if p.recreate {
+		if err := p.deleteNote(ctx, existingID); err != nil {
+			return fmt.Errorf("deleting previous note %d: %w", existingID, err)
+		}
 		return p.createNote(ctx, fullBody)
 	}
 	return p.editNote(ctx, existingID, fullBody)
@@ -136,7 +149,7 @@ func (p *GitLabPoster) findExisting(ctx context.Context) (int, error) {
 			return 0, fmt.Errorf("decode notes: %w", err)
 		}
 		for _, n := range notes {
-			if strings.Contains(n.Body, Marker) {
+			if strings.Contains(n.Body, p.marker) {
 				return n.ID, nil
 			}
 		}
@@ -183,6 +196,22 @@ func (p *GitLabPoster) editNote(ctx context.Context, noteID int, body string) er
 	if resp.StatusCode >= 300 {
 		raw, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("edit note %d HTTP %d: %s", noteID, resp.StatusCode, string(raw))
+	}
+	return nil
+}
+
+func (p *GitLabPoster) deleteNote(ctx context.Context, noteID int) error {
+	project := url.PathEscape(p.target.ProjectID)
+	endpoint := fmt.Sprintf("%s/projects/%s/merge_requests/%d/notes/%d",
+		p.baseURL, project, p.target.MR, noteID)
+	resp, err := p.do(ctx, http.MethodDelete, endpoint, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode >= 300 {
+		raw, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("delete note %d HTTP %d: %s", noteID, resp.StatusCode, string(raw))
 	}
 	return nil
 }

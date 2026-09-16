@@ -75,11 +75,13 @@ type BitbucketPoster struct {
 	username string
 	password string
 	target   BitbucketTarget
+	marker   string
+	recreate bool
 }
 
 // NewBitbucketPoster takes the username (Bitbucket workspace user
 // or app-password user) plus the app password, and the PR target.
-func NewBitbucketPoster(username, password, baseURL string, target BitbucketTarget) (*BitbucketPoster, error) {
+func NewBitbucketPoster(username, password, baseURL string, target BitbucketTarget, opts ...Options) (*BitbucketPoster, error) {
 	if username == "" {
 		return nil, errors.New("bitbucket username is empty (set BITBUCKET_USERNAME or pass --user)")
 	}
@@ -92,12 +94,15 @@ func NewBitbucketPoster(username, password, baseURL string, target BitbucketTarg
 	if baseURL == "" {
 		baseURL = DefaultBitbucketBaseURL
 	}
+	o := resolveOptions(opts)
 	return &BitbucketPoster{
 		client:   &http.Client{Timeout: DefaultHTTPTimeout},
 		baseURL:  strings.TrimRight(baseURL, "/"),
 		username: username,
 		password: password,
 		target:   target,
+		marker:   MarkerFor(o.Tag),
+		recreate: o.Recreate,
 	}, nil
 }
 
@@ -107,8 +112,16 @@ func (p *BitbucketPoster) Post(ctx context.Context, body string) error {
 	if err != nil {
 		return fmt.Errorf("looking up existing comment: %w", err)
 	}
-	fullBody := Marker + "\n" + body
+	fullBody := p.marker + "\n" + body
 	if existingID == 0 {
+		return p.createComment(ctx, fullBody)
+	}
+	// Recreate: delete the old comment and post a fresh one so the
+	// latest estimate lands at the bottom of the PR.
+	if p.recreate {
+		if err := p.deleteComment(ctx, existingID); err != nil {
+			return fmt.Errorf("deleting previous comment %d: %w", existingID, err)
+		}
 		return p.createComment(ctx, fullBody)
 	}
 	return p.editComment(ctx, existingID, fullBody)
@@ -145,7 +158,7 @@ func (p *BitbucketPoster) findExisting(ctx context.Context) (int, error) {
 			return 0, fmt.Errorf("decode comments: %w", err)
 		}
 		for _, c := range page.Values {
-			if strings.Contains(c.Content.Raw, Marker) {
+			if strings.Contains(c.Content.Raw, p.marker) {
 				return c.ID, nil
 			}
 		}
@@ -186,6 +199,21 @@ func (p *BitbucketPoster) editComment(ctx context.Context, id int, body string) 
 	if resp.StatusCode >= 300 {
 		raw, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("edit comment %d HTTP %d: %s", id, resp.StatusCode, string(raw))
+	}
+	return nil
+}
+
+func (p *BitbucketPoster) deleteComment(ctx context.Context, id int) error {
+	endpoint := fmt.Sprintf("%s/repositories/%s/%s/pullrequests/%d/comments/%d",
+		p.baseURL, p.target.Workspace, p.target.Repo, p.target.PR, id)
+	resp, err := p.do(ctx, http.MethodDelete, endpoint, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode >= 300 {
+		raw, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("delete comment %d HTTP %d: %s", id, resp.StatusCode, string(raw))
 	}
 	return nil
 }

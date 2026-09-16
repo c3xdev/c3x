@@ -200,6 +200,7 @@ func newPricingSyncCmd() *cobra.Command {
 			start := time.Now()
 			res, err := pricing.Sync(cmd.Context(), pricing.SyncOptions{
 				Endpoint:    resolved.PricingEndpoint,
+				Token:       resolved.PricingToken,
 				CachePath:   path,
 				Regions:     regions,
 				Shapes:      shapes,

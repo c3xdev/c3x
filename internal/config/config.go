@@ -23,6 +23,15 @@ type Resolved struct {
 	// PricingEndpoint is the GraphQL endpoint URL of the pricing API.
 	PricingEndpoint string
 
+	// PricingToken authenticates requests to the pricing API. When
+	// non-empty it is sent as `Authorization: Bearer <token>` — the
+	// scheme a self-hosted c3x-pricing-api accepts when its API_KEY is
+	// set (it also honours X-Api-Key). Empty means no auth header,
+	// matching the public pricing.c3x.dev endpoint. Source it from the
+	// C3X_PRICING_TOKEN env var or `pricing.token` in config; never
+	// commit it.
+	PricingToken string
+
 	// Offline forces the calculator to use the offline stub price source.
 	Offline bool
 
@@ -68,6 +77,7 @@ func Defaults() Resolved {
 		Currency:        domain.CurrencyUSD,
 		Format:          "text",
 		PricingEndpoint: "https://pricing.c3x.dev/graphql",
+		PricingToken:    "",
 		Offline:         false,
 		NoCache:         false,
 		CachePath:       "",

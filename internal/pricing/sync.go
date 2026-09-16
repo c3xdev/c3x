@@ -46,6 +46,7 @@ type MappingShape struct {
 // SyncOptions configures [Sync].
 type SyncOptions struct {
 	Endpoint  string
+	Token     string
 	CachePath string
 	// Regions to warm for non-region-pinned shapes. Empty means "the
 	// provider's reference region only" — enough for full attribute
@@ -120,7 +121,7 @@ func Sync(ctx context.Context, opts SyncOptions) (SyncResult, error) {
 		return SyncResult{}, fmt.Errorf("pricing.Sync: no work units planned")
 	}
 
-	enum := newProductEnumerator(opts.Client, opts.Endpoint)
+	enum := newProductEnumerator(opts.Client, opts.Endpoint, opts.Token)
 
 	var (
 		wg        sync.WaitGroup

@@ -29,8 +29,79 @@ const DefaultHTTPTimeout = 20 * time.Second
 
 // Marker is the HTML-comment sentinel embedded in every body c3x
 // posts. Versioned so we can change the layout later without losing
-// the ability to find old comments.
+// the ability to find old comments. This is the base (untagged)
+// marker; [MarkerFor] derives tag-namespaced variants.
 const Marker = "<!-- c3x-comment:v1 -->"
+
+// Options tunes how a Poster manages its comment. The zero value is
+// the default behaviour c3x has always had: one shared marker,
+// updated in place.
+type Options struct {
+	// Tag namespaces the comment marker so multiple c3x runs on the
+	// same PR/MR — one per environment, or per Terraform directory in
+	// a monorepo — keep independent comments instead of overwriting
+	// each other. Empty uses the default [Marker].
+	Tag string
+
+	// Recreate deletes the previous c3x comment and posts a fresh one
+	// instead of editing in place. Useful on busy PRs where "newest at
+	// the bottom" reads better than an edit buried up-thread.
+	Recreate bool
+}
+
+// resolveOptions collapses the variadic option slug the poster
+// constructors accept into a single value. Passing no Options keeps
+// the historical behaviour, which is why the constructors stayed
+// backward-compatible when tagging was added.
+func resolveOptions(opts []Options) Options {
+	if len(opts) > 0 {
+		return opts[0]
+	}
+	return Options{}
+}
+
+// MarkerFor returns the sentinel a Poster embeds for the given tag.
+// An empty (or all-invalid) tag yields the base [Marker], so comments
+// written before tagging existed are still found. A non-empty tag is
+// namespaced as `<!-- c3x-comment:v1:<tag> -->` so each tag finds and
+// edits only its own comment.
+func MarkerFor(tag string) string {
+	t := sanitizeTag(tag)
+	if t == "" {
+		return Marker
+	}
+	return "<!-- c3x-comment:v1:" + t + " -->"
+}
+
+// sanitizeTag restricts a user-supplied tag to a safe charset so it
+// cannot break out of the surrounding HTML comment. Notably it drops
+// '>' (mapping any disallowed rune to '-'), which makes a premature
+// `-->` sequence impossible. The result stays a tidy single token,
+// keeping the common `$WORKSPACE-$DIR` shape intact (letters, digits,
+// '.', '_', '-', '/').
+func sanitizeTag(tag string) string {
+	tag = strings.TrimSpace(tag)
+	if tag == "" {
+		return ""
+	}
+	var b strings.Builder
+	for _, r := range tag {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+		case r == '.', r == '_', r == '-', r == '/':
+			b.WriteRune(r)
+		default:
+			b.WriteRune('-')
+		}
+	}
+	const maxLen = 80
+	out := b.String()
+	if len(out) > maxLen {
+		out = out[:maxLen]
+	}
+	return strings.Trim(out, "-")
+}
 
 // Poster is the contract a forge integration satisfies. Implementing
 // a new backend means returning a new Poster from a constructor and
@@ -93,8 +164,10 @@ func prFromEnv() (int, error) {
 // GitHubPoster talks to api.github.com. Construct with [NewGitHubPoster];
 // the zero value is not usable.
 type GitHubPoster struct {
-	client *github.Client
-	target Target
+	client   *github.Client
+	target   Target
+	marker   string
+	recreate bool
 }
 
 // NewGitHubPoster takes the API token (typically from GITHUB_TOKEN)
@@ -104,17 +177,20 @@ type GitHubPoster struct {
 // HTTP client. go-github otherwise defers to http.DefaultClient,
 // which has no timeout — a network-side hang would block the CLI
 // indefinitely.
-func NewGitHubPoster(token string, target Target) (*GitHubPoster, error) {
+func NewGitHubPoster(token string, target Target, opts ...Options) (*GitHubPoster, error) {
 	if token == "" {
 		return nil, errors.New("github token is empty (set GITHUB_TOKEN or pass --token)")
 	}
 	if target.Owner == "" || target.Repo == "" || target.PR == 0 {
 		return nil, fmt.Errorf("incomplete target: %+v", target)
 	}
+	o := resolveOptions(opts)
 	httpClient := &http.Client{Timeout: DefaultHTTPTimeout}
 	return &GitHubPoster{
-		client: github.NewClient(httpClient).WithAuthToken(token),
-		target: target,
+		client:   github.NewClient(httpClient).WithAuthToken(token),
+		target:   target,
+		marker:   MarkerFor(o.Tag),
+		recreate: o.Recreate,
 	}, nil
 }
 
@@ -125,20 +201,34 @@ func (p *GitHubPoster) Post(ctx context.Context, body string) error {
 	if err != nil {
 		return fmt.Errorf("looking up existing comment: %w", err)
 	}
-	fullBody := Marker + "\n" + body
+	fullBody := p.marker + "\n" + body
 	if existing == nil {
-		_, _, err := p.client.Issues.CreateComment(ctx, p.target.Owner, p.target.Repo, p.target.PR,
-			&github.IssueComment{Body: &fullBody})
-		if err != nil {
-			return fmt.Errorf("creating PR comment: %w", err)
+		return p.create(ctx, fullBody)
+	}
+	// Recreate: drop the old comment and post a fresh one so the
+	// latest estimate lands at the bottom of the thread.
+	if p.recreate {
+		if _, err := p.client.Issues.DeleteComment(ctx, p.target.Owner, p.target.Repo, *existing.ID); err != nil {
+			return fmt.Errorf("deleting previous PR comment %d: %w", *existing.ID, err)
 		}
-		return nil
+		return p.create(ctx, fullBody)
 	}
 	existing.Body = &fullBody
 	_, _, err = p.client.Issues.EditComment(ctx, p.target.Owner, p.target.Repo, *existing.ID,
 		&github.IssueComment{Body: &fullBody})
 	if err != nil {
 		return fmt.Errorf("updating PR comment %d: %w", *existing.ID, err)
+	}
+	return nil
+}
+
+// create posts a new comment carrying the (already-marker-prefixed)
+// body.
+func (p *GitHubPoster) create(ctx context.Context, fullBody string) error {
+	_, _, err := p.client.Issues.CreateComment(ctx, p.target.Owner, p.target.Repo, p.target.PR,
+		&github.IssueComment{Body: &fullBody})
+	if err != nil {
+		return fmt.Errorf("creating PR comment: %w", err)
 	}
 	return nil
 }
@@ -157,7 +247,7 @@ func (p *GitHubPoster) findExisting(ctx context.Context) (*github.IssueComment, 
 			return nil, err
 		}
 		for _, c := range comments {
-			if c.Body != nil && strings.Contains(*c.Body, Marker) {
+			if c.Body != nil && strings.Contains(*c.Body, p.marker) {
 				return c, nil
 			}
 		}

@@ -34,6 +34,7 @@ const DefaultHTTPTimeout = 30 * time.Second
 // underlying [http.Client] reuses connections via its Transport.
 type HTTPSource struct {
 	endpoint string
+	token    string
 	client   *http.Client
 }
 
@@ -42,6 +43,12 @@ type HTTPOption func(*HTTPSource)
 
 // WithEndpoint overrides the GraphQL endpoint URL.
 func WithEndpoint(url string) HTTPOption { return func(s *HTTPSource) { s.endpoint = url } }
+
+// WithToken sets a bearer token sent as `Authorization: Bearer <token>`
+// on every request. Empty is a no-op, so the public endpoint (which
+// needs no auth) is unaffected; a self-hosted endpoint with API_KEY
+// set requires it.
+func WithToken(token string) HTTPOption { return func(s *HTTPSource) { s.token = token } }
 
 // WithHTTPClient lets tests inject a custom *http.Client (typically
 // pointing at an httptest.Server). Production callers should pass nil
@@ -71,6 +78,18 @@ func NewHTTPSource(opts ...HTTPOption) *HTTPSource {
 // Endpoint returns the configured URL — exposed so the CLI can echo it
 // during `--verbose` runs.
 func (s *HTTPSource) Endpoint() string { return s.endpoint }
+
+// setRequestHeaders applies the headers common to every GraphQL POST.
+// Centralising them keeps the auth header from drifting between the
+// Lookup and Spread request paths.
+func (s *HTTPSource) setRequestHeaders(req *http.Request) {
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "c3x/dev (+https://github.com/c3xdev/c3x)")
+	if s.token != "" {
+		req.Header.Set("Authorization", "Bearer "+s.token)
+	}
+}
 
 // Lookup implements [Source]. It builds a GraphQL document from the
 // Query, POSTs it to the endpoint, and returns the first non-zero
@@ -137,9 +156,7 @@ func (s *HTTPSource) lookupOnce(ctx context.Context, q Query) (decimal.Decimal, 
 	if err != nil {
 		return decimal.Zero, domain.PriceSourceLive, fmt.Errorf("build request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "c3x/dev (+https://github.com/c3xdev/c3x)")
+	s.setRequestHeaders(req)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -334,9 +351,7 @@ func (s *HTTPSource) Spread(ctx context.Context, q Query) (PriceSpread, error) {
 	if err != nil {
 		return PriceSpread{}, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "c3x/dev (+https://github.com/c3xdev/c3x)")
+	s.setRequestHeaders(req)
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return PriceSpread{}, err

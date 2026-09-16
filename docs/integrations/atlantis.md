@@ -19,7 +19,33 @@ steps. We wire c3x as a post-plan step:
 
 The comment carries c3x's marker (`<!-- c3x-comment:v1 -->`), which
 is distinct from Atlantis's own marker — both comments live side by
-side on the PR without conflicting.
+side on the PR without conflicting. Re-running c3x on the same PR
+updates that comment in place.
+
+## Multiple projects in one PR (`--comment-tag`)
+
+When one PR touches several Atlantis projects (per environment, or
+per Terraform directory in a monorepo), each c3x run would otherwise
+find and overwrite the same comment. Pass `--comment-tag` to namespace
+the marker so each project keeps its own comment:
+
+```yaml
+        - run: |
+            c3x comment gitlab \
+              --path $PLANFILE.json \
+              --comment-tag "$PROJECT_NAME" \
+              --token "$ATLANTIS_GITLAB_TOKEN"
+```
+
+Atlantis exposes `$PROJECT_NAME`, `$WORKSPACE`, and `$REPO_REL_DIR`;
+any of them (or a combination) makes a good tag — e.g.
+`--comment-tag "$WORKSPACE-$REPO_REL_DIR"`. The tag also reads from
+`$C3X_COMMENT_TAG` if you'd rather set it in the environment. Each
+distinct tag maintains an independent comment on the same MR.
+
+To always post the newest estimate at the bottom of a busy MR rather
+than editing the note where it first landed, add `--recreate` (it
+deletes the previous c3x comment and posts a fresh one).
 
 ## Configuration
 
@@ -81,6 +107,23 @@ a baseline file saved earlier:
                 --budget-delta 50    # fail when PR adds >$50/mo
             fi
 ```
+
+## Self-hosted pricing API
+
+If you point c3x at your own `c3x-pricing-api` instead of the public
+endpoint, set the endpoint (and, when the API has `API_KEY` enabled,
+the matching token) in the Atlantis runner environment:
+
+```yaml
+    environment:
+      C3X_PRICING_ENDPOINT: https://pricing.internal/graphql
+      C3X_PRICING_TOKEN: ${C3X_PRICING_TOKEN}   # sent as Authorization: Bearer
+```
+
+c3x sends the token as `Authorization: Bearer <token>` (the pricing
+API also accepts `X-Api-Key`) on every pricing request, including
+`c3x pricing sync`. Leave `C3X_PRICING_TOKEN` unset for an API running
+without `API_KEY`. Verify connectivity and auth with `c3x doctor`.
 
 ## Pre-built image
 

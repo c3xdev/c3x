@@ -204,6 +204,7 @@ func runEstimate(
 
 	prices, err := pricing.BuildChain(pricing.ChainOptions{
 		Endpoint:  resolved.PricingEndpoint,
+		Token:     resolved.PricingToken,
 		CachePath: cachePath,
 		Offline:   resolved.Offline,
 		NoCache:   resolved.NoCache,
