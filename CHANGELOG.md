@@ -6,6 +6,13 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `--pricing-token` flag on `estimate`, `diff`, `recommend`, and
+  `pricing sync`, as a CLI alternative to `$C3X_PRICING_TOKEN` /
+  `pricing.token` for authenticating to a self-hosted pricing API. The
+  flag takes precedence over the env var.
+
 ## [0.3.0] - 2026-09-16
 
 ### Added

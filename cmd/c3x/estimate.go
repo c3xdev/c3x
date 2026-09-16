@@ -40,6 +40,7 @@ func newEstimateCmd() *cobra.Command {
 		noCache         bool
 		cachePath       string
 		pricingEndpoint string
+		pricingToken    string
 		saveBaseline    string
 		budget          float64
 		inlineDemo      bool
@@ -92,6 +93,9 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 			if pricingEndpoint != "" {
 				flags["pricing.endpoint"] = pricingEndpoint
 			}
+			if pricingToken != "" {
+				flags["pricing.token"] = pricingToken
+			}
 			if currency != "" {
 				flags["currency"] = currency
 			}
@@ -127,6 +131,8 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 		"SQLite file used by the on-disk price cache (default: platform XDG cache dir)")
 	cmd.Flags().StringVar(&pricingEndpoint, "pricing-endpoint", "",
 		"override the GraphQL endpoint (default: https://pricing.c3x.dev/graphql)")
+	cmd.Flags().StringVar(&pricingToken, "pricing-token", "",
+		"bearer token for a self-hosted pricing API (default: $C3X_PRICING_TOKEN)")
 
 	cmd.Flags().StringVar(&usagePath, "usage", "",
 		"path to a c3x-usage.yml file with runtime usage quantities (monthly_requests, monthly_storage_gb, etc.)")

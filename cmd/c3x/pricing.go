@@ -149,6 +149,7 @@ func newPricingSyncCmd() *cobra.Command {
 	var (
 		cachePath       string
 		pricingEndpoint string
+		pricingToken    string
 		providers       []string
 		regions         []string
 		concurrency     int
@@ -167,6 +168,9 @@ func newPricingSyncCmd() *cobra.Command {
 			}
 			if pricingEndpoint != "" {
 				flags["pricing.endpoint"] = pricingEndpoint
+			}
+			if pricingToken != "" {
+				flags["pricing.token"] = pricingToken
 			}
 			resolved, err := config.Resolve(".", flags)
 			if err != nil {
@@ -222,6 +226,7 @@ func newPricingSyncCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&cachePath, "cache-path", "", "override path (else platform default)")
 	cmd.Flags().StringVar(&pricingEndpoint, "pricing-endpoint", "", "override the GraphQL endpoint")
+	cmd.Flags().StringVar(&pricingToken, "pricing-token", "", "bearer token for a self-hosted pricing API (default: $C3X_PRICING_TOKEN)")
 	cmd.Flags().StringSliceVar(&providers, "providers", nil, "limit to providers (aws,azure,gcp); default all")
 	cmd.Flags().StringSliceVar(&regions, "regions", nil, "regions to warm; default each provider's reference region")
 	cmd.Flags().IntVar(&concurrency, "concurrency", 0, "max concurrent service/region fetches (default 6)")

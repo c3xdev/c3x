@@ -122,34 +122,44 @@ the matching token) in the Atlantis runner environment:
 
 c3x sends the token as `Authorization: Bearer <token>` (the pricing
 API also accepts `X-Api-Key`) on every pricing request, including
-`c3x pricing sync`. Leave `C3X_PRICING_TOKEN` unset for an API running
-without `API_KEY`. Verify connectivity and auth with `c3x doctor`.
+`c3x pricing sync`. You can also pass it per-invocation with
+`--pricing-token` instead of the env var. Leave both unset for an API
+running without `API_KEY`. Verify connectivity and auth with
+`c3x doctor`.
 
-## Pre-built image
+## Atlantis image with c3x
 
-We ship a thin Atlantis-compatible image that has `c3x` + `terraform`
-+ the standard Atlantis shell tools on its path:
+`examples/atlantis/Dockerfile` builds `c3x` from source and layers it
+onto the official Atlantis image, so `c3x` + `terraform` + the standard
+Atlantis shell tools are all on the path. The build context is the repo
+root (the Dockerfile compiles `./cmd/c3x`), so build from a c3x checkout
+and push to your own registry:
 
 ```bash
-docker pull ghcr.io/c3xdev/c3x-atlantis:latest
+# from the root of a c3x checkout (check out the tag you want to ship)
+docker build -f examples/atlantis/Dockerfile -t your-registry/c3x-atlantis:latest .
+docker push your-registry/c3x-atlantis:latest
 ```
 
-Reference from your Atlantis deployment:
+Reference it from your Atlantis deployment:
 
 ```yaml
 # docker-compose.yml
 services:
   atlantis:
-    image: ghcr.io/c3xdev/c3x-atlantis:latest
+    image: your-registry/c3x-atlantis:latest
     environment:
       ATLANTIS_GH_USER: ${ATLANTIS_GH_USER}
       ATLANTIS_GH_TOKEN: ${ATLANTIS_GH_TOKEN}
-      ...
+      # For a self-hosted pricing API with API_KEY set:
+      # C3X_PRICING_ENDPOINT: https://pricing.internal/graphql
+      # C3X_PRICING_TOKEN: ${C3X_PRICING_TOKEN}
 ```
 
-(The image isn't published yet — pending the release pipeline in
-ROADMAP item G. Build locally from `examples/atlantis/Dockerfile`
-in the meantime.)
+There is no official `c3x-atlantis` image published yet; build your own
+from the Dockerfile above. It compiles c3x from the checkout you build
+from, so check out the c3x tag you want to ship before building, and
+pin the Atlantis base tag (not `:latest`) in production.
 
 ## Troubleshooting
 

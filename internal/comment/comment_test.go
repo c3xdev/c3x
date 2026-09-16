@@ -147,6 +147,56 @@ func TestPostUpdatesExistingComment(t *testing.T) {
 	}
 }
 
+// TestGitHubRecreateDeletesThenCreates verifies --recreate on GitHub:
+// an existing marked comment is DELETEd and a fresh one POSTed, not
+// PATCHed in place.
+func TestGitHubRecreateDeletesThenCreates(t *testing.T) {
+	var deleted, created, patched bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/comments"):
+			existing := comment.Marker + "\n(old)"
+			id := int64(7)
+			_ = json.NewEncoder(w).Encode([]github.IssueComment{{ID: &id, Body: &existing}})
+		case r.Method == http.MethodDelete:
+			deleted = true
+			w.WriteHeader(http.StatusNoContent)
+		case r.Method == http.MethodPost:
+			created = true
+			var ic github.IssueComment
+			_ = json.NewDecoder(r.Body).Decode(&ic)
+			newID := int64(8)
+			ic.ID = &newID
+			_ = json.NewEncoder(w).Encode(&ic)
+		case r.Method == http.MethodPatch:
+			patched = true
+			w.WriteHeader(http.StatusOK)
+		default:
+			w.WriteHeader(http.StatusNotImplemented)
+		}
+	}))
+	defer srv.Close()
+
+	p, err := comment.NewGitHubPoster("test-token",
+		comment.Target{Owner: "acme", Repo: "widgets", PR: 1},
+		comment.Options{Recreate: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := comment.SetClientBaseURL(p, srv.URL); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.Post(context.Background(), "fresh"); err != nil {
+		t.Fatal(err)
+	}
+	if !deleted || !created {
+		t.Errorf("recreate should DELETE then POST; deleted=%v created=%v", deleted, created)
+	}
+	if patched {
+		t.Error("recreate must not PATCH in place")
+	}
+}
+
 // newPosterWithBaseURL constructs a GitHubPoster pointing at a
 // stub server instead of api.github.com.
 func newPosterWithBaseURL(t *testing.T, baseURL string) *comment.GitHubPoster {
