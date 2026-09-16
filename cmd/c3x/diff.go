@@ -166,6 +166,7 @@ func computeCurrent(
 	}
 	prices, err := pricing.BuildChain(pricing.ChainOptions{
 		Endpoint:  resolved.PricingEndpoint,
+		Token:     resolved.PricingToken,
 		CachePath: pricePath,
 		Offline:   resolved.Offline,
 		NoCache:   resolved.NoCache,

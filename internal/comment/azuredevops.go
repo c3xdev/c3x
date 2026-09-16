@@ -95,15 +95,17 @@ func AutoDetectAzureDevOps() (AzureDevOpsTarget, string, error) {
 
 // AzureDevOpsPoster talks to the Azure DevOps REST API.
 type AzureDevOpsPoster struct {
-	client  *http.Client
-	baseURL string
-	token   string
-	target  AzureDevOpsTarget
+	client   *http.Client
+	baseURL  string
+	token    string
+	target   AzureDevOpsTarget
+	marker   string
+	recreate bool
 }
 
 // NewAzureDevOpsPoster takes a personal access token + the target.
 // baseURL defaults to dev.azure.com.
-func NewAzureDevOpsPoster(token, baseURL string, target AzureDevOpsTarget) (*AzureDevOpsPoster, error) {
+func NewAzureDevOpsPoster(token, baseURL string, target AzureDevOpsTarget, opts ...Options) (*AzureDevOpsPoster, error) {
 	if token == "" {
 		return nil, errors.New("azure devops PAT is empty (set AZURE_DEVOPS_TOKEN or SYSTEM_ACCESSTOKEN, or pass --token)")
 	}
@@ -113,11 +115,14 @@ func NewAzureDevOpsPoster(token, baseURL string, target AzureDevOpsTarget) (*Azu
 	if baseURL == "" {
 		baseURL = DefaultAzureDevOpsBaseURL
 	}
+	o := resolveOptions(opts)
 	return &AzureDevOpsPoster{
-		client:  &http.Client{Timeout: DefaultHTTPTimeout},
-		baseURL: strings.TrimRight(baseURL, "/"),
-		token:   token,
-		target:  target,
+		client:   &http.Client{Timeout: DefaultHTTPTimeout},
+		baseURL:  strings.TrimRight(baseURL, "/"),
+		token:    token,
+		target:   target,
+		marker:   MarkerFor(o.Tag),
+		recreate: o.Recreate,
 	}, nil
 }
 
@@ -142,8 +147,17 @@ func (p *AzureDevOpsPoster) Post(ctx context.Context, body string) error {
 	if err != nil {
 		return fmt.Errorf("looking up existing thread: %w", err)
 	}
-	fullBody := Marker + "\n" + body
+	fullBody := p.marker + "\n" + body
 	if threadID == 0 {
+		return p.createThread(ctx, fullBody)
+	}
+	// Recreate: delete the old thread's root comment (which removes the
+	// thread) and post a fresh thread so the latest estimate lands at
+	// the bottom of the PR.
+	if p.recreate {
+		if err := p.deleteComment(ctx, threadID, commentID); err != nil {
+			return fmt.Errorf("deleting previous comment %d: %w", commentID, err)
+		}
 		return p.createThread(ctx, fullBody)
 	}
 	return p.editComment(ctx, threadID, commentID, fullBody)
@@ -166,7 +180,7 @@ func (p *AzureDevOpsPoster) findExisting(ctx context.Context) (int, int, error) 
 	}
 	for _, th := range list.Value {
 		for _, c := range th.Comments {
-			if strings.Contains(c.Content, Marker) {
+			if strings.Contains(c.Content, p.marker) {
 				return th.ID, c.ID, nil
 			}
 		}
@@ -208,6 +222,20 @@ func (p *AzureDevOpsPoster) editComment(ctx context.Context, threadID, commentID
 	if resp.StatusCode >= 300 {
 		raw, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("edit comment %d HTTP %d: %s", commentID, resp.StatusCode, string(raw))
+	}
+	return nil
+}
+
+func (p *AzureDevOpsPoster) deleteComment(ctx context.Context, threadID, commentID int) error {
+	endpoint := p.threadsURL(fmt.Sprintf("/%d/comments/%d", threadID, commentID))
+	resp, err := p.do(ctx, http.MethodDelete, endpoint, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode >= 300 {
+		raw, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("delete comment %d HTTP %d: %s", commentID, resp.StatusCode, string(raw))
 	}
 	return nil
 }

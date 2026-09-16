@@ -41,6 +41,7 @@ func Resolve(projectDir string, flags map[string]any) (Resolved, error) {
 	v.SetDefault("budget_delta", d.BudgetDelta)
 	v.SetDefault("verbosity", d.Verbosity)
 	v.SetDefault("pricing.endpoint", d.PricingEndpoint)
+	v.SetDefault("pricing.token", d.PricingToken)
 
 	// Layer 2: user config file (silent if missing).
 	if userPath, err := UserConfigPath(); err == nil {
@@ -86,6 +87,7 @@ func Resolve(projectDir string, flags map[string]any) (Resolved, error) {
 		Currency:        currency,
 		Format:          v.GetString("format"),
 		PricingEndpoint: v.GetString("pricing.endpoint"),
+		PricingToken:    v.GetString("pricing.token"),
 		Offline:         v.GetBool("offline"),
 		NoRemoteModules: v.GetBool("no_remote_modules"),
 		NoCache:         v.GetBool("no_cache"),

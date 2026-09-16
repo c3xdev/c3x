@@ -6,6 +6,25 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `c3x comment <forge>` gained `--comment-tag` (all forges): namespaces
+  the comment marker so multiple runs on one PR/MR — one per
+  environment or Terraform directory in a monorepo — keep independent
+  comments instead of overwriting each other. Falls back to
+  `$C3X_COMMENT_TAG`. Restores the pre-rewrite per-directory comment
+  workflow. (#55)
+- `c3x comment <forge>` gained `--recreate` (all forges): deletes the
+  previous c3x comment and posts a fresh one at the bottom of the
+  thread instead of updating it in place — for busy PRs where "newest
+  at the bottom" reads better. (#55)
+- Pricing API authentication: set `C3X_PRICING_TOKEN` (or `pricing.token`
+  in config) and c3x sends `Authorization: Bearer <token>` on every
+  pricing request, including `c3x pricing sync` and `c3x doctor`. This
+  lets the CLI talk to a self-hosted `c3x-pricing-api` that has
+  `API_KEY` enabled (the server also accepts `X-Api-Key`). Empty by
+  default, so the public endpoint is unaffected. (#55)
+
 ## [0.2.1] - 2026-07-28
 
 ### Added

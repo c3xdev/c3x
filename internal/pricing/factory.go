@@ -19,6 +19,7 @@ import (
 //	NoCache   → true bypasses the disk layer (still memoised)
 type ChainOptions struct {
 	Endpoint  string
+	Token     string
 	CachePath string
 	TTL       time.Duration
 	Offline   bool
@@ -66,7 +67,7 @@ func BuildChain(opts ChainOptions) (Source, error) {
 	// DefaultRetryPolicy.MaxAttempts tries before bubbling up. Cache
 	// hits never reach this layer, so the retry cost is only paid on
 	// real upstream-hitting paths.
-	live := withRetry(NewHTTPSource(WithEndpoint(opts.Endpoint)), DefaultRetryPolicy)
+	live := withRetry(NewHTTPSource(WithEndpoint(opts.Endpoint), WithToken(opts.Token)), DefaultRetryPolicy)
 
 	var base Source
 	if opts.NoCache {

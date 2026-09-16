@@ -150,6 +150,9 @@ func checkEndpoint(ctx context.Context) checkResult {
 		}
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if resolved.PricingToken != "" {
+		req.Header.Set("Authorization", "Bearer "+resolved.PricingToken)
+	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return checkResult{

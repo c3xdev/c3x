@@ -39,16 +39,17 @@ type enumPrice struct {
 type productEnumerator struct {
 	client   *http.Client
 	endpoint string
+	token    string
 }
 
-func newProductEnumerator(client *http.Client, endpoint string) *productEnumerator {
+func newProductEnumerator(client *http.Client, endpoint, token string) *productEnumerator {
 	if client == nil {
 		client = &http.Client{Timeout: DefaultHTTPTimeout}
 	}
 	if endpoint == "" {
 		endpoint = DefaultEndpoint
 	}
-	return &productEnumerator{client: client, endpoint: endpoint}
+	return &productEnumerator{client: client, endpoint: endpoint, token: token}
 }
 
 // each invokes fn for every product in (provider, service, region),
@@ -92,6 +93,9 @@ func (e *productEnumerator) fetchPage(
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "c3x/dev (+https://github.com/c3xdev/c3x)")
+	if e.token != "" {
+		req.Header.Set("Authorization", "Bearer "+e.token)
+	}
 
 	resp, err := e.client.Do(req)
 	if err != nil {

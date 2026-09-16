@@ -73,6 +73,31 @@ region = "eu-west-1"
 	}
 }
 
+func TestResolvePricingTokenDefaultsEmpty(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	got, err := config.Resolve(t.TempDir(), nil)
+	if err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+	if got.PricingToken != "" {
+		t.Errorf("PricingToken = %q, want empty by default (public endpoint needs no auth)", got.PricingToken)
+	}
+}
+
+func TestResolvePricingTokenFromEnv(t *testing.T) {
+	// t.Setenv is incompatible with t.Parallel; runs sequentially.
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("C3X_PRICING_TOKEN", "self-hosted-key")
+
+	got, err := config.Resolve(t.TempDir(), nil)
+	if err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+	if got.PricingToken != "self-hosted-key" {
+		t.Errorf("PricingToken = %q, want %q from C3X_PRICING_TOKEN", got.PricingToken, "self-hosted-key")
+	}
+}
+
 func TestResolveFlagsOverrideEverything(t *testing.T) {
 	// t.Setenv is incompatible with t.Parallel; tests that mutate env
 	// vars run sequentially.
