@@ -6,16 +6,23 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `c3x comment <forge>` gained `--expand` (all forges): opt out of the
+  new collapsible layout and post the full breakdown always-expanded,
+  for anyone who preferred the flat comment body. (#55)
+
 ### Fixed
 
 - `c3x comment <forge>` now posts the collapsible summary+details
-  layout: a one-line monthly-cost headline (or the per-PR delta with
-  `--baseline`) with the per-resource breakdown tucked into a
-  `<details>` block, restoring the pre-rewrite comment format. Long
+  layout by default: a one-line monthly-cost headline (or the per-PR
+  delta with `--baseline`) with the per-resource breakdown tucked into
+  a `<details>` block, restoring the pre-rewrite comment format. Long
   estimates no longer flood the MR/PR discussion thread. The doc
   comments that described this layout are now accurate — the layer was
   previously unimplemented. `c3x estimate --format markdown` is
-  unchanged (flat, always-expanded). (#55)
+  unchanged (flat, always-expanded), and `--expand` restores the flat
+  body on the comment command. (#55)
 
 ## [0.3.1] - 2026-09-16
 

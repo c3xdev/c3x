@@ -236,7 +236,7 @@ func TestFormatCommentDiffRendersDelta(t *testing.T) {
 		}},
 	}
 
-	body, err := comment.FormatCommentDiff(domain.ComputeDiff(base, current))
+	body, err := comment.FormatCommentDiff(domain.ComputeDiff(base, current), false)
 	if err != nil {
 		t.Fatalf("FormatCommentDiff: %v", err)
 	}
@@ -273,7 +273,7 @@ func TestFormatCommentCollapsesDetails(t *testing.T) {
 		}},
 	}
 
-	body, err := comment.FormatComment(est)
+	body, err := comment.FormatComment(est, false)
 	if err != nil {
 		t.Fatalf("FormatComment: %v", err)
 	}
@@ -286,5 +286,17 @@ func TestFormatCommentCollapsesDetails(t *testing.T) {
 	// breakdown is actually inside the collapsible block.
 	if strings.Index(body, "<details>") > strings.Index(body, "aws_instance.web") {
 		t.Errorf("resource table is not inside the <details> block\n---\n%s", body)
+	}
+
+	// --expand opts out: flat, always-expanded layout with no <details>.
+	flat, err := comment.FormatComment(est, true)
+	if err != nil {
+		t.Fatalf("FormatComment(expand): %v", err)
+	}
+	if strings.Contains(flat, "<details>") {
+		t.Errorf("--expand body should not wrap details\n---\n%s", flat)
+	}
+	if !strings.Contains(flat, "## c3x estimate") || !strings.Contains(flat, "Project total") {
+		t.Errorf("--expand body should be the flat RenderMarkdown layout\n---\n%s", flat)
 	}
 }

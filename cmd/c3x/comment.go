@@ -23,31 +23,34 @@ func commentBody(
 	resolved config.Resolved,
 	varFiles, vars []string,
 	baselinePath string,
+	expand bool,
 ) (string, error) {
 	current, err := computeCurrent(ctx, rawPath, resolved, varFiles, vars)
 	if err != nil {
 		return "", err
 	}
 	if baselinePath == "" {
-		return comment.FormatComment(current)
+		return comment.FormatComment(current, expand)
 	}
 	baseline, err := loadBaseline(baselinePath)
 	if err != nil {
 		return "", fmt.Errorf("loading baseline %s: %w", baselinePath, err)
 	}
-	return comment.FormatCommentDiff(domain.ComputeDiff(baseline, current))
+	return comment.FormatCommentDiff(domain.ComputeDiff(baseline, current), expand)
 }
 
 // addCommentBehaviorFlags registers the flags shared by every forge
 // subcommand that control how the comment is managed (independent of
 // which forge). Kept in one place so the four subcommands stay in
 // lockstep.
-func addCommentBehaviorFlags(cmd *cobra.Command, tag *string, recreate *bool) {
+func addCommentBehaviorFlags(cmd *cobra.Command, tag *string, recreate, expand *bool) {
 	cmd.Flags().StringVar(tag, "comment-tag", "",
 		"namespace the comment marker so multiple c3x runs on one PR/MR keep separate comments "+
 			"(default: $C3X_COMMENT_TAG) — e.g. one per environment or Terraform directory")
 	cmd.Flags().BoolVar(recreate, "recreate", false,
 		"delete the previous c3x comment and post a fresh one at the bottom, instead of updating it in place")
+	cmd.Flags().BoolVar(expand, "expand", false,
+		"post the full breakdown expanded instead of the default collapsible summary + <details> layout")
 }
 
 // commentOptions builds comment.Options from the shared flags, falling
@@ -90,6 +93,7 @@ func newCommentAzureDevOpsCmd() *cobra.Command {
 		baselinePath string
 		commentTag   string
 		recreate     bool
+		expand       bool
 	)
 	cmd := &cobra.Command{
 		Use:     "azuredevops",
@@ -136,7 +140,7 @@ token reads from AZURE_DEVOPS_TOKEN or SYSTEM_ACCESSTOKEN.`,
 				return fmt.Errorf("resolving config: %w", err)
 			}
 
-			body, err := commentBody(cmd.Context(), path, resolved, varFiles, vars, baselinePath)
+			body, err := commentBody(cmd.Context(), path, resolved, varFiles, vars, baselinePath, expand)
 			if err != nil {
 				return err
 			}
@@ -163,7 +167,7 @@ token reads from AZURE_DEVOPS_TOKEN or SYSTEM_ACCESSTOKEN.`,
 	cmd.Flags().StringArrayVar(&vars, "var", nil, "variable override name=value (repeatable)")
 	cmd.Flags().StringVar(&baselinePath, "baseline", "",
 		"saved baseline JSON (from `c3x estimate --save-baseline`); posts a cost delta instead of an absolute estimate")
-	addCommentBehaviorFlags(cmd, &commentTag, &recreate)
+	addCommentBehaviorFlags(cmd, &commentTag, &recreate, &expand)
 	return cmd
 }
 
@@ -210,6 +214,7 @@ func newCommentBitbucketCmd() *cobra.Command {
 		baselinePath string
 		commentTag   string
 		recreate     bool
+		expand       bool
 	)
 	cmd := &cobra.Command{
 		Use:   "bitbucket",
@@ -255,7 +260,7 @@ by a dedicated implementation.`,
 				return fmt.Errorf("resolving config: %w", err)
 			}
 
-			body, err := commentBody(cmd.Context(), path, resolved, varFiles, vars, baselinePath)
+			body, err := commentBody(cmd.Context(), path, resolved, varFiles, vars, baselinePath, expand)
 			if err != nil {
 				return err
 			}
@@ -282,7 +287,7 @@ by a dedicated implementation.`,
 	cmd.Flags().StringArrayVar(&vars, "var", nil, "variable override name=value (repeatable)")
 	cmd.Flags().StringVar(&baselinePath, "baseline", "",
 		"saved baseline JSON (from `c3x estimate --save-baseline`); posts a cost delta instead of an absolute estimate")
-	addCommentBehaviorFlags(cmd, &commentTag, &recreate)
+	addCommentBehaviorFlags(cmd, &commentTag, &recreate, &expand)
 	return cmd
 }
 
@@ -322,6 +327,7 @@ func newCommentGitLabCmd() *cobra.Command {
 		baselinePath string
 		commentTag   string
 		recreate     bool
+		expand       bool
 	)
 	cmd := &cobra.Command{
 		Use:   "gitlab",
@@ -367,7 +373,7 @@ or CI_JOB_TOKEN, or pass --token.`,
 				return fmt.Errorf("resolving config: %w", err)
 			}
 
-			body, err := commentBody(cmd.Context(), path, resolved, varFiles, vars, baselinePath)
+			body, err := commentBody(cmd.Context(), path, resolved, varFiles, vars, baselinePath, expand)
 			if err != nil {
 				return err
 			}
@@ -392,7 +398,7 @@ or CI_JOB_TOKEN, or pass --token.`,
 	cmd.Flags().StringArrayVar(&vars, "var", nil, "variable override name=value (repeatable)")
 	cmd.Flags().StringVar(&baselinePath, "baseline", "",
 		"saved baseline JSON (from `c3x estimate --save-baseline`); posts a cost delta instead of an absolute estimate")
-	addCommentBehaviorFlags(cmd, &commentTag, &recreate)
+	addCommentBehaviorFlags(cmd, &commentTag, &recreate, &expand)
 	return cmd
 }
 
@@ -432,6 +438,7 @@ func newCommentGitHubCmd() *cobra.Command {
 		baselinePath string
 		commentTag   string
 		recreate     bool
+		expand       bool
 	)
 	cmd := &cobra.Command{
 		Use:   "github",
@@ -470,7 +477,7 @@ The token reads from GITHUB_TOKEN (set automatically by Actions) or
 				return fmt.Errorf("resolving config: %w", err)
 			}
 
-			body, err := commentBody(cmd.Context(), path, resolved, varFiles, vars, baselinePath)
+			body, err := commentBody(cmd.Context(), path, resolved, varFiles, vars, baselinePath, expand)
 			if err != nil {
 				return err
 			}
@@ -493,7 +500,7 @@ The token reads from GITHUB_TOKEN (set automatically by Actions) or
 	cmd.Flags().StringArrayVar(&vars, "var", nil, "variable override name=value (repeatable)")
 	cmd.Flags().StringVar(&baselinePath, "baseline", "",
 		"saved baseline JSON (from `c3x estimate --save-baseline`); posts a cost delta instead of an absolute estimate")
-	addCommentBehaviorFlags(cmd, &commentTag, &recreate)
+	addCommentBehaviorFlags(cmd, &commentTag, &recreate, &expand)
 	return cmd
 }
 

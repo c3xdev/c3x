@@ -1,9 +1,9 @@
 c3x: --verbose
 c3x comment: 
-c3x comment azuredevops: --base-url --baseline --comment-tag --offline --org --path --pr --project --recreate --repo --token --var --var-file
-c3x comment bitbucket: --base-url --baseline --comment-tag --offline --path --pr --recreate --repo --token --user --var --var-file --workspace
-c3x comment github: --baseline --comment-tag --offline --owner --path --pr --recreate --repo --token --var --var-file
-c3x comment gitlab: --base-url --baseline --comment-tag --mr --offline --path --project --recreate --token --var --var-file
+c3x comment azuredevops: --base-url --baseline --comment-tag --expand --offline --org --path --pr --project --recreate --repo --token --var --var-file
+c3x comment bitbucket: --base-url --baseline --comment-tag --expand --offline --path --pr --recreate --repo --token --user --var --var-file --workspace
+c3x comment github: --baseline --comment-tag --expand --offline --owner --path --pr --recreate --repo --token --var --var-file
+c3x comment gitlab: --base-url --baseline --comment-tag --expand --mr --offline --path --project --recreate --token --var --var-file
 c3x configure: --non-interactive
 c3x diff: --baseline --budget-delta --cache-path --format --no-cache --offline --path --pricing-endpoint --pricing-token --region --var --var-file
 c3x doctor: --quiet
