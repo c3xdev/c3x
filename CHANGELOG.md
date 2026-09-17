@@ -6,6 +6,8 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-09-17
+
 ### Added
 
 - `c3x comment <forge>` now derives the cost delta straight from a
