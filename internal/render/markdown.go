@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/c3xdev/c3x/internal/domain"
+	"github.com/shopspring/decimal"
 )
 
 // RenderMarkdown formats an Estimate as flat, always-expanded
@@ -157,28 +158,63 @@ func markdownDiffGroups(d domain.Diff) string {
 }
 
 // RenderMarkdownDiffComment is the collapsible PR/MR layout for a cost
-// diff: the headline total-delta line stays visible while the
-// Added/Modified/Removed tables collapse into a <details> block. The
-// summary is the per-PR delta ("$894/mo → $1,038/mo ▲ +$144") reviewers
-// care about; the breakdown is one click away.
+// diff. The headline leads with the dollar change ("Monthly cost
+// increased by $144.00 (+16.1%)") because that delta is what financial
+// approvers act on, followed by a baseline/new/change table; the
+// per-resource Added/Modified/Removed breakdown collapses into a
+// <details> block, one click away.
 func RenderMarkdownDiffComment(d domain.Diff) string {
-	cur := d.Currency
+	sym := d.Currency.Symbol()
 	var b strings.Builder
 	b.WriteString("#### 💰 C3X report\n\n")
-	fmt.Fprintf(&b, "**Monthly estimate: %s%s/mo → %s%s/mo  %s**\n\n",
-		cur.Symbol(), d.BaselineTotal,
-		cur.Symbol(), d.CurrentTotal,
-		signedWithIndicator(cur.Symbol(), d.TotalDelta.String()))
+
+	// Lead with the change in dollars (and percent) — the number
+	// approvers care about most, mirroring the pre-rewrite CLI.
+	pct := diffPercent(d)
+	switch {
+	case d.TotalDelta.IsPositive():
+		fmt.Fprintf(&b, "**Monthly cost increased by %s%s%s 📈**\n\n",
+			sym, d.TotalDelta.Abs().StringFixed(2), pct)
+	case d.TotalDelta.IsNegative():
+		fmt.Fprintf(&b, "**Monthly cost decreased by %s%s%s 📉**\n\n",
+			sym, d.TotalDelta.Abs().StringFixed(2), pct)
+	default:
+		fmt.Fprintf(&b, "**Monthly cost unchanged at %s%s/mo**\n\n",
+			sym, d.CurrentTotal.StringFixed(2))
+	}
+
+	// Baseline / new / change so all three numbers are visible at once.
+	b.WriteString("| Baseline | New | Change |\n|---:|---:|---:|\n")
+	fmt.Fprintf(&b, "| %s%s/mo | %s%s/mo | %s |\n\n",
+		sym, d.BaselineTotal.StringFixed(2),
+		sym, d.CurrentTotal.StringFixed(2),
+		signedWithIndicator(sym, d.TotalDelta.StringFixed(2)))
 
 	groups := markdownDiffGroups(d)
 	if groups == "" {
-		b.WriteString("_No cost changes in this change set._\n")
+		b.WriteString("_No line-item changes._\n")
 		return b.String()
 	}
 	b.WriteString("<details><summary>Estimate details</summary>\n\n")
 	b.WriteString(groups)
 	b.WriteString("</details>\n")
 	return b.String()
+}
+
+// diffPercent renders the change as a percent of the baseline —
+// " (+16.1%)" / " (-5.2%)" — for the diff-comment headline. Returns ""
+// when there's no baseline to divide by (a brand-new project) or the
+// change is zero, so the caller can omit it cleanly.
+func diffPercent(d domain.Diff) string {
+	if d.BaselineTotal.IsZero() || d.TotalDelta.IsZero() {
+		return ""
+	}
+	pct := d.TotalDelta.Div(d.BaselineTotal).Mul(decimal.NewFromInt(100))
+	sign := "+"
+	if pct.IsNegative() {
+		sign = "-"
+	}
+	return fmt.Sprintf(" (%s%s%%)", sign, pct.Abs().StringFixed(1))
 }
 
 // escapeMD escapes the pipe character so resource labels and

@@ -15,14 +15,17 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - `c3x comment <forge>` now posts the collapsible summary+details
-  layout by default: a one-line monthly-cost headline (or the per-PR
-  delta with `--baseline`) with the per-resource breakdown tucked into
-  a `<details>` block, restoring the pre-rewrite comment format. Long
-  estimates no longer flood the MR/PR discussion thread. The doc
-  comments that described this layout are now accurate — the layer was
-  previously unimplemented. `c3x estimate --format markdown` is
-  unchanged (flat, always-expanded), and `--expand` restores the flat
-  body on the comment command. (#55)
+  layout by default: a one-line summary with the per-resource breakdown
+  tucked into a `<details>` block, restoring the pre-rewrite comment
+  format. With `--baseline`, the summary leads with the dollar change —
+  "Monthly cost increased by $144.00 (+16.1%) 📈" plus a
+  baseline/new/change table — so financial approvers see the delta
+  first; without a baseline it shows the monthly total. Long estimates
+  no longer flood the MR/PR discussion thread. The doc comments that
+  described this layout are now accurate — the layer was previously
+  unimplemented. `c3x estimate --format markdown` is unchanged (flat,
+  always-expanded), and `--expand` restores the flat body on the
+  comment command. (#55)
 
 ## [0.3.1] - 2026-09-16
 

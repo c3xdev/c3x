@@ -240,10 +240,17 @@ func TestFormatCommentDiffRendersDelta(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FormatCommentDiff: %v", err)
 	}
-	// Collapsible PR/MR layout: the C3X report summary carries the
-	// baseline→current delta, and the per-resource tables sit inside a
-	// <details> block.
-	for _, want := range []string{"C3X report", "894.32", "1038.32", "144", "<details>", "</details>"} {
+	// Collapsible PR/MR layout: the headline leads with the dollar change
+	// (and percent) approvers act on, a Baseline/New/Change table shows
+	// all three numbers, and the per-resource tables sit inside <details>.
+	for _, want := range []string{
+		"C3X report",
+		"increased by $144.00", // headline delta in dollars
+		"16.1%",                // percent of baseline (144.00 / 894.32)
+		"| Baseline | New | Change |",
+		"894.32", "1038.32",
+		"<details>", "</details>",
+	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("diff comment body missing %q\n---\n%s", want, body)
 		}
