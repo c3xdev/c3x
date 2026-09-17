@@ -5,8 +5,9 @@
 // Three formats are supported:
 //
 //	Text      — terminal-friendly with box-drawing characters
-//	Markdown  — PR-comment ready (the full PR-flavored layout is
-//	            added by `c3x comment`; this is a faithful render)
+//	Markdown  — flat, always-expanded tables (RenderMarkdown). The
+//	            collapsible summary+<details> comment layout that
+//	            `c3x comment` posts is RenderMarkdownComment.
 //	JSON      — machine-readable, structurally identical to
 //	            domain.Estimate
 //

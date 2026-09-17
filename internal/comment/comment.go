@@ -259,20 +259,23 @@ func (p *GitHubPoster) findExisting(ctx context.Context) (*github.IssueComment, 
 	return nil, nil
 }
 
-// FormatComment renders an Estimate as the body c3x will post. We
-// hard-pin markdown here because PR comments are markdown-rendered;
-// using the user's resolved format would let `--format text` post
-// box-drawing characters that render as garbage on GitHub.
+// FormatComment renders an Estimate as the body c3x will post: the
+// collapsible summary+details comment layout ([render.RenderMarkdownComment]),
+// so a long estimate shows a one-line headline with the per-resource
+// tables tucked into a <details> block. Markdown is hard-pinned because
+// PR comments are markdown-rendered; the user's `--format` (e.g. text)
+// would post box-drawing characters that render as garbage on GitHub.
 func FormatComment(est domain.Estimate) (string, error) {
-	return render.Render(est, render.FormatMarkdown)
+	return render.RenderMarkdownComment(est), nil
 }
 
 // FormatCommentDiff renders a Diff as the body c3x will post when a
 // baseline is supplied — a per-PR cost delta ("Total: $894/mo →
-// $1,038/mo +$144") instead of an absolute estimate. Markdown is
-// hard-pinned for the same reason as [FormatComment].
+// $1,038/mo +$144") as the headline, with the Added/Modified/Removed
+// tables in a collapsible <details> block. Markdown is hard-pinned for
+// the same reason as [FormatComment].
 func FormatCommentDiff(d domain.Diff) (string, error) {
-	return render.RenderDiff(d, render.FormatMarkdown)
+	return render.RenderMarkdownDiffComment(d), nil
 }
 
 // SetClientBaseURL redirects a poster's GitHub client to the given
