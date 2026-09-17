@@ -25,18 +25,33 @@ func commentBody(
 	baselinePath string,
 	expand bool,
 ) (string, error) {
-	current, err := computeCurrent(ctx, rawPath, resolved, varFiles, vars)
+	// An explicit --baseline file overrides everything: diff the current
+	// estimate against the saved baseline.
+	if baselinePath != "" {
+		current, err := computeCurrent(ctx, rawPath, resolved, varFiles, vars)
+		if err != nil {
+			return "", err
+		}
+		baseline, err := loadBaseline(baselinePath)
+		if err != nil {
+			return "", fmt.Errorf("loading baseline %s: %w", baselinePath, err)
+		}
+		return comment.FormatCommentDiff(domain.ComputeDiff(baseline, current), expand)
+	}
+
+	// No baseline file. If the input is a Terraform plan JSON carrying
+	// prior state, the plan already holds both sides of every change, so
+	// diff before -> after straight from it (the dollar change with no
+	// extra plumbing). Otherwise (a .tf directory, or a greenfield plan)
+	// fall back to the absolute estimate.
+	current, planBaseline, err := computePlanAware(ctx, rawPath, resolved, varFiles, vars)
 	if err != nil {
 		return "", err
 	}
-	if baselinePath == "" {
-		return comment.FormatComment(current, expand)
+	if planBaseline != nil {
+		return comment.FormatCommentDiff(domain.ComputeDiff(*planBaseline, current), expand)
 	}
-	baseline, err := loadBaseline(baselinePath)
-	if err != nil {
-		return "", fmt.Errorf("loading baseline %s: %w", baselinePath, err)
-	}
-	return comment.FormatCommentDiff(domain.ComputeDiff(baseline, current), expand)
+	return comment.FormatComment(current, expand)
 }
 
 // addCommentBehaviorFlags registers the flags shared by every forge

@@ -351,3 +351,83 @@ func TestArrayExpressionsHandledGracefully(t *testing.T) {
 		t.Errorf("region should be westeurope despite array expression, got %v", got[0].Region)
 	}
 }
+
+func TestParseBaseline_PricesBeforeState(t *testing.T) {
+	// Plan with an update, a create, and a delete. The baseline (before)
+	// set must contain only the resources that had prior state (the
+	// update and the delete), each carrying its BEFORE attributes.
+	raw := `{
+		"format_version": "1.2",
+		"resource_changes": [
+			{
+				"address": "aws_instance.web",
+				"type": "aws_instance",
+				"name": "web",
+				"change": {
+					"actions": ["update"],
+					"before": { "instance_type": "m5.large" },
+					"after":  { "instance_type": "m5.xlarge" }
+				}
+			},
+			{
+				"address": "aws_s3_bucket.data",
+				"type": "aws_s3_bucket",
+				"name": "data",
+				"change": { "actions": ["create"], "before": null, "after": {} }
+			},
+			{
+				"address": "aws_db_instance.old",
+				"type": "aws_db_instance",
+				"name": "old",
+				"change": {
+					"actions": ["delete"],
+					"before": { "instance_class": "db.t3.medium" },
+					"after": null
+				}
+			}
+		]
+	}`
+	got, hasBaseline, err := plan.ParseBaselineBytes([]byte(raw), nil)
+	if err != nil {
+		t.Fatalf("ParseBaselineBytes: %v", err)
+	}
+	if !hasBaseline {
+		t.Fatal("expected hasBaseline=true when resources have prior state")
+	}
+	if len(got) != 2 {
+		t.Fatalf("expected 2 baseline resources (update + delete), got %d: %+v", len(got), got)
+	}
+	byName := map[string]map[string]any{}
+	for _, r := range got {
+		byName[r.Ref.Name] = r.Attributes
+	}
+	if byName["web"]["instance_type"] != "m5.large" {
+		t.Errorf("baseline must use BEFORE attrs; got web=%v (want m5.large)", byName["web"])
+	}
+	if _, ok := byName["data"]; ok {
+		t.Error("a create (before=null) must not appear in the baseline")
+	}
+	if _, ok := byName["old"]; !ok {
+		t.Error("a delete must appear in the baseline (its before state)")
+	}
+}
+
+func TestParseBaseline_GreenfieldHasNoBaseline(t *testing.T) {
+	// Every resource is a create → no prior state → nothing to diff.
+	raw := `{
+		"resource_changes": [
+			{ "address": "aws_instance.web", "type": "aws_instance", "name": "web",
+			  "change": { "actions": ["create"], "before": null, "after": {} } }
+		]
+	}`
+	got, hasBaseline, err := plan.ParseBaselineBytes([]byte(raw), nil)
+	if err != nil {
+		t.Fatalf("ParseBaselineBytes: %v", err)
+	}
+	if hasBaseline {
+		t.Error("greenfield plan should report hasBaseline=false")
+	}
+	if len(got) != 0 {
+		t.Errorf("greenfield baseline should be empty, got %d", len(got))
+	}
+}

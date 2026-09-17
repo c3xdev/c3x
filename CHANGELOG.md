@@ -6,6 +6,18 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `c3x comment <forge>` now derives the cost delta straight from a
+  Terraform plan JSON when no `--baseline` is supplied: a plan already
+  carries both sides of every change (`resource_changes[].change.before`
+  and the post-apply state), so c3x prices both from the single plan file
+  and renders the old/new/change summary with no baseline file and no
+  base-branch checkout. Falls back to the absolute estimate for a `.tf`
+  directory or a greenfield (all-create) plan; an explicit `--baseline`
+  still overrides. Works with exactly what CI already passes
+  (`--path=<terraform show -json output>`), no new flags. (#60)
+
 ## [0.3.2] - 2026-09-17
 
 ### Added

@@ -133,6 +133,45 @@ func loadBaseline(path string) (domain.Estimate, error) {
 	return render.DecodeEstimate(raw)
 }
 
+// buildPricingEngine assembles the catalog + pricing chain + calculator
+// once. Shared by the estimate paths so a before/after plan diff prices
+// both sides with a single setup (and one shared cache handle). The
+// returned closer must be called to release the pricing chain.
+func buildPricingEngine(ctx context.Context, resolved config.Resolved) (*calculator.Engine, func(), error) {
+	reg, err := loadCatalogAuto(ctx, resolved)
+	if err != nil {
+		return nil, nil, fmt.Errorf("loading catalog: %w", err)
+	}
+	// Default cache path for both online (write-through) and offline
+	// (read the warmed cache); only --no-cache opts out.
+	pricePath := resolved.CachePath
+	if pricePath == "" && !resolved.NoCache {
+		def, err := config.UserCachePath()
+		if err != nil {
+			return nil, nil, fmt.Errorf("resolving default cache path: %w", err)
+		}
+		pricePath = def
+	}
+	prices, err := pricing.BuildChain(pricing.ChainOptions{
+		Endpoint:  resolved.PricingEndpoint,
+		Token:     resolved.PricingToken,
+		CachePath: pricePath,
+		Offline:   resolved.Offline,
+		NoCache:   resolved.NoCache,
+		Currency:  resolved.Currency,
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("building pricing chain: %w", err)
+	}
+	engine := calculator.New(calculator.Options{
+		Registry:      reg,
+		Prices:        prices,
+		Currency:      resolved.Currency,
+		DefaultRegion: coalesce(resolved.Region, "us-east-1"),
+	})
+	return engine, func() { _ = pricing.TryClose(prices) }, nil
+}
+
 // computeCurrent re-runs the full parse → calculate pipeline for the
 // `current` side of a diff. Mirrors the estimate command's flow so
 // baseline and current are computed identically.
@@ -155,39 +194,58 @@ func computeCurrent(
 	if err != nil {
 		return domain.Estimate{}, fmt.Errorf("parsing %s: %w", rawPath, err)
 	}
-	reg, err := loadCatalogAuto(ctx, resolved)
+	engine, closeFn, err := buildPricingEngine(ctx, resolved)
 	if err != nil {
-		return domain.Estimate{}, fmt.Errorf("loading catalog: %w", err)
+		return domain.Estimate{}, err
 	}
-	// Default cache path for both online (write-through) and offline
-	// (read the warmed cache); only --no-cache opts out.
-	pricePath := resolved.CachePath
-	if pricePath == "" && !resolved.NoCache {
-		def, err := config.UserCachePath()
-		if err != nil {
-			return domain.Estimate{}, fmt.Errorf("resolving default cache path: %w", err)
-		}
-		pricePath = def
-	}
-	prices, err := pricing.BuildChain(pricing.ChainOptions{
-		Endpoint:  resolved.PricingEndpoint,
-		Token:     resolved.PricingToken,
-		CachePath: pricePath,
-		Offline:   resolved.Offline,
-		NoCache:   resolved.NoCache,
-		Currency:  resolved.Currency,
-	})
-	if err != nil {
-		return domain.Estimate{}, fmt.Errorf("building pricing chain: %w", err)
-	}
-	defer func() { _ = pricing.TryClose(prices) }()
-	engine := calculator.New(calculator.Options{
-		Registry:      reg,
-		Prices:        prices,
-		Currency:      resolved.Currency,
-		DefaultRegion: coalesce(resolved.Region, "us-east-1"),
-	})
+	defer closeFn()
 	return engine.Estimate(ctx, parsed)
+}
+
+// computePlanAware computes the post-apply (current) estimate and, when
+// the input is a Terraform plan JSON that carries prior state, also the
+// pre-apply (baseline) estimate from that same plan. This yields a cost
+// delta with no --baseline file: the plan already contains both sides of
+// every change. baseline is nil when the input isn't a plan, or is a
+// greenfield plan with no before-state — the caller then renders the
+// absolute estimate. Both sides price through one engine.
+func computePlanAware(
+	ctx context.Context,
+	rawPath string,
+	resolved config.Resolved,
+	varFiles []string,
+	rawVars []string,
+) (domain.Estimate, *domain.Estimate, error) {
+	varMap, err := parseVarFlags(rawVars)
+	if err != nil {
+		return domain.Estimate{}, nil, err
+	}
+	opts := parser.Options{VarFiles: varFiles, Vars: varMap, Offline: resolved.Offline}
+	after, err := parser.Parse(rawPath, opts)
+	if err != nil {
+		return domain.Estimate{}, nil, fmt.Errorf("parsing %s: %w", rawPath, err)
+	}
+	before, hasBaseline, err := parser.PlanBaseline(rawPath, opts)
+	if err != nil {
+		return domain.Estimate{}, nil, fmt.Errorf("parsing plan baseline %s: %w", rawPath, err)
+	}
+	engine, closeFn, err := buildPricingEngine(ctx, resolved)
+	if err != nil {
+		return domain.Estimate{}, nil, err
+	}
+	defer closeFn()
+	current, err := engine.Estimate(ctx, after)
+	if err != nil {
+		return domain.Estimate{}, nil, err
+	}
+	if !hasBaseline {
+		return current, nil, nil
+	}
+	baseline, err := engine.Estimate(ctx, before)
+	if err != nil {
+		return domain.Estimate{}, nil, err
+	}
+	return current, &baseline, nil
 }
 
 // enforceBudgetDelta exits non-zero if the delta exceeds the gate.

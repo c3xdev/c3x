@@ -109,6 +109,31 @@ func Parse(path string, opts Options) ([]domain.Resource, error) {
 	}
 }
 
+// PlanBaseline returns the pre-apply ("before") resource set when path is
+// a Terraform plan JSON that carries prior state, so callers can render a
+// cost delta straight from the plan with no --baseline file. For any
+// other input (a directory, .tf, CloudFormation), or a greenfield plan
+// with no before-state, ok is false and the caller should fall back to
+// the absolute estimate. The plan is read twice (once here, once in
+// [Parse]); plan JSON is small and this keeps the two call sites simple.
+func PlanBaseline(path string, opts Options) ([]domain.Resource, bool, error) {
+	if path == "" {
+		return nil, false, nil
+	}
+	if opts.Logger == nil {
+		opts.Logger = slog.Default()
+	}
+	info, err := os.Stat(path)
+	if err != nil || info.IsDir() {
+		return nil, false, nil
+	}
+	lower := strings.ToLower(path)
+	if !strings.HasSuffix(lower, ".json") || isCFNJSON(path) {
+		return nil, false, nil
+	}
+	return plan.ParseBaselineFile(path, opts.Logger)
+}
+
 func toTerraformOptions(o Options) terraform.Options {
 	return terraform.Options{
 		VarFiles: o.VarFiles,
