@@ -236,13 +236,74 @@ func TestFormatCommentDiffRendersDelta(t *testing.T) {
 		}},
 	}
 
-	body, err := comment.FormatCommentDiff(domain.ComputeDiff(base, current))
+	body, err := comment.FormatCommentDiff(domain.ComputeDiff(base, current), false)
 	if err != nil {
 		t.Fatalf("FormatCommentDiff: %v", err)
 	}
-	for _, want := range []string{"c3x diff", "894.32", "1038.32", "144"} {
+	// Collapsible PR/MR layout: the headline leads with the dollar change
+	// (and percent) approvers act on, a Baseline/New/Change table shows
+	// all three numbers, and the per-resource tables sit inside <details>.
+	for _, want := range []string{
+		"C3X report",
+		"increased by $144.00", // headline delta in dollars
+		"16.1%",                // percent of baseline (144.00 / 894.32)
+		"| Baseline | New | Change |",
+		"894.32", "1038.32",
+		"<details>", "</details>",
+	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("diff comment body missing %q\n---\n%s", want, body)
 		}
+	}
+}
+
+// TestFormatCommentCollapsesDetails verifies the absolute-estimate comment
+// body is the summary+<details> layout — a headline monthly total with the
+// per-resource breakdown tucked into a collapsible block — not the flat,
+// always-expanded `c3x estimate --format markdown` output.
+func TestFormatCommentCollapsesDetails(t *testing.T) {
+	est := domain.Estimate{
+		ProjectTotal: decimal.RequireFromString("143.81"),
+		Currency:     domain.CurrencyUSD,
+		Costs: []domain.Cost{{
+			Resource:        domain.Reference{Kind: "aws_instance", Name: "web"},
+			MonthlySubtotal: decimal.RequireFromString("143.81"),
+			Currency:        domain.CurrencyUSD,
+			LineItems: []domain.LineItem{{
+				Description: "Instance usage",
+				Quantity:    decimal.RequireFromString("730"),
+				Unit:        "hours",
+				UnitRate:    decimal.RequireFromString("0.197"),
+				MonthlyCost: decimal.RequireFromString("143.81"),
+				PriceSource: "live",
+			}},
+		}},
+	}
+
+	body, err := comment.FormatComment(est, false)
+	if err != nil {
+		t.Fatalf("FormatComment: %v", err)
+	}
+	for _, want := range []string{"C3X report", "143.81", "<details>", "<summary>", "</details>", "aws_instance.web"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("comment body missing %q\n---\n%s", want, body)
+		}
+	}
+	// The <details> wrapper must come before the resource table so the
+	// breakdown is actually inside the collapsible block.
+	if strings.Index(body, "<details>") > strings.Index(body, "aws_instance.web") {
+		t.Errorf("resource table is not inside the <details> block\n---\n%s", body)
+	}
+
+	// --expand opts out: flat, always-expanded layout with no <details>.
+	flat, err := comment.FormatComment(est, true)
+	if err != nil {
+		t.Fatalf("FormatComment(expand): %v", err)
+	}
+	if strings.Contains(flat, "<details>") {
+		t.Errorf("--expand body should not wrap details\n---\n%s", flat)
+	}
+	if !strings.Contains(flat, "## c3x estimate") || !strings.Contains(flat, "Project total") {
+		t.Errorf("--expand body should be the flat RenderMarkdown layout\n---\n%s", flat)
 	}
 }

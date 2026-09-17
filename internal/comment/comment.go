@@ -259,20 +259,33 @@ func (p *GitHubPoster) findExisting(ctx context.Context) (*github.IssueComment, 
 	return nil, nil
 }
 
-// FormatComment renders an Estimate as the body c3x will post. We
-// hard-pin markdown here because PR comments are markdown-rendered;
-// using the user's resolved format would let `--format text` post
+// FormatComment renders an Estimate as the body c3x will post. By
+// default this is the collapsible summary+details layout
+// ([render.RenderMarkdownComment]): a one-line headline with the
+// per-resource tables tucked into a <details> block, so a long estimate
+// doesn't flood the thread. When expand is true it posts the flat,
+// always-expanded layout ([render.RenderMarkdown]) instead.
+//
+// Markdown is hard-pinned in both cases because PR comments are
+// markdown-rendered; the user's `--format` (e.g. text) would post
 // box-drawing characters that render as garbage on GitHub.
-func FormatComment(est domain.Estimate) (string, error) {
-	return render.Render(est, render.FormatMarkdown)
+func FormatComment(est domain.Estimate, expand bool) (string, error) {
+	if expand {
+		return render.RenderMarkdown(est), nil
+	}
+	return render.RenderMarkdownComment(est), nil
 }
 
 // FormatCommentDiff renders a Diff as the body c3x will post when a
 // baseline is supplied — a per-PR cost delta ("Total: $894/mo →
-// $1,038/mo +$144") instead of an absolute estimate. Markdown is
-// hard-pinned for the same reason as [FormatComment].
-func FormatCommentDiff(d domain.Diff) (string, error) {
-	return render.RenderDiff(d, render.FormatMarkdown)
+// $1,038/mo +$144") as the headline. Collapsible by default (the
+// Added/Modified/Removed tables sit in a <details> block); expand posts
+// the flat layout. Markdown is hard-pinned as in [FormatComment].
+func FormatCommentDiff(d domain.Diff, expand bool) (string, error) {
+	if expand {
+		return render.RenderMarkdownDiff(d), nil
+	}
+	return render.RenderMarkdownDiffComment(d), nil
 }
 
 // SetClientBaseURL redirects a poster's GitHub client to the given
