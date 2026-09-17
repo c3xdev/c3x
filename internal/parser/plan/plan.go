@@ -101,6 +101,61 @@ func ParseBytes(raw []byte, logger *slog.Logger) ([]domain.Resource, error) {
 	return out, nil
 }
 
+// ParseBaselineFile reads a plan.json file and returns its pre-apply
+// (before) resource set. See [ParseBaselineBytes].
+func ParseBaselineFile(path string, logger *slog.Logger) ([]domain.Resource, bool, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, false, fmt.Errorf("read %s: %w", path, err)
+	}
+	return ParseBaselineBytes(raw, logger)
+}
+
+// ParseBaselineBytes builds the pre-apply ("before") resource set from a
+// plan's resource_changes[].change.before. A Terraform plan already
+// carries both sides of every change, so pricing this set alongside the
+// post-apply set (from [ParseBytes]) yields the cost delta directly, with
+// no baseline file and no base-branch checkout.
+//
+// The bool reports whether the plan carried any prior state at all. It is
+// false for a greenfield plan where every resource is a create (every
+// before is null) — there is nothing to diff against, so the caller
+// should fall back to an absolute estimate.
+func ParseBaselineBytes(raw []byte, logger *slog.Logger) ([]domain.Resource, bool, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	var doc planFile
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		return nil, false, fmt.Errorf("decode plan: %w", err)
+	}
+
+	region := defaultRegion(doc.Configuration)
+	out := make([]domain.Resource, 0, len(doc.ResourceChanges))
+	hasBaseline := false
+	for _, rc := range doc.ResourceChanges {
+		// A non-nil before map means the resource existed prior to the
+		// plan. A null before (create) contributes nothing to the baseline.
+		attrs, ok := rc.Change.Before.(map[string]any)
+		if !ok || attrs == nil {
+			continue
+		}
+		hasBaseline = true
+		r := domain.Resource{
+			Ref:        domain.Reference{Kind: rc.Type, Name: nameFromAddress(rc.Address, rc.Name)},
+			Attributes: attrs,
+		}
+		if region != "" {
+			rgn := region
+			r.Region = &rgn
+		}
+		out = append(out, r)
+	}
+
+	logger.Debug("plan baseline parsed", "resources", len(out), "hasBaseline", hasBaseline)
+	return out, hasBaseline, nil
+}
+
 // collectPlanned walks a planned_values module tree, appending every
 // managed resource. Data sources and null child-module entries (which
 // untrusted plan JSON can contain) are skipped rather than dereferenced.
