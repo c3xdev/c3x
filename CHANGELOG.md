@@ -6,6 +6,8 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-09-18
+
 ### Fixed
 
 - Plan-aware diff (`c3x comment` on a plan JSON with no `--baseline`): a
