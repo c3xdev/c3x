@@ -109,6 +109,18 @@ func Parse(path string, opts Options) ([]domain.Resource, error) {
 	}
 }
 
+// isPlanFile reports whether path is a Terraform plan JSON (a .json file
+// that isn't a CloudFormation template). Shared by [PlanBaseline] and
+// [ParsePostApply] so plan detection stays in one place.
+func isPlanFile(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil || info.IsDir() {
+		return false
+	}
+	lower := strings.ToLower(path)
+	return strings.HasSuffix(lower, ".json") && !isCFNJSON(path)
+}
+
 // PlanBaseline returns the pre-apply ("before") resource set when path is
 // a Terraform plan JSON that carries prior state, so callers can render a
 // cost delta straight from the plan with no --baseline file. For any
@@ -117,21 +129,30 @@ func Parse(path string, opts Options) ([]domain.Resource, error) {
 // the absolute estimate. The plan is read twice (once here, once in
 // [Parse]); plan JSON is small and this keeps the two call sites simple.
 func PlanBaseline(path string, opts Options) ([]domain.Resource, bool, error) {
-	if path == "" {
+	if path == "" || !isPlanFile(path) {
 		return nil, false, nil
 	}
 	if opts.Logger == nil {
 		opts.Logger = slog.Default()
 	}
-	info, err := os.Stat(path)
-	if err != nil || info.IsDir() {
-		return nil, false, nil
-	}
-	lower := strings.ToLower(path)
-	if !strings.HasSuffix(lower, ".json") || isCFNJSON(path) {
-		return nil, false, nil
-	}
 	return plan.ParseBaselineFile(path, opts.Logger)
+}
+
+// ParsePostApply returns the strictly post-apply resource set. For a
+// Terraform plan JSON it excludes resources scheduled for deletion (they
+// won't exist after apply), unlike [Parse], which appends them for the
+// single-estimate --show-delta view. For every other input it is
+// identical to [Parse]. Used as the "current" side of the plan-aware diff
+// so removed resources land only in the before set and the absolute total
+// doesn't count them.
+func ParsePostApply(path string, opts Options) ([]domain.Resource, error) {
+	if opts.Logger == nil {
+		opts.Logger = slog.Default()
+	}
+	if isPlanFile(path) {
+		return plan.ParsePostApplyFile(path, opts.Logger)
+	}
+	return Parse(path, opts)
 }
 
 func toTerraformOptions(o Options) terraform.Options {
