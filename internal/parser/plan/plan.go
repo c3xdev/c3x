@@ -40,9 +40,78 @@ func ParseBytes(raw []byte, logger *slog.Logger) ([]domain.Resource, error) {
 	if logger == nil {
 		logger = slog.Default()
 	}
+	out, doc, region, err := collectPostApply(raw, logger)
+	if err != nil {
+		return nil, err
+	}
+
+	// Append resources scheduled for pure deletion. These don't exist
+	// in planned_values (they won't be in the post-apply state) but
+	// the single-estimate --show-delta view needs them to show what's
+	// being removed. We use the "before" attributes so the calculator
+	// can price them.
+	//
+	// NOTE: the two-estimate plan-aware diff must NOT see these here, or
+	// a deletion appears in both the before and after sets and gets
+	// misclassified as Unchanged (and inflates the absolute total). That
+	// path uses [ParsePostApplyBytes], which omits this append.
+	for _, rc := range doc.ResourceChanges {
+		if isDeleteOnly(rc.Change.Actions) {
+			attrs, _ := rc.Change.Before.(map[string]any)
+			r := domain.Resource{
+				Ref:        domain.Reference{Kind: rc.Type, Name: nameFromAddress(rc.Address, rc.Name)},
+				Attributes: attrs,
+				Action:     domain.PlanActionDelete,
+			}
+			if region != "" {
+				rgn := region
+				r.Region = &rgn
+			}
+			out = append(out, r)
+		}
+	}
+
+	logger.Debug("plan parsed", "resources", len(out), "region", region)
+	return out, nil
+}
+
+// ParsePostApplyFile reads a plan.json file and returns its strictly
+// post-apply resource set. See [ParsePostApplyBytes].
+func ParsePostApplyFile(path string, logger *slog.Logger) ([]domain.Resource, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", path, err)
+	}
+	return ParsePostApplyBytes(raw, logger)
+}
+
+// ParsePostApplyBytes returns the strictly post-apply resource set: every
+// resource that will exist after the plan is applied (planned_values, or
+// the resource_changes after-state when planned_values is absent), with
+// NO resources scheduled for deletion appended.
+//
+// This is the correct "current" side for the two-estimate plan-aware
+// diff: a removed resource then appears only in the before set (rendered
+// as Removed), and the absolute post-apply total doesn't count resources
+// that won't exist. [ParseBytes] keeps the delete-append for the
+// single-estimate --show-delta view.
+func ParsePostApplyBytes(raw []byte, logger *slog.Logger) ([]domain.Resource, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	out, _, _, err := collectPostApply(raw, logger)
+	return out, err
+}
+
+// collectPostApply decodes a plan and builds the post-apply resource set
+// from planned_values (falling back to the resource_changes after-state
+// when planned_values is absent), excluding deletions. Shared by
+// [ParseBytes] and [ParsePostApplyBytes]; the decoded doc and region are
+// returned so ParseBytes can append delete-only resources.
+func collectPostApply(raw []byte, logger *slog.Logger) ([]domain.Resource, planFile, string, error) {
 	var doc planFile
 	if err := json.Unmarshal(raw, &doc); err != nil {
-		return nil, fmt.Errorf("decode plan: %w", err)
+		return nil, planFile{}, "", fmt.Errorf("decode plan: %w", err)
 	}
 
 	region := defaultRegion(doc.Configuration)
@@ -77,28 +146,7 @@ func ParseBytes(raw []byte, logger *slog.Logger) ([]domain.Resource, error) {
 		}
 	}
 
-	// Append resources scheduled for pure deletion. These don't exist
-	// in planned_values (they won't be in the post-apply state) but
-	// the delta renderer needs them to show what's being removed.
-	// We use the "before" attributes so the calculator can price them.
-	for _, rc := range doc.ResourceChanges {
-		if isDeleteOnly(rc.Change.Actions) {
-			attrs, _ := rc.Change.Before.(map[string]any)
-			r := domain.Resource{
-				Ref:        domain.Reference{Kind: rc.Type, Name: nameFromAddress(rc.Address, rc.Name)},
-				Attributes: attrs,
-				Action:     domain.PlanActionDelete,
-			}
-			if region != "" {
-				rgn := region
-				r.Region = &rgn
-			}
-			out = append(out, r)
-		}
-	}
-
-	logger.Debug("plan parsed", "resources", len(out), "region", region)
-	return out, nil
+	return out, doc, region, nil
 }
 
 // ParseBaselineFile reads a plan.json file and returns its pre-apply

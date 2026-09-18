@@ -6,6 +6,17 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Plan-aware diff (`c3x comment` on a plan JSON with no `--baseline`): a
+  resource scheduled for pure deletion now renders as a Removed (🔴) row
+  and no longer inflates the absolute New / Baseline totals. It was being
+  appended to the post-apply set (correct for the single-estimate
+  `--show-delta` view) and leaking into the two-estimate diff, where it
+  matched itself and was misclassified as Unchanged. The diff's current
+  side now parses post-apply-only. The headline dollar change was already
+  correct (the cost cancelled in the subtraction). (#62)
+
 ## [0.3.3] - 2026-09-17
 
 ### Added

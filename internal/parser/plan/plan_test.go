@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/c3xdev/c3x/internal/domain"
 	"github.com/c3xdev/c3x/internal/parser/plan"
 )
 
@@ -429,5 +430,51 @@ func TestParseBaseline_GreenfieldHasNoBaseline(t *testing.T) {
 	}
 	if len(got) != 0 {
 		t.Errorf("greenfield baseline should be empty, got %d", len(got))
+	}
+}
+
+func TestParsePostApply_ExcludesDeletions(t *testing.T) {
+	// Update + create + delete (no planned_values, so the resource_changes
+	// fallback is exercised). ParseBytes keeps the delete (for --show-delta);
+	// ParsePostApplyBytes drops it (the plan-aware diff's "after" side).
+	raw := `{
+		"resource_changes": [
+			{ "address": "aws_instance.web", "type": "aws_instance", "name": "web",
+			  "change": { "actions": ["update"], "before": {"instance_type":"m5.large"}, "after": {"instance_type":"m5.xlarge"} } },
+			{ "address": "aws_s3_bucket.data", "type": "aws_s3_bucket", "name": "data",
+			  "change": { "actions": ["create"], "before": null, "after": {} } },
+			{ "address": "aws_db_instance.old", "type": "aws_db_instance", "name": "old",
+			  "change": { "actions": ["delete"], "before": {"instance_class":"db.t3.medium"}, "after": null } }
+		]
+	}`
+	names := func(rs []domain.Resource) map[string]bool {
+		m := map[string]bool{}
+		for _, r := range rs {
+			m[r.Ref.Name] = true
+		}
+		return m
+	}
+
+	full, err := plan.ParseBytes([]byte(raw), nil)
+	if err != nil {
+		t.Fatalf("ParseBytes: %v", err)
+	}
+	if !names(full)["old"] {
+		t.Error("ParseBytes must keep the delete-only resource (for --show-delta)")
+	}
+
+	post, err := plan.ParsePostApplyBytes([]byte(raw), nil)
+	if err != nil {
+		t.Fatalf("ParsePostApplyBytes: %v", err)
+	}
+	pn := names(post)
+	if pn["old"] {
+		t.Error("ParsePostApplyBytes must EXCLUDE the delete-only resource (#62)")
+	}
+	if !pn["web"] || !pn["data"] {
+		t.Errorf("ParsePostApplyBytes should keep the update and the create; got %v", pn)
+	}
+	if len(post) != 2 {
+		t.Errorf("post-apply set should be 2 (web, data), got %d", len(post))
 	}
 }
