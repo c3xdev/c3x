@@ -6,6 +6,8 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-09-21
+
 ### Added
 
 - `c3x top`: ranks the resources in an estimate by monthly cost, highest
