@@ -6,6 +6,24 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `c3x top`: ranks the resources in an estimate by monthly cost, highest
+  first. `--format targets` emits `-target=<address>` flags so CI can
+  feed the costliest resources straight into a destroy, the motivating
+  case being scheduled teardown of expensive development environments:
+  `tofu destroy $(c3x top --limit 5 --format targets)`. Also renders a
+  ranked table (`text`, with each resource's share of the total) and
+  `json`. Addresses are canonical Terraform addresses, so resources
+  inside modules target correctly; free resources are never listed.
+  c3x only prints the list, it never destroys anything. (#64)
+- `domain.Reference.TerraformAddress()` builds the canonical Terraform
+  address for a reference (`module.frontend.aws_instance.web`), which
+  `Label()` does not: the parsers store the module path in `Name` with
+  the kind stripped, so the kind has to be spliced back in ahead of the
+  final segment. Handles nested modules and `for_each` keys containing
+  dots.
+
 ## [0.3.4] - 2026-09-18
 
 ### Fixed

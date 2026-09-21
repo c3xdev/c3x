@@ -21,6 +21,60 @@ func (r Reference) Label() string { return r.Kind + "." + r.Name }
 
 func (r Reference) String() string { return r.Label() }
 
+// TerraformAddress renders the reference as a canonical Terraform
+// resource address, the form `-target` expects.
+//
+// This is NOT Label(). The parsers store the module path inside Name with
+// the kind stripped out (Kind="aws_instance", Name="module.frontend.web"
+// for `module.frontend.aws_instance.web`), so the kind has to be spliced
+// back in ahead of the final segment rather than prepended to the whole
+// string: Label() would yield `aws_instance.module.frontend.web`, which
+// Terraform does not accept.
+//
+// The final segment is located by scanning for the last '.' outside any
+// brackets, so count/for_each indexes and keys containing dots survive:
+//
+//	{aws_instance, web}                    -> aws_instance.web
+//	{aws_instance, web[0]}                 -> aws_instance.web[0]
+//	{aws_instance, module.frontend.web}    -> module.frontend.aws_instance.web
+//	{aws_instance, module.a.module.b.web}  -> module.a.module.b.aws_instance.web
+//	{aws_instance, web["a.b"]}             -> aws_instance.web["a.b"]
+func (r Reference) TerraformAddress() string {
+	base := r.Name
+	prefix := ""
+	if i := lastDotOutsideBrackets(r.Name); i >= 0 {
+		prefix, base = r.Name[:i], r.Name[i+1:]
+	}
+	addr := r.Kind + "." + base
+	if prefix != "" {
+		addr = prefix + "." + addr
+	}
+	return addr
+}
+
+// lastDotOutsideBrackets returns the index of the final '.' that is not
+// inside a [...] index or key, or -1 when there is none. Scanning from
+// the right means a for_each key like `web["a.b"]` does not get split on
+// the dot inside the quotes.
+func lastDotOutsideBrackets(s string) int {
+	depth := 0
+	for i := len(s) - 1; i >= 0; i-- {
+		switch s[i] {
+		case ']':
+			depth++
+		case '[':
+			if depth > 0 {
+				depth--
+			}
+		case '.':
+			if depth == 0 {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
 // Resource is a parsed IaC resource with its attributes already resolved
 // to literal values. The calculator turns Resources into Costs.
 //

@@ -65,6 +65,14 @@ c3x estimate --var 'env="prod"' --var-file=overrides.tfvars
 # Run offline (no calls to pricing.c3x.dev; uses the offline stub).
 c3x estimate --offline
 
+# Rank resources by monthly cost.
+c3x top --limit 10
+
+# Emit the costliest resources as destroy targets, e.g. to tear down an
+# expensive dev environment on a schedule. c3x only prints the list;
+# review it before destroying anything.
+tofu destroy $(c3x top --limit 5 --format targets)
+
 # Inspect the on-disk price cache.
 c3x pricing where
 c3x pricing stats

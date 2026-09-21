@@ -41,6 +41,7 @@ func newRootCmd() *cobra.Command {
 	root.AddCommand(
 		newEstimateCmd(),
 		newDiffCmd(),
+		newTopCmd(),
 		newRecommendCmd(),
 		newCommentCmd(),
 		newPricingCmd(),
