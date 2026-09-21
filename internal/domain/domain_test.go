@@ -174,3 +174,66 @@ func TestCostHasStaticRate(t *testing.T) {
 func ptr[T any](v T) *T { return &v }
 
 func dec(s string) decimal.Decimal { return decimal.RequireFromString(s) }
+
+// TestTerraformAddress covers the address reconstruction `-target` needs.
+// The parsers stash the module path in Name with the kind removed, so the
+// kind must be spliced in before the final segment; Label() is the
+// display form and is deliberately not a valid address for module
+// resources.
+func TestTerraformAddress(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name string
+		ref  domain.Reference
+		want string
+	}{
+		{"root", domain.Reference{Kind: "aws_instance", Name: "web"}, "aws_instance.web"},
+		{"count index", domain.Reference{Kind: "aws_instance", Name: "web[0]"}, "aws_instance.web[0]"},
+		{
+			"module",
+			domain.Reference{Kind: "aws_instance", Name: "module.frontend.web"},
+			"module.frontend.aws_instance.web",
+		},
+		{
+			"nested modules",
+			domain.Reference{Kind: "aws_instance", Name: "module.a.module.b.web"},
+			"module.a.module.b.aws_instance.web",
+		},
+		{
+			"module with indexed resource",
+			domain.Reference{Kind: "aws_instance", Name: "module.frontend.web[2]"},
+			"module.frontend.aws_instance.web[2]",
+		},
+		// A for_each key containing a dot must not be split on that dot.
+		{
+			"for_each key with dot",
+			domain.Reference{Kind: "aws_instance", Name: `web["a.b"]`},
+			`aws_instance.web["a.b"]`,
+		},
+		{
+			"module for_each key with dot",
+			domain.Reference{Kind: "aws_instance", Name: `module.a["x.y"].web`},
+			`module.a["x.y"].aws_instance.web`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.ref.TerraformAddress(); got != tc.want {
+				t.Errorf("TerraformAddress() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// TestTerraformAddressDiffersFromLabelForModules pins the distinction so
+// nobody "simplifies" TerraformAddress back into Label.
+func TestTerraformAddressDiffersFromLabelForModules(t *testing.T) {
+	t.Parallel()
+	ref := domain.Reference{Kind: "aws_instance", Name: "module.frontend.web"}
+	if ref.Label() == ref.TerraformAddress() {
+		t.Fatal("module Label() must not equal TerraformAddress()")
+	}
+	if ref.Label() != "aws_instance.module.frontend.web" {
+		t.Errorf("Label() changed unexpectedly: %q", ref.Label())
+	}
+}
