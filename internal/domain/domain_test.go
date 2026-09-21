@@ -189,17 +189,32 @@ func TestTerraformAddress(t *testing.T) {
 	}{
 		{"root", domain.Reference{Kind: "aws_instance", Name: "web"}, "aws_instance.web"},
 		{"count index", domain.Reference{Kind: "aws_instance", Name: "web[0]"}, "aws_instance.web[0]"},
-		{"module", domain.Reference{Kind: "aws_instance", Name: "module.frontend.web"},
-			"module.frontend.aws_instance.web"},
-		{"nested modules", domain.Reference{Kind: "aws_instance", Name: "module.a.module.b.web"},
-			"module.a.module.b.aws_instance.web"},
-		{"module with indexed resource", domain.Reference{Kind: "aws_instance", Name: "module.frontend.web[2]"},
-			"module.frontend.aws_instance.web[2]"},
+		{
+			"module",
+			domain.Reference{Kind: "aws_instance", Name: "module.frontend.web"},
+			"module.frontend.aws_instance.web",
+		},
+		{
+			"nested modules",
+			domain.Reference{Kind: "aws_instance", Name: "module.a.module.b.web"},
+			"module.a.module.b.aws_instance.web",
+		},
+		{
+			"module with indexed resource",
+			domain.Reference{Kind: "aws_instance", Name: "module.frontend.web[2]"},
+			"module.frontend.aws_instance.web[2]",
+		},
 		// A for_each key containing a dot must not be split on that dot.
-		{"for_each key with dot", domain.Reference{Kind: "aws_instance", Name: `web["a.b"]`},
-			`aws_instance.web["a.b"]`},
-		{"module for_each key with dot", domain.Reference{Kind: "aws_instance", Name: `module.a["x.y"].web`},
-			`module.a["x.y"].aws_instance.web`},
+		{
+			"for_each key with dot",
+			domain.Reference{Kind: "aws_instance", Name: `web["a.b"]`},
+			`aws_instance.web["a.b"]`,
+		},
+		{
+			"module for_each key with dot",
+			domain.Reference{Kind: "aws_instance", Name: `module.a["x.y"].web`},
+			`module.a["x.y"].aws_instance.web`,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
