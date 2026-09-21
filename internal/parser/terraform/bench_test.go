@@ -115,12 +115,12 @@ func writeMonorepo(tb testing.TB, dir string, count int) {
 	}
 
 	// Hook the module into the top-level config.
-	hook := (`
+	hook := `
 		module "fleet" {
 		  source = "./modules/fleet"
 		  size   = "t3.medium"
 		}
-	`)
+	`
 	if err := os.WriteFile(filepath.Join(dir, "modules_hookup.tf"), []byte(hook), 0o644); err != nil {
 		tb.Fatal(err)
 	}
