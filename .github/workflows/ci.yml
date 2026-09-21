@@ -46,7 +46,7 @@ jobs:
           cache: true
       - uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.12.2
+          version: v2.13.2
 
   catalog-offline:
     name: catalog smoke (offline)
