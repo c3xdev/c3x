@@ -6,6 +6,17 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `go install github.com/c3xdev/c3x/cmd/c3x@latest` installed v1.0.2,
+  old code from the pre-relaunch lineage, instead of the current
+  release. Those versions stayed in the module proxy after their tags
+  were removed (proxy content is immutable), and the go command resolves
+  `@latest` to the highest release version. `go.mod` now retracts
+  v1.0.0 through v1.0.3, published as v1.0.3 because retractions are
+  only read from the go.mod of the highest version. v1.0.3 retracts
+  itself too, so `@latest` falls back to the 0.x line.
+
 ## [0.3.5] - 2026-09-21
 
 ### Added

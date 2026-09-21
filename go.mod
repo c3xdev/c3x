@@ -2,14 +2,36 @@ module github.com/c3xdev/c3x
 
 go 1.25.0
 
+// v1.0.x was published by the pre-relaunch lineage and shares no history
+// with this module. Those versions stayed in the module proxy after the
+// tags were removed (proxy content is immutable), and because the go
+// command resolves @latest to the highest release version, they were
+// what `go install github.com/c3xdev/c3x/cmd/c3x@latest` actually
+// installed: old, unrelated code instead of the current release.
+//
+// The go command reads retractions from the go.mod of the highest
+// version, so these directives only take effect when published above
+// v1.0.2, which is why v1.0.3 exists. v1.0.3 retracts itself as well: it
+// carries nothing but this block, and with every v1.0.x retracted the go
+// command falls back to the highest remaining version, putting @latest
+// back on the 0.x line.
+retract (
+	v1.0.3 // Carries these retractions only; not a release.
+	v1.0.2 // Pre-relaunch lineage; unrelated code.
+	v1.0.1 // Pre-relaunch lineage; unrelated code.
+	v1.0.0 // Pre-relaunch lineage; unrelated code.
+)
+
 require (
 	github.com/expr-lang/expr v1.17.8
 	github.com/google/go-github/v84 v84.0.0
+	github.com/hashicorp/go-version v1.9.0
 	github.com/hashicorp/hcl/v2 v2.24.0
 	github.com/open-policy-agent/opa v1.17.1
 	github.com/pelletier/go-toml/v2 v2.3.1
 	github.com/shopspring/decimal v1.4.0
 	github.com/spf13/cobra v1.10.2
+	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/zclconf/go-cty v1.18.1
 	go.opentelemetry.io/otel v1.44.0
@@ -33,7 +55,6 @@ require (
 	github.com/goccy/go-json v0.10.6 // indirect
 	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/hashicorp/go-version v1.9.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.4 // indirect
 	github.com/lestrrat-go/dsig v1.3.0 // indirect
@@ -52,7 +73,6 @@ require (
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
-	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tchap/go-patricia/v2 v2.3.3 // indirect
 	github.com/valyala/fastjson v1.6.10 // indirect
