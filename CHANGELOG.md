@@ -6,6 +6,39 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-09-22
+
+### Fixed
+
+- Aurora clusters were priced at the I/O-Optimized rate whether or not
+  they used it. Aurora publishes two instance SKUs per class that share
+  `instanceType`, `databaseEngine` and `deploymentOption`, which was all
+  the mapping filtered on, so both matched and the max-non-zero picker
+  took the dearer one. A `db.r6g.large` priced at $246.74/mo instead of
+  $189.80, a roughly 30% overcharge on Aurora Standard, and switching to
+  `aurora-iopt1` appeared to cost nothing because the premium was
+  already being charged. The instance now discriminates on the `storage`
+  attribute, and cluster storage follows `storage_type`. (#68)
+- Aurora I/O was priced at zero everywhere except us-east-1: the
+  `usagetype` filter pinned `Aurora:StorageIOUsage`, but upstream that
+  value carries a region prefix (`EU-Aurora:StorageIOUsage`), so it
+  matched nothing. The pin is gone; `group` already narrows the meter.
+- Aurora I/O is no longer billed on clusters using `aurora-iopt1`, where
+  it is included in the storage rate.
+
+### Added
+
+- `linked(kind, join_attr, wanted_attr)` in catalog expressions: reads an
+  attribute from a related resource, joined on an attribute the two
+  share. It exists because some costs are decided elsewhere than where
+  they are billed, as with Aurora, where `storage_type` is declared on
+  `aws_rds_cluster` but the hours are billed on
+  `aws_rds_cluster_instance`. Returns "" when nothing matches, so
+  expressions fall back with `default()` instead of failing on
+  unresolved HCL references. Used by the embedded catalog; the copy
+  served from pricing.c3x.dev keeps the compatible form until a catalog
+  schema bump lets older clients fall back safely.
+
 ### Fixed
 
 - `go install github.com/c3xdev/c3x/cmd/c3x@latest` installed v1.0.2,
