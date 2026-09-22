@@ -48,7 +48,7 @@ func FuzzCompile(f *testing.F) {
 		// If compilation succeeded, evaluation against an empty env
 		// must also not panic. Type errors / nil deref → return an
 		// error from RunString/Run.
-		env := c3xexpr.EnvFor(domain.Resource{}, nil, nil)
+		env := c3xexpr.EnvFor(domain.Resource{}, nil, nil, nil)
 		// Best-effort run each accessor. We don't care about the
 		// values, only that the call returns rather than panics.
 		_, _ = c3xexpr.Run(prog, env)

@@ -33,8 +33,52 @@ const MonthlyHours = 730
 // Functions return Go primitives (float64, bool, any) — expr-lang
 // handles the conversion to/from typed values. Anywhere we'd want
 // Decimal precision, we round-trip via shopspring/decimal at the caller.
-func stdFunctions(lookup PriceLookup) map[string]any {
+func stdFunctions(lookup PriceLookup, self domain.Resource, siblings []domain.Resource) map[string]any {
 	return map[string]any{
+		// linked(kind, join_attr, wanted_attr) → the value of
+		// wanted_attr on the resource of `kind` whose `join_attr`
+		// matches this resource's own `join_attr`, or "" when there is
+		// no such resource.
+		//
+		// Some costs are decided by an attribute that Terraform puts on
+		// a different resource. Aurora is the motivating case: the
+		// hourly rate depends on storage_type, which is declared on
+		// aws_rds_cluster, while the hours are billed on
+		// aws_rds_cluster_instance. The two are joined by the
+		// cluster_identifier they share:
+		//
+		//   linked("aws_rds_cluster", "cluster_identifier", "storage_type")
+		//
+		// Returns "" rather than erroring when the join attribute is
+		// absent or nothing matches, so callers can fall back with
+		// default() or compare directly. That matters for HCL input,
+		// where a reference like aws_rds_cluster.main.id may not
+		// resolve to a literal; the estimate then degrades to the
+		// resource's own attributes instead of failing.
+		"linked": func(kind, joinAttr, wantedAttr string) any {
+			mine, ok := self.Attributes[joinAttr]
+			if !ok || mine == nil {
+				return ""
+			}
+			mineStr := fmt.Sprint(mine)
+			if mineStr == "" {
+				return ""
+			}
+			for _, s := range siblings {
+				if s.Ref.Kind != kind || s.Ref == self.Ref {
+					continue
+				}
+				v, ok := s.Attributes[joinAttr]
+				if !ok || v == nil || fmt.Sprint(v) != mineStr {
+					continue
+				}
+				if w, ok := s.Attributes[wantedAttr]; ok && w != nil {
+					return w
+				}
+				return ""
+			}
+			return ""
+		},
 		// price("mapping") → per-unit rate for that mapping. Returns 0
 		// if the lookup yields no priced products (e.g. ACM public
 		// certificates are free). The error path is reserved for genuine
@@ -158,7 +202,10 @@ func stdFunctions(lookup PriceLookup) map[string]any {
 // Attribute keys collide with stdlib function names at the user's risk:
 // the function wins. Catalog authors who name an attribute `default` or
 // `price` will be surprised, and that's acceptable.
-func EnvFor(r domain.Resource, lookup PriceLookup, constants map[string]any) map[string]any {
+// EnvFor builds the expression environment for one resource. siblings is
+// the rest of the resource set being estimated, which backs linked(); pass
+// nil when no cross-resource context is available.
+func EnvFor(r domain.Resource, lookup PriceLookup, constants map[string]any, siblings []domain.Resource) map[string]any {
 	env := make(map[string]any, len(r.Attributes)+len(constants)+4)
 	for k, v := range constants {
 		env[k] = v
@@ -184,7 +231,7 @@ func EnvFor(r domain.Resource, lookup PriceLookup, constants map[string]any) map
 			}
 		}
 	}
-	for k, v := range stdFunctions(lookup) {
+	for k, v := range stdFunctions(lookup, r, siblings) {
 		env[k] = v
 	}
 	return env

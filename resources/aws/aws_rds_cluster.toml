@@ -14,7 +14,14 @@ attribute_filters = [
       pick(default(engine, "aurora-postgresql") == "aurora-mysql", "Aurora MySQL",
       "Aurora PostgreSQL")
   ''' },
-  { key = "volumeType", const = "General Purpose-Aurora" },
+  # Aurora Standard bills storage at the General Purpose rate; Aurora
+  # I/O-Optimized (storage_type = "aurora-iopt1") bills a dearer
+  # IO Optimized rate and charges no I/O. storage_type lives on this
+  # resource, so the switch is visible here.
+  { key = "volumeType", expr = '''
+      pick(default(storage_type, "") == "aurora-iopt1",
+      "IO Optimized-Aurora", "General Purpose-Aurora")
+  ''' },
 ]
 
 [mappings.io_requests]
@@ -24,8 +31,13 @@ attribute_filters = [
   # The "System Operation" family covers many unrelated meters
   # (snapshot export, etc.). Without the `group` constraint the
   # filter matches non-I/O products too; pin it explicitly.
+  #
+  # usagetype is deliberately NOT pinned: it carries a region prefix
+  # outside us-east-1 (EU-Aurora:StorageIOUsage), so a literal pin
+  # matched nothing and priced I/O at zero in every other region. The
+  # group filter already narrows to the I/O meters, and the max-non-zero
+  # picker takes the real rate over the $0 Limitless-preview SKU.
   { key = "group", const = "Aurora I/O Operation" },
-  { key = "usagetype", const = "Aurora:StorageIOUsage" },
   { key = "databaseEngine", expr = '''
       pick(default(engine, "aurora-postgresql") == "aurora-mysql", "Aurora MySQL",
       "Aurora PostgreSQL")
@@ -43,7 +55,9 @@ rate     = 'price("storage")'
 id       = "io_requests"
 label    = "I/O requests"
 unit     = "1M-requests"
-when     = "default(monthly_io_requests, 0) > 0"
+# Aurora I/O-Optimized includes I/O in the storage rate, so a cluster on
+# aurora-iopt1 has no I/O line at all.
+when     = 'default(monthly_io_requests, 0) > 0 and default(storage_type, "") != "aurora-iopt1"'
 quantity = "default(monthly_io_requests, 0) / 1000000"
 rate     = 'price("io_requests")'
 
