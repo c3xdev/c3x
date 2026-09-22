@@ -98,7 +98,7 @@ func (e *Engine) Estimate(ctx context.Context, resources []domain.Resource) (dom
 	costs := make([]domain.Cost, 0, len(resources))
 	var skipped []domain.SkippedResource
 	for _, r := range resources {
-		c, reason, err := e.costFor(ctx, r)
+		c, reason, err := e.costFor(ctx, r, resources)
 		if err != nil {
 			return domain.Estimate{}, fmt.Errorf("%s: %w", r.Ref.Label(), err)
 		}
@@ -126,7 +126,11 @@ func (e *Engine) Estimate(ctx context.Context, resources []domain.Resource) (dom
 // resource produced no priced output for a fixable cause — the
 // caller (Estimate) collects these so renderers can surface them
 // via --show-skipped.
-func (e *Engine) costFor(ctx context.Context, r domain.Resource) (domain.Cost, string, error) {
+// siblings is the full resource set being estimated; it backs the
+// linked() expression function, which lets a resource price on an
+// attribute declared on a related resource (see expr.stdFunctions). It is
+// a parameter rather than Engine state because estimates run concurrently.
+func (e *Engine) costFor(ctx context.Context, r domain.Resource, siblings []domain.Resource) (domain.Cost, string, error) {
 	ctx, span := observability.Tracer().Start(ctx, "calculator.costFor")
 	defer span.End()
 	span.SetAttributes(
@@ -144,13 +148,13 @@ func (e *Engine) costFor(ctx context.Context, r domain.Resource) (domain.Cost, s
 		}, "unsupported kind (no catalog entry)", nil
 	}
 
-	lookup := e.priceLookupFor(ctx, r, def)
+	lookup := e.priceLookupFor(ctx, r, def, siblings)
 
 	var items []domain.LineItem
 	subtotal := decimal.Zero
 
 	for _, dim := range def.Dimensions {
-		env := expr.EnvFor(r, lookup, dim.Constants)
+		env := expr.EnvFor(r, lookup, dim.Constants, siblings)
 
 		// `when` predicate (optional).
 		if dim.When != "" {
@@ -224,6 +228,7 @@ func (e *Engine) priceLookupFor(
 	ctx context.Context,
 	r domain.Resource,
 	def *catalog.Definition,
+	siblings []domain.Resource,
 ) expr.PriceLookup {
 	region := r.ResolveRegion(e.defaultRegion)
 	return func(mappingName string) (decimal.Decimal, string, error) {
@@ -232,7 +237,7 @@ func (e *Engine) priceLookupFor(
 			return decimal.Zero, domain.PriceSourceLive,
 				fmt.Errorf("mapping %q not declared on %s", mappingName, def.Kind)
 		}
-		query, err := e.buildQuery(r, def, mapping, region)
+		query, err := e.buildQuery(r, def, mapping, region, siblings)
 		if err != nil {
 			return decimal.Zero, domain.PriceSourceLive, err
 		}
@@ -252,13 +257,14 @@ func (e *Engine) buildQuery(
 	def *catalog.Definition,
 	m catalog.PriceMapping,
 	region string,
+	siblings []domain.Resource,
 ) (pricing.Query, error) {
 	if m.Region != "" {
 		region = m.Region
 	}
 	filters := make([]pricing.KV, 0, len(m.AttributeFilters))
 	for _, af := range m.AttributeFilters {
-		value, err := resolveFilter(af, r, e.programs, def.Kind)
+		value, err := resolveFilter(af, r, e.programs, def.Kind, siblings)
 		if err != nil {
 			return pricing.Query{}, err
 		}
@@ -287,6 +293,7 @@ func resolveFilter(
 	r domain.Resource,
 	cache *programCache,
 	kind string,
+	siblings []domain.Resource,
 ) (string, error) {
 	if af.Expr == "" {
 		return af.Literal, nil
@@ -302,7 +309,7 @@ func resolveFilter(
 	if err != nil {
 		return "", err
 	}
-	env := expr.EnvFor(r, nil, nil)
+	env := expr.EnvFor(r, nil, nil, siblings)
 	return expr.RunString(prog, env)
 }
 

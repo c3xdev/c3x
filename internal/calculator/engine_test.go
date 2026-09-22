@@ -227,3 +227,127 @@ func TestFilterExprCacheDoesNotCollideBetweenMappings(t *testing.T) {
 			"collision regressed (ecpu mapping is reading data's rate)", got)
 	}
 }
+
+// TestAuroraInstancePricesByClusterStorageType covers #68: the hourly rate
+// of an Aurora instance depends on storage_type, which Terraform declares
+// on the parent aws_rds_cluster rather than on the instance. The catalog
+// reaches it through linked(), joining on the cluster_identifier the two
+// resources share, so switching a cluster to I/O-Optimized moves the
+// instance onto the dearer SKU.
+func TestAuroraInstancePricesByClusterStorageType(t *testing.T) {
+	t.Parallel()
+
+	instanceQuery := func(storage string) pricing.Query {
+		return pricing.Query{
+			Provider:       "aws",
+			Service:        "AmazonRDS",
+			ProductFamily:  "Database Instance",
+			Region:         "us-east-1",
+			PurchaseOption: "on_demand",
+			AttributeFilters: []pricing.KV{
+				{Key: "instanceType", Value: "db.r6g.large"},
+				{Key: "databaseEngine", Value: "Aurora PostgreSQL"},
+				{Key: "deploymentOption", Value: "Single-AZ"},
+				{Key: "storage", Value: storage},
+			},
+		}
+	}
+
+	cases := []struct {
+		name        string
+		storageType string
+		wantRate    string // per instance-hour
+	}{
+		{"aurora standard", "", "0.26"},
+		{"aurora io-optimized", "aurora-iopt1", "0.338"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			stub := pricing.NewStub()
+			// Both SKUs are priced, so a wrong filter would still return
+			// a rate: the test fails on the value, not on a zero.
+			stub.Set(instanceQuery("EBS Only"), decimal.RequireFromString("0.26"))
+			stub.Set(instanceQuery("Aurora IO Optimization Mode"), decimal.RequireFromString("0.338"))
+
+			region := "us-east-1"
+			clusterAttrs := map[string]any{
+				"cluster_identifier": "demo",
+				"engine":             "aurora-postgresql",
+			}
+			if tc.storageType != "" {
+				clusterAttrs["storage_type"] = tc.storageType
+			}
+			cluster := domain.Resource{
+				Ref:        domain.Reference{Kind: "aws_rds_cluster", Name: "main"},
+				Region:     &region,
+				Attributes: clusterAttrs,
+			}
+			instance := domain.Resource{
+				Ref:    domain.Reference{Kind: "aws_rds_cluster_instance", Name: "one"},
+				Region: &region,
+				Attributes: map[string]any{
+					"cluster_identifier": "demo",
+					"engine":             "aurora-postgresql",
+					"instance_class":     "db.r6g.large",
+				},
+			}
+
+			engine := newEngine(t, stub)
+			est, err := engine.Estimate(context.Background(), []domain.Resource{cluster, instance})
+			if err != nil {
+				t.Fatalf("Estimate: %v", err)
+			}
+
+			var got decimal.Decimal
+			for _, c := range est.Costs {
+				if c.Resource.Kind == "aws_rds_cluster_instance" {
+					got = c.MonthlySubtotal
+				}
+			}
+			want := decimal.RequireFromString(tc.wantRate).Mul(decimal.NewFromInt(730))
+			if !got.Equal(want) {
+				t.Errorf("instance subtotal = %s, want %s (rate %s/hr x 730)", got, want, tc.wantRate)
+			}
+		})
+	}
+}
+
+// TestAuroraInstanceWithoutClusterFallsBackToStandard: an instance with no
+// matching cluster in the set (a lone resource, or an HCL reference that
+// never resolved) must not error or price at zero. It falls back to Aurora
+// Standard, the common case.
+func TestAuroraInstanceWithoutClusterFallsBackToStandard(t *testing.T) {
+	t.Parallel()
+	stub := pricing.NewStub()
+	stub.Set(pricing.Query{
+		Provider: "aws", Service: "AmazonRDS", ProductFamily: "Database Instance",
+		Region: "us-east-1", PurchaseOption: "on_demand",
+		AttributeFilters: []pricing.KV{
+			{Key: "instanceType", Value: "db.r6g.large"},
+			{Key: "databaseEngine", Value: "Aurora PostgreSQL"},
+			{Key: "deploymentOption", Value: "Single-AZ"},
+			{Key: "storage", Value: "EBS Only"},
+		},
+	}, decimal.RequireFromString("0.26"))
+
+	region := "us-east-1"
+	instance := domain.Resource{
+		Ref:    domain.Reference{Kind: "aws_rds_cluster_instance", Name: "orphan"},
+		Region: &region,
+		Attributes: map[string]any{
+			"engine":         "aurora-postgresql",
+			"instance_class": "db.r6g.large",
+		},
+	}
+	engine := newEngine(t, stub)
+	est, err := engine.Estimate(context.Background(), []domain.Resource{instance})
+	if err != nil {
+		t.Fatalf("Estimate: %v", err)
+	}
+	want := decimal.RequireFromString("0.26").Mul(decimal.NewFromInt(730))
+	if !est.ProjectTotal.Equal(want) {
+		t.Errorf("ProjectTotal = %s, want %s", est.ProjectTotal, want)
+	}
+}

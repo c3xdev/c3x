@@ -19,10 +19,13 @@ provider     = "aws"
 # a region prefix outside us-east-1 (EU-InstanceUsage:db.r6g.large), so
 # pinning it would match nothing in most regions.
 #
-# storage_type lives on the parent aws_rds_cluster, which this resource
-# cannot read, so the default is Aurora Standard: the common case, and the
-# safer way to be wrong. Supplying storage_type on the instance (via a
-# usage file) selects the I/O-Optimized rate.
+# storage_type is declared on the parent aws_rds_cluster, not here, so the
+# filter reads it across the join the two resources already share:
+# linked() matches the cluster whose cluster_identifier equals this
+# instance's. An explicit storage_type on the instance wins, and when
+# neither resolves (an HCL reference that stays unresolved, or a lone
+# instance) the default is Aurora Standard: the common case, and the safer
+# way to be wrong.
 [mappings.instance]
 service        = "AmazonRDS"
 product_family = "Database Instance"
@@ -34,7 +37,8 @@ attribute_filters = [
   ''' },
   { key = "deploymentOption", const = "Single-AZ" },
   { key = "storage", expr = '''
-      pick(default(storage_type, "") == "aurora-iopt1",
+      pick(default(storage_type,
+             linked("aws_rds_cluster", "cluster_identifier", "storage_type")) == "aurora-iopt1",
       "Aurora IO Optimization Mode", "EBS Only")
   ''' },
 ]
