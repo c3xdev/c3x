@@ -7,6 +7,22 @@ provider     = "aws"
 # the two separate matches Terraform's resource shape and avoids
 # double-counting.
 
+# Aurora publishes two instance SKUs per class: Aurora Standard
+# ("EBS Only") and Aurora I/O-Optimized ("Aurora IO Optimization Mode"),
+# the latter roughly 30% dearer per hour in exchange for no I/O charges.
+# Both carry the same instanceType, databaseEngine and deploymentOption,
+# so without the `storage` discriminator the lookup matched both and the
+# max-non-zero picker always returned the I/O-Optimized rate, overcharging
+# every Aurora Standard cluster by ~30%.
+#
+# `storage` is used rather than `usagetype` on purpose: usagetype carries
+# a region prefix outside us-east-1 (EU-InstanceUsage:db.r6g.large), so
+# pinning it would match nothing in most regions.
+#
+# storage_type lives on the parent aws_rds_cluster, which this resource
+# cannot read, so the default is Aurora Standard: the common case, and the
+# safer way to be wrong. Supplying storage_type on the instance (via a
+# usage file) selects the I/O-Optimized rate.
 [mappings.instance]
 service        = "AmazonRDS"
 product_family = "Database Instance"
@@ -17,6 +33,10 @@ attribute_filters = [
       "Aurora PostgreSQL")
   ''' },
   { key = "deploymentOption", const = "Single-AZ" },
+  { key = "storage", expr = '''
+      pick(default(storage_type, "") == "aurora-iopt1",
+      "Aurora IO Optimization Mode", "EBS Only")
+  ''' },
 ]
 
 [[dimensions]]
@@ -27,7 +47,9 @@ quantity = "monthly_hours()"
 rate     = 'price("instance")'
 
 [fixture]
+# Aurora Standard: $0.26/hr x 730. The old expectation of 246.74 was the
+# I/O-Optimized rate ($0.338/hr), which is what the ambiguous filter had
+# been returning for every cluster.
 attributes = { engine = "aurora-postgresql", instance_class = "db.r6g.large" }
-expected_monthly_cost = 246.74
+expected_monthly_cost = 189.80
 tolerance = 0.05
-
