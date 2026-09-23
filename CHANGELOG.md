@@ -6,6 +6,29 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-09-23
+
+### Fixed
+
+- Aurora I/O-Optimized clusters now price their instances at the
+  I/O-Optimized rate. `storage_type` is declared on `aws_rds_cluster`
+  while the hours are billed on `aws_rds_cluster_instance`, so the
+  parser copies declared attributes from a parent resource onto the
+  child billed for them, before pricing. Flipping a cluster to
+  `aurora-iopt1` moves the instance from $0.26 to $0.338 per hour and
+  storage from $0.10 to $0.225 per GB-month. (#68)
+
+### Changed
+
+- `linked()` and the cross-resource expression context added in 0.3.6
+  are removed. The catalog is fetched remote-first, so an expression
+  calling a function an older engine lacks breaks that client, and
+  gating it behind a schema bump is worse: a client that rejects the
+  bundle falls back to its own embedded catalog, which for <= 0.3.5
+  still overcharges Aurora. The capability belongs in the client, where
+  an older release simply does not benefit instead of breaking. Both
+  catalog copies are byte identical again.
+
 ## [0.3.6] - 2026-09-22
 
 ### Fixed
