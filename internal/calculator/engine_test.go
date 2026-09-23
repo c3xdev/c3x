@@ -228,13 +228,12 @@ func TestFilterExprCacheDoesNotCollideBetweenMappings(t *testing.T) {
 	}
 }
 
-// TestAuroraInstancePricesByClusterStorageType covers #68: the hourly rate
-// of an Aurora instance depends on storage_type, which Terraform declares
-// on the parent aws_rds_cluster rather than on the instance. The catalog
-// reaches it through linked(), joining on the cluster_identifier the two
-// resources share, so switching a cluster to I/O-Optimized moves the
-// instance onto the dearer SKU.
-func TestAuroraInstancePricesByClusterStorageType(t *testing.T) {
+// TestAuroraInstancePricesByStorageType: Aurora publishes two instance
+// SKUs per class, and storage_type selects between them. The attribute is
+// declared on the parent cluster and copied onto the instance by the
+// parser (internal/parser/inherit.go); by the time the calculator sees it,
+// it is an ordinary attribute.
+func TestAuroraInstancePricesByStorageType(t *testing.T) {
 	t.Parallel()
 
 	instanceQuery := func(storage string) pricing.Query {
@@ -272,30 +271,22 @@ func TestAuroraInstancePricesByClusterStorageType(t *testing.T) {
 			stub.Set(instanceQuery("Aurora IO Optimization Mode"), decimal.RequireFromString("0.338"))
 
 			region := "us-east-1"
-			clusterAttrs := map[string]any{
+			attrs := map[string]any{
 				"cluster_identifier": "demo",
 				"engine":             "aurora-postgresql",
+				"instance_class":     "db.r6g.large",
 			}
 			if tc.storageType != "" {
-				clusterAttrs["storage_type"] = tc.storageType
-			}
-			cluster := domain.Resource{
-				Ref:        domain.Reference{Kind: "aws_rds_cluster", Name: "main"},
-				Region:     &region,
-				Attributes: clusterAttrs,
+				attrs["storage_type"] = tc.storageType
 			}
 			instance := domain.Resource{
-				Ref:    domain.Reference{Kind: "aws_rds_cluster_instance", Name: "one"},
-				Region: &region,
-				Attributes: map[string]any{
-					"cluster_identifier": "demo",
-					"engine":             "aurora-postgresql",
-					"instance_class":     "db.r6g.large",
-				},
+				Ref:        domain.Reference{Kind: "aws_rds_cluster_instance", Name: "one"},
+				Region:     &region,
+				Attributes: attrs,
 			}
 
 			engine := newEngine(t, stub)
-			est, err := engine.Estimate(context.Background(), []domain.Resource{cluster, instance})
+			est, err := engine.Estimate(context.Background(), []domain.Resource{instance})
 			if err != nil {
 				t.Fatalf("Estimate: %v", err)
 			}

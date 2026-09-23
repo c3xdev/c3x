@@ -70,6 +70,20 @@ func Parse(path string, opts Options) ([]domain.Resource, error) {
 	if opts.Logger == nil {
 		opts.Logger = slog.Default()
 	}
+	resources, err := parseRaw(path, opts)
+	if err != nil {
+		return nil, err
+	}
+	// Copy attributes that live on a related resource onto the resource
+	// billed for them (see inherit.go). Done here so every command that
+	// parses goes through it, and so the catalog can stay on expressions
+	// that every released client understands.
+	applyInheritance(resources)
+	return resources, nil
+}
+
+// parseRaw is Parse without the cross-resource enrichment.
+func parseRaw(path string, opts Options) ([]domain.Resource, error) {
 	info, err := os.Stat(path)
 	if err != nil {
 		return nil, fmt.Errorf("stat %s: %w", path, err)
@@ -135,7 +149,12 @@ func PlanBaseline(path string, opts Options) ([]domain.Resource, bool, error) {
 	if opts.Logger == nil {
 		opts.Logger = slog.Default()
 	}
-	return plan.ParseBaselineFile(path, opts.Logger)
+	out, hasBaseline, err := plan.ParseBaselineFile(path, opts.Logger)
+	if err != nil {
+		return nil, false, err
+	}
+	applyInheritance(out)
+	return out, hasBaseline, nil
 }
 
 // ParsePostApply returns the strictly post-apply resource set. For a
@@ -150,7 +169,12 @@ func ParsePostApply(path string, opts Options) ([]domain.Resource, error) {
 		opts.Logger = slog.Default()
 	}
 	if isPlanFile(path) {
-		return plan.ParsePostApplyFile(path, opts.Logger)
+		out, err := plan.ParsePostApplyFile(path, opts.Logger)
+		if err != nil {
+			return nil, err
+		}
+		applyInheritance(out)
+		return out, nil
 	}
 	return Parse(path, opts)
 }
