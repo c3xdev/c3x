@@ -20,25 +20,10 @@ No API key, no SaaS account, no telemetry.
 
 </div>
 
-```console
-$ c3x estimate
-── c3x estimate · USD ─────────────────────────────────────────
-
-  aws_instance.web
-    Instance usage (Linux/UNIX, on-demand)
-      730 hours × $0.192 = $140.16/mo
-    aws_instance.web subtotal: $140.16/mo
-
-  aws_db_instance.primary
-    Database instance
-      730 hours × $0.068 = $49.64/mo
-    Storage
-      50 GB-month × $0.115 = $5.75/mo
-    aws_db_instance.primary subtotal: $55.39/mo
-
-  ──────────────────────────────────────────────────────────
-  PROJECT TOTAL: $195.55/mo
-```
+<div align="center">
+  <img src="https://raw.githubusercontent.com/c3xdev/c3x/main/docs/demo.gif" width="880"
+       alt="c3x estimate running against a two-resource Terraform project and printing a per-resource cost breakdown totalling $202.47 per month">
+</div>
 
 c3x parses your infrastructure code **statically**. No `terraform init`, no
 providers, no cloud credentials, no state access. That makes it safe to run
