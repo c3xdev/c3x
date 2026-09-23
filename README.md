@@ -20,7 +20,7 @@ No API key, no SaaS account, no telemetry.
 
 </div>
 
-```
+```console
 $ c3x estimate
 ── c3x estimate · USD ─────────────────────────────────────────
 
@@ -46,22 +46,26 @@ on untrusted input and fast enough to sit in front of every pull request.
 
 ## Install
 
-```bash
-# Homebrew (macOS)
-brew install c3xdev/tap/c3x
+| Method | Command |
+|---|---|
+| **Homebrew** | `brew install c3xdev/tap/c3x` |
+| **Script** | `curl -fsSL https://c3x.dev/install.sh \| sh` |
+| **Docker** | `docker pull ghcr.io/c3xdev/c3x` |
+| **Go** | `go install github.com/c3xdev/c3x/cmd/c3x@latest` |
 
-# Install script, detects your OS/arch and verifies the checksum
-curl -fsSL https://c3x.dev/install.sh | sh
+Windows, and anyone who would rather not pipe a script into a shell, can
+take the archive straight from the
+[releases page](https://github.com/c3xdev/c3x/releases), which carries
+macOS, Linux and Windows builds alongside `checksums.txt`. The container
+image is on [GHCR](https://github.com/c3xdev/c3x/pkgs/container/c3x).
 
-# Docker
-docker pull ghcr.io/c3xdev/c3x
+The script detects your OS and architecture and checks the published
+SHA-256, aborting on a mismatch. It skips that check if it cannot fetch
+`checksums.txt` or finds no sha256 tool, so verify the download yourself
+if you need the guarantee.
 
-# From source
-go install github.com/c3xdev/c3x/cmd/c3x@latest
-```
-
-Pre-built binaries and checksums for every release are on the
-[releases page](https://github.com/c3xdev/c3x/releases).
+Verify the install with `c3x doctor`, which checks the catalog parses,
+the pricing API answers, and the cache directory is writable.
 
 ## Cost on every pull request
 
