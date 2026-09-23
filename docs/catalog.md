@@ -860,7 +860,7 @@ Status meaning:
 | `azurerm_lb_outbound_rule` | FREE | azurerm_lb_outbound_rule |
 | `azurerm_lb_probe` | FREE | Azure Lb Probe |
 | `azurerm_lb_rule` | FREE | Azure Lb Rule |
-| `azurerm_linux_function_app` | LIVE | Azure Functions App |
+| `azurerm_linux_function_app` | STATIC | Azure Functions App |
 | `azurerm_linux_function_app_slot` | FREE | azurerm_linux_function_app_slot |
 | `azurerm_linux_virtual_machine` | LIVE | Azure Linux Virtual Machine |
 | `azurerm_linux_virtual_machine_scale_set` | STATIC | Azure Linux VM Scale Set |
@@ -878,7 +878,7 @@ Status meaning:
 | `azurerm_log_analytics_saved_search` | FREE | azurerm_log_analytics_saved_search |
 | `azurerm_log_analytics_solution` | FREE | Azure Log Analytics Solution |
 | `azurerm_log_analytics_storage_insights` | FREE | azurerm_log_analytics_storage_insights |
-| `azurerm_log_analytics_workspace` | LIVE | Azure Log Analytics Workspace |
+| `azurerm_log_analytics_workspace` | STATIC | Azure Log Analytics Workspace |
 | `azurerm_logic_app_standard` | STATIC | Azure Logic App (Standard) |
 | `azurerm_logic_app_workflow` | LIVE | Azure Logic App (Consumption) |
 | `azurerm_machine_learning_compute_cluster` | LIVE | Azure ML Compute Cluster |
@@ -1056,7 +1056,7 @@ Status meaning:
 | `azurerm_windows_virtual_machine_scale_set` | STATIC | Azure Windows VM Scale Set |
 | `azurerm_windows_web_app_slot` | FREE | azurerm_windows_web_app_slot |
 
-**AZURE totals:** 59 LIVE · 44 STATIC · 306 FREE
+**AZURE totals:** 57 LIVE · 46 STATIC · 306 FREE
 
 ## GCP (306 resources)
 
@@ -1373,4 +1373,4 @@ Status meaning:
 
 ---
 
-**Grand total: 1340 resources.** 178 LIVE · 85 STATIC · 1077 FREE.
+**Grand total: 1340 resources.** 176 LIVE · 87 STATIC · 1077 FREE.
