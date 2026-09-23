@@ -21,18 +21,8 @@ No API key, no SaaS account, no telemetry.
 </div>
 
 <div align="center">
-
-[<img src="https://img.youtube.com/vi/hM7TiieQZ7U/maxresdefault.jpg" width="720"
-      alt="Watch the C3X demo: cloud cost estimates from Terraform, before you apply">](https://www.youtube.com/watch?v=hM7TiieQZ7U)
-
-**[▶ Watch the demo](https://www.youtube.com/watch?v=hM7TiieQZ7U)**
-
-<sub>or the short version, a real run against
-<a href="examples/quickstart">examples/quickstart</a>:</sub>
-
-<img src="https://raw.githubusercontent.com/c3xdev/c3x/main/docs/demo.gif" width="620"
-     alt="c3x estimate printing a per-resource cost breakdown for a two-resource Terraform project, totalling $202.47 per month">
-
+  <img src="https://raw.githubusercontent.com/c3xdev/c3x/main/docs/demo.gif" width="880"
+       alt="c3x estimate printing a per-resource cost breakdown for a two-resource Terraform project, totalling $202.47 per month">
 </div>
 
 c3x parses your infrastructure code **statically**. No `terraform init`, no
