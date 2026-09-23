@@ -44,7 +44,7 @@ func TestPropertyExprNeverPanics(t *testing.T) {
 			}
 			env := c3xexpr.EnvFor(domain.Resource{
 				Attributes: map[string]any{"x": float64(10), "name": "demo"},
-			}, nil, nil, nil)
+			}, nil, nil)
 			_, _ = c3xexpr.Run(prog, env)
 		})
 	}

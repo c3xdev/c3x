@@ -26,7 +26,7 @@ func TestStdlibPrice(t *testing.T) {
 		}
 		return decimal.Zero, domain.PriceSourceLive, nil
 	}
-	env := c3xexpr.EnvFor(domain.Resource{}, lookup, nil, nil)
+	env := c3xexpr.EnvFor(domain.Resource{}, lookup, nil)
 	p := mustCompile(t, `price("compute")`)
 	got, err := c3xexpr.RunNumber(p, env)
 	if err != nil {
@@ -44,7 +44,7 @@ func TestStdlibDefault(t *testing.T) {
 		"instance_type": "m5.xlarge",
 		"empty_string":  "",
 	}}
-	env := c3xexpr.EnvFor(r, nil, nil, nil)
+	env := c3xexpr.EnvFor(r, nil, nil)
 
 	cases := []struct {
 		src  string
@@ -69,7 +69,7 @@ func TestStdlibDefault(t *testing.T) {
 func TestStdlibMonthlyHours(t *testing.T) {
 	t.Parallel()
 
-	env := c3xexpr.EnvFor(domain.Resource{}, nil, nil, nil)
+	env := c3xexpr.EnvFor(domain.Resource{}, nil, nil)
 	p := mustCompile(t, `monthly_hours()`)
 	got, err := c3xexpr.RunNumber(p, env)
 	if err != nil {
@@ -85,7 +85,7 @@ func TestStdlibPickFunction(t *testing.T) {
 
 	env := c3xexpr.EnvFor(domain.Resource{Attributes: map[string]any{
 		"size": "large",
-	}}, nil, nil, nil)
+	}}, nil, nil)
 
 	p := mustCompile(t, `pick(size == "large", 100, 10)`)
 	got, err := c3xexpr.RunNumber(p, env)
@@ -103,7 +103,7 @@ func TestUndefinedVariablesYieldZeroValues(t *testing.T) {
 	// `vcpu_count` isn't set on this resource. Without
 	// AllowUndefinedVariables this would be a compile error; with it,
 	// the catalog's `default(vcpu_count, 2)` idiom resolves cleanly.
-	env := c3xexpr.EnvFor(domain.Resource{}, nil, nil, nil)
+	env := c3xexpr.EnvFor(domain.Resource{}, nil, nil)
 	p := mustCompile(t, `default(vcpu_count, 2) * monthly_hours()`)
 	got, err := c3xexpr.RunNumber(p, env)
 	if err != nil {
@@ -117,7 +117,7 @@ func TestUndefinedVariablesYieldZeroValues(t *testing.T) {
 func TestRunStringStringifiesNumerics(t *testing.T) {
 	t.Parallel()
 
-	env := c3xexpr.EnvFor(domain.Resource{}, nil, nil, nil)
+	env := c3xexpr.EnvFor(domain.Resource{}, nil, nil)
 	p := mustCompile(t, `42`)
 	got, err := c3xexpr.RunString(p, env)
 	if err != nil {
@@ -131,7 +131,7 @@ func TestRunStringStringifiesNumerics(t *testing.T) {
 func TestRunBoolRejectsNonBool(t *testing.T) {
 	t.Parallel()
 
-	env := c3xexpr.EnvFor(domain.Resource{}, nil, nil, nil)
+	env := c3xexpr.EnvFor(domain.Resource{}, nil, nil)
 	p := mustCompile(t, `"not a bool"`)
 	if _, err := c3xexpr.RunBool(p, env); err == nil {
 		t.Errorf("expected error when expression doesn't return bool")

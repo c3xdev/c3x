@@ -21,7 +21,7 @@ func evalQty(t *testing.T, src string, attrs map[string]any) float64 {
 	if err != nil {
 		t.Fatalf("Compile(%q): %v", src, err)
 	}
-	got, err := expr.RunNumber(prog, expr.EnvFor(r, lookup, nil, nil))
+	got, err := expr.RunNumber(prog, expr.EnvFor(r, lookup, nil))
 	if err != nil {
 		t.Fatalf("RunNumber(%q): %v", src, err)
 	}
