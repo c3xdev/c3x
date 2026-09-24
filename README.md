@@ -6,7 +6,7 @@
 
 **Know what your Terraform costs before you apply it.**
 
-Open source cost estimation for Terraform, Terragrunt and CloudFormation.
+Open source cost estimation for Terraform, OpenTofu, Terragrunt and CloudFormation.
 No API key, no SaaS account, no telemetry.
 
 [![Release](https://img.shields.io/github/v/release/c3xdev/c3x?color=00ADD8)](https://github.com/c3xdev/c3x/releases)
@@ -124,6 +124,15 @@ Pipelines, Azure Pipelines, Atlantis and Spacelift recipes.
 | `c3x supported-resources` | Lists every supported resource kind |
 
 Full flag reference: [c3x.dev/docs/cli](https://c3x.dev/docs/cli).
+
+## OpenTofu
+
+c3x reads OpenTofu projects directly. `.tofu` files are loaded alongside
+`.tf`, and a `main.tofu` replaces the `main.tf` of the same name, as
+OpenTofu does, so a codebase that ships both is not counted twice.
+Provider `for_each` is supported: each instance of a resource is priced
+in the region of the provider instance it uses. Plan JSON from
+`tofu show -json` works the same as Terraform's.
 
 ## Output formats
 

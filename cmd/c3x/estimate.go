@@ -52,7 +52,7 @@ func newEstimateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "estimate",
 		Short: "Estimate the monthly cost of infrastructure at the given path.",
-		Long: `Reads Terraform (.tf, plan JSON) at the target path, prices every
+		Long: `Reads Terraform or OpenTofu (.tf, .tofu, plan JSON) at the target path, prices every
 supported resource against pricing.c3x.dev, and prints a per-resource
 breakdown.
 
@@ -114,7 +114,7 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 		},
 	}
 
-	cmd.Flags().StringVar(&path, "path", ".", "Terraform input (directory, .tf, .hcl, or plan JSON)")
+	cmd.Flags().StringVar(&path, "path", ".", "Terraform or OpenTofu input (directory, .tf, .tofu, .hcl, or plan JSON)")
 	cmd.Flags().StringVar(&format, "format", "", "output format: text, markdown, json, junit, html, csv, sarif (overrides config)")
 	cmd.Flags().StringVar(&region, "region", "", "default region when the IaC source doesn't declare one")
 	cmd.Flags().StringArrayVar(&varFiles, "var-file", nil,

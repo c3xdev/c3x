@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 
@@ -70,7 +69,7 @@ func expandModules(
 	parentVars map[string]cty.Value,
 	parentLocals map[string]cty.Value,
 	parentData cty.Value,
-	parentRegion string,
+	parentRegions providerRegions,
 	namePrefix string,
 	keyPrefix string,
 	initModules map[string]string,
@@ -133,11 +132,10 @@ func expandModules(
 				childInputs[attr.Name] = val
 			}
 
-			childPaths, err := filepath.Glob(filepath.Join(childDir, "*.tf"))
+			childPaths, err := configFiles(childDir)
 			if err != nil {
-				return fmt.Errorf("module %s glob: %w", modName, err)
+				return fmt.Errorf("module %s: %w", modName, err)
 			}
-			sort.Strings(childPaths)
 			childSources, err := loadFiles(childPaths)
 			if err != nil {
 				return fmt.Errorf("module %s load: %w", modName, err)
@@ -164,11 +162,15 @@ func expandModules(
 			applyVariableTypes(childVars, collectVariableTypes(childSources))
 
 			childData := collectDataBlocks(childSources)
-			childLocals := resolveLocals(childSources, childVars, childData)
-			childRegion := findDefaultRegion(childSources, childVars, childLocals, childData, logger)
-			if childRegion == "" {
-				childRegion = parentRegion
+			childLocals := resolveLocals(childSources, childVars, childData, logger)
+			childFallback := findDefaultRegion(childSources, childVars, childLocals, childData, logger)
+			if childFallback == "" {
+				childFallback = parentRegions.fallback
 			}
+			childRegions := parentRegions.forChild(
+				collectProviderRegions(childSources, childVars, childLocals, childData, childFallback, logger),
+				block.Body, parentCtx,
+			)
 
 			childPrefix := namePrefix + "module." + modName + "."
 			for _, csrc := range childSources {
@@ -180,7 +182,7 @@ func expandModules(
 					nm := cb.Labels[1]
 					if err := emitOne(
 						csrc.Path, kind, nm, cb.Body,
-						childVars, childLocals, childData, childRegion,
+						childVars, childLocals, childData, childRegions,
 						childPrefix, logger, out,
 					); err != nil {
 						return err
@@ -190,7 +192,7 @@ func expandModules(
 
 			if err := expandModules(
 				childDir, childSources,
-				childVars, childLocals, childData, childRegion,
+				childVars, childLocals, childData, childRegions,
 				childPrefix, manifestKey, initModules, depth+1,
 				offline, logger, out,
 			); err != nil {

@@ -6,6 +6,56 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- OpenTofu support. `.tofu` files are read alongside `.tf`, and a
+  `.tofu` file shadows the `.tf` file of the same name, as OpenTofu
+  does, so a project carrying both is not double-counted; a single
+  `.tofu` file can be passed to `--path`. OpenTofu 1.9 provider
+  `for_each` is supported: `provider = aws.by_region[each.key]` prices
+  each instance in its own provider instance's region. Verified against
+  OpenTofu 1.12.6.
+- Terraform and OpenTofu functions the evaluator lacked: `one`, `sum`,
+  `alltrue`, `anytrue`, `startswith`, `endswith`, `strcontains`,
+  `templatestring`, `chunklist`, `sensitive`, `nonsensitive`,
+  `issensitive`, `base64encode`/`decode`, `base64gzip`, `urlencode`,
+  `yamldecode`/`encode`, `md5`, `sha1`, `sha256`, `sha512`,
+  `base64sha256`/`512`, `cidrhost`, `cidrnetmask`, `cidrsubnet`,
+  `cidrsubnets`, and OpenTofu's `cidrcontains`, `urldecode` and
+  `base64gunzip`. An unknown function was silent where it hurt: in an
+  attribute it priced the catalog default (`templatestring` in an
+  `instance_type` came out as a t3.micro), and in a local it dropped
+  every resource reading it (a `cidrsubnet` in a `for_each` local
+  removed three NAT gateways from an estimate).
+- A warning naming the function and location when a configuration calls
+  one c3x still does not implement (the filesystem functions such as
+  `file` and `templatefile`, `timestamp`, `uuid`), instead of a silently
+  wrong estimate.
+
+### Fixed
+
+- Resources on an aliased provider are priced in that provider's
+  region. Every resource used to take the region of the first provider
+  block, so a default `us-east-1` provider plus an `aws.eu` alias priced
+  both halves at us-east-1 rates. Module `providers = { aws = aws.eu }`
+  mappings are honoured as well.
+- Plan JSON: each resource is priced in the region the plan resolved
+  for it (the `region` attribute AWS provider v6 and Google resources
+  carry), falling back to the configuration default when absent.
+- Plan JSON: `count` and `for_each` instances keep their keys, so
+  `web["a"]` and `web["b"]` are no longer both named `web`. Diffs pair
+  resources by name, so every instance was compared against the first
+  one: a PR comment for a plan downsizing `web["b"]` listed both
+  instances as unchanged while its total showed the saving. Names now
+  also match what the `.tf` parser produces.
+
+### Changed
+
+- Resource names from plan JSON now include the instance key. A
+  baseline saved from a plan by an earlier version will show those
+  resources as removed and re-added on the first diff against a new
+  one; re-save the baseline to clear it.
+
 ## [0.3.7] - 2026-09-23
 
 ### Fixed
