@@ -16,6 +16,37 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   eu-west-1 and sa-east-1, fallback lines went from 35 to 7 with no change
   in us-east-1. If the prefixed form misses, the original query is tried
   in the resource's own region before falling back.
+- Catalog lines that priced at $0 with a `no_price` caveat in every
+  region, because their price lookup matched no product, now price from
+  the right product:
+  - `aws_cloudwatch_log_group`: ingestion and Logs Insights filtered on
+    a `group` value that does not exist; they now pin the usagetype
+    ($0.50/GB Standard and $0.25/GB Infrequent Access ingestion,
+    $0.005/GB scanned in us-east-1). The fixture goes from $1.50 to
+    $6.51.
+  - `aws_dms_replication_instance`: storage filtered on a
+    `deploymentOption` attribute that storage rows lack. It now bills
+    only storage above the included 50 GB (T classes) or 100 GB (C and
+    R classes), at $0.115/GB-month single-AZ. Fixture: $19.33.
+  - `aws_kinesis_stream`: PUT payload units used the wrong group name,
+    and the per-unit rate was applied per million units. Now $0.014 per
+    million. Fixture: $21.91.
+  - `aws_kms_key`: the $1/month key fee filtered on a usagetype the data
+    does not carry (it embeds the full region code). Fixture: $3 to $4.
+  - `aws_mq_broker`: storage filtered on a missing `storageMedia`
+    attribute; it now picks EFS ($0.30/GB-month, the ActiveMQ default),
+    ActiveMQ EBS or RabbitMQ ($0.10) by usagetype. Fixture: $25.74.
+  - `aws_opensearch_domain`: EBS storage queried a product family that
+    does not exist; it now uses "Amazon OpenSearch Service Volume"
+    ($0.122/GB-month gp3). Fixture: $27.50.
+  - `azurerm_firewall`: data processed ($0.016/GB Standard) is priced,
+    and the deployment fee is now live instead of an inline $1.25/hour,
+    both by `sku_tier`. Fixture: $914.10.
+- `azurerm_service_plan` tells Linux from Windows plans by `os_type`.
+  Both share a skuName, and a Linux Premium v3 plan was priced at the
+  Windows rate. A Windows Basic, Standard or Premium (v1) plan has no
+  price until the pricing API ingests Azure's non-primary regional
+  meters.
 - A single `.tf.json` or `.tofu.json` file passed as `--path` is parsed as
   configuration; it was sent to the plan-JSON parser and priced nothing.
 - Azure resources are priced in their own `location`. Azure has no

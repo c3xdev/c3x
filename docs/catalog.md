@@ -813,7 +813,7 @@ Status meaning:
 | `azurerm_eventhub_namespace_authorization_rule` | FREE | azurerm_eventhub_namespace_authorization_rule |
 | `azurerm_express_route_circuit` | LIVE | Azure ExpressRoute Circuit |
 | `azurerm_federated_identity_credential` | FREE | azurerm_federated_identity_credential |
-| `azurerm_firewall` | STATIC | Azure Firewall |
+| `azurerm_firewall` | LIVE | Azure Firewall |
 | `azurerm_firewall_application_rule_collection` | FREE | azurerm_firewall_application_rule_collection |
 | `azurerm_firewall_nat_rule_collection` | FREE | azurerm_firewall_nat_rule_collection |
 | `azurerm_firewall_network_rule_collection` | FREE | azurerm_firewall_network_rule_collection |
@@ -1056,7 +1056,7 @@ Status meaning:
 | `azurerm_windows_virtual_machine_scale_set` | STATIC | Azure Windows VM Scale Set |
 | `azurerm_windows_web_app_slot` | FREE | azurerm_windows_web_app_slot |
 
-**AZURE totals:** 67 LIVE · 45 STATIC · 297 FREE
+**AZURE totals:** 68 LIVE · 44 STATIC · 297 FREE
 
 ## GCP (306 resources)
 
@@ -1373,4 +1373,4 @@ Status meaning:
 
 ---
 
-**Grand total: 1340 resources.** 186 LIVE · 86 STATIC · 1068 FREE.
+**Grand total: 1340 resources.** 187 LIVE · 85 STATIC · 1068 FREE.

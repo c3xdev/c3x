@@ -9,11 +9,19 @@ attribute_filters = [
   { key = "instanceType", expr = 'default(cluster_config_instance_type, "t3.small.search")' },
 ]
 
+# EBS storage lives in the "Amazon OpenSearch Service Volume" family,
+# keyed by storageMedia: GP3, GP2, Magnetic (Terraform "standard") and
+# PIOPS-Storage (io1).
 [mappings.storage]
 service        = "AmazonES"
-product_family = "Storage"
+product_family = "Amazon OpenSearch Service Volume"
 attribute_filters = [
-  { key = "volumeType", expr = 'default(ebs_options_volume_type, "gp3")' },
+  { key = "storageMedia", expr = '''
+      default(ebs_options_volume_type, "gp3") == "gp2" ? "GP2" :
+      default(ebs_options_volume_type, "gp3") == "standard" ? "Magnetic" :
+      default(ebs_options_volume_type, "gp3") == "io1" ? "PIOPS-Storage" :
+      "GP3"
+  ''' },
 ]
 
 [[dimensions]]
@@ -32,7 +40,9 @@ quantity = "default(cluster_config_instance_count, 1) * default(ebs_options_volu
 rate     = 'price("storage")'
 
 [fixture]
+# us-east-1: t3.small.search 730 h x $0.036 + 10 GB gp3 x $0.122 = $27.50
+# (https://aws.amazon.com/opensearch-service/pricing/)
 attributes = { cluster_config_instance_count = 1, cluster_config_instance_type = "t3.small.search", ebs_options_ebs_enabled = true, ebs_options_volume_size = 10, ebs_options_volume_type = "gp3" }
-expected_monthly_cost = 26.28
+expected_monthly_cost = 27.5
 tolerance = 0.05
 

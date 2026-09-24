@@ -13,7 +13,7 @@ attribute_filters = [
 service        = "AmazonKinesis"
 product_family = "Kinesis Streams"
 attribute_filters = [
-  { key = "group", const = "PUT payload units" },
+  { key = "group", const = "Payload Units" },
 ]
 
 [[dimensions]]
@@ -29,10 +29,14 @@ id       = "put_units"
 label    = "PUT payload units"
 unit     = "1M units"
 quantity = "default(monthly_put_payload_units, 0) / 1000000"
-rate     = 'price("put_payload")'
+# The upstream rate is per single payload unit ($0.000000014); the line
+# is priced per million units.
+rate     = 'price("put_payload") * 1000000'
 
 [fixture]
+# us-east-1: 2 shards x 730 h x $0.015 + 1M PUT payload units x $0.014
+# per million = $21.914 (https://aws.amazon.com/kinesis/data-streams/pricing/)
 attributes = { monthly_put_payload_units = 1_000_000, shard_count = 2 }
-expected_monthly_cost = 21.9
+expected_monthly_cost = 21.91
 tolerance = 0.05
 
