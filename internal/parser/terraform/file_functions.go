@@ -38,14 +38,18 @@ type evalScope struct {
 	// allowFiles registers the filesystem functions. Without it they stay
 	// unregistered, so a call is an unknown function and nothing is read.
 	allowFiles bool
+	// budget bounds the whole parse; shared by every module's scope.
+	budget *parseBudget
+	// untrusted confines local module sources to the root directory.
+	untrusted bool
 }
 
-func newRootScope(dir string, allowFiles bool) evalScope {
+func newRootScope(dir string, allowFiles, untrusted bool) evalScope {
 	abs, err := filepath.Abs(dir)
 	if err != nil {
 		abs = dir
 	}
-	return evalScope{rootDir: abs, moduleDir: abs, allowFiles: allowFiles}
+	return evalScope{rootDir: abs, moduleDir: abs, allowFiles: allowFiles, budget: newParseBudget(), untrusted: untrusted}
 }
 
 func (s evalScope) child(dir string) evalScope {
@@ -53,7 +57,7 @@ func (s evalScope) child(dir string) evalScope {
 	if err != nil {
 		abs = dir
 	}
-	return evalScope{rootDir: s.rootDir, moduleDir: abs, allowFiles: s.allowFiles}
+	return evalScope{rootDir: s.rootDir, moduleDir: abs, allowFiles: s.allowFiles, budget: s.budget, untrusted: s.untrusted}
 }
 
 // evalContext is buildEvalContext plus the path object and the
@@ -122,6 +126,17 @@ func (s evalScope) resolve(p string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("%w: %s", errOutsideProject, p)
+}
+
+// containsDir reports whether dir, symlinks resolved, lies within the root
+// directory.
+func (s evalScope) containsDir(dir string) bool {
+	target, err := filepath.EvalSymlinks(dir)
+	if err != nil {
+		return false
+	}
+	root, err := filepath.EvalSymlinks(s.rootDir)
+	return err == nil && within(root, target)
 }
 
 func within(root, target string) bool {

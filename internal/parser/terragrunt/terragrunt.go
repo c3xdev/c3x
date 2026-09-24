@@ -55,8 +55,9 @@ type Options struct {
 	// Offline is forwarded to the Terraform parser; disables network
 	// module fetching inside the resolved module tree.
 	Offline bool
-	// AllowFileFunctions is forwarded to the Terraform parser.
+	// AllowFileFunctions and Untrusted are forwarded to the Terraform parser.
 	AllowFileFunctions bool
+	Untrusted          bool
 }
 
 // ParseDirectory detects a Terragrunt config in `dir` and resolves
@@ -100,6 +101,7 @@ func ParseDirectory(dir string, opts Options) ([]domain.Resource, error) {
 		Offline: opts.Offline,
 
 		AllowFileFunctions: opts.AllowFileFunctions,
+		Untrusted:          opts.Untrusted,
 	})
 }
 

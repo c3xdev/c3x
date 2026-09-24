@@ -25,6 +25,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -37,6 +38,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	goversion "github.com/hashicorp/go-version"
 )
@@ -75,7 +77,9 @@ func NewModuleFetcher(cacheDir string) (*ModuleFetcher, error) {
 	}
 	return &ModuleFetcher{
 		CacheDir: cacheDir,
-		HTTP:     http.DefaultClient,
+		// http.DefaultClient has no timeout: a registry host that never
+		// answers would hang the parse, and CI with it.
+		HTTP: &http.Client{Timeout: fetchTimeout},
 	}, nil
 }
 
@@ -437,8 +441,14 @@ func unzip(r io.Reader, dest string) error {
 		return err
 	}
 	defer func() { _ = os.Remove(tmp.Name()); _ = tmp.Close() }()
-	if _, err := io.Copy(tmp, r); err != nil {
+	// Extraction was capped, the download itself was not: an endless
+	// response body would fill the disk before extraction began.
+	n, err := io.Copy(tmp, io.LimitReader(r, maxExtractBytes+1))
+	if err != nil {
 		return err
+	}
+	if n > maxExtractBytes {
+		return fmt.Errorf("module archive exceeds %d bytes", maxExtractBytes)
 	}
 	stat, _ := tmp.Stat()
 	zr, err := zip.NewReader(tmp, stat.Size())
@@ -502,17 +512,30 @@ func dirHasFiles(path string) bool {
 	return err == nil && len(entries) > 0
 }
 
-func runCommand(args []string) error {
-	cmd := exec.Command("git", args...)
+func runCommand(args []string) error { return runCommandIn("", args) }
+
+func runCommandIn(dir string, args []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), fetchTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd.Dir = dir
+	cmd.Env = gitEnv()
 	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
-func runCommandIn(dir string, args []string) error {
-	cmd := exec.Command("git", args...)
-	cmd.Dir = dir
-	cmd.Stdout = os.Stderr
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+// fetchTimeout bounds one module download or git command.
+const fetchTimeout = 2 * time.Minute
+
+// gitEnv restricts the transports git may use for a module source.
+// GIT_ALLOW_PROTOCOL is git's own allowlist: it rules out file:// (reading
+// repositories on the host running c3x) and remote helpers such as ext::,
+// which run commands. GIT_TERMINAL_PROMPT=0 makes a source that needs
+// credentials fail instead of waiting on a prompt nobody will answer.
+func gitEnv() []string {
+	return append(os.Environ(),
+		"GIT_ALLOW_PROTOCOL=https:ssh:git",
+		"GIT_TERMINAL_PROMPT=0",
+	)
 }

@@ -21,5 +21,7 @@ func parserOptions(resolved config.Resolved, varFiles []string, vars map[string]
 		// Already forced off by config in untrusted-input mode; repeated
 		// here so the guarantee does not rest on one place.
 		AllowFileFunctions: resolved.AllowFileFunctions && !resolved.NoRemoteModules,
+		// Confines local module sources to the scanned directory.
+		Untrusted: resolved.NoRemoteModules,
 	}
 }

@@ -27,10 +27,19 @@ No API key, no SaaS account, no telemetry.
 
 c3x parses your infrastructure code **statically**. No `terraform init`, no
 providers, no cloud credentials, no state access, so it is fast enough to
-sit in front of every pull request. For input you don't control, such as
-pull requests from forks, add `--no-remote-modules` (or set
-`C3X_NO_REMOTE_MODULES=true`): c3x then fetches no remote modules and
-reads no files, whatever the configuration asks for.
+sit in front of every pull request.
+
+For input you don't control, such as pull requests from forks, use
+untrusted-input mode: `--no-remote-modules`, or `C3X_NO_REMOTE_MODULES=true`
+for every command. The GitHub Action turns it on automatically for pull
+requests from forks. In that mode c3x fetches no remote modules, reads no
+files, keeps local modules inside the scanned directory, and ignores
+anything in the repository's `.c3x.toml` that could redirect pricing,
+credentials or file access (only region, currency, format, budgets and an
+in-project usage file are honoured). Every parse is also bounded — at most
+10,000 instances per resource, 200,000 resources, 5,000 module expansions
+and two minutes — so a hostile configuration fails fast instead of
+exhausting the machine.
 
 ## Install
 
