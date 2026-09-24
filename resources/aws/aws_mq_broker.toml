@@ -29,11 +29,23 @@ attribute_filters = [
   ''' },
 ]
 
+# Storage rows carry no storageMedia; the usagetype names the storage:
+#   ActiveMQ, EFS (durability optimized, the default): TimedStorage-ByteHrs
+#   ActiveMQ, EBS (throughput optimized, mq.m5 only):  TimedStorage-EBS-ByteHrs
+#   RabbitMQ (always EBS):                             TimedStorage-RabbitMQ-ByteHrs
+# The EFS row's deploymentOption says "Multi-AZ" but it bills single
+# instance brokers too. AWS publishes no EFS row in some regions
+# (eu-west-1 among them); there the engine quotes the us-east-1 rate
+# with a region_fallback caveat.
 [mappings.storage]
 service        = "AmazonMQ"
 product_family = "Broker Storage"
 attribute_filters = [
-  { key = "storageMedia", const = "EBS" },
+  { key = "usagetype", expr = '''
+      default(engine_type, "ActiveMQ") == "RabbitMQ" ? "USE1-TimedStorage-RabbitMQ-ByteHrs" :
+      lower(default(storage_type, "efs")) == "ebs" ? "USE1-TimedStorage-EBS-ByteHrs" :
+      "USE1-TimedStorage-ByteHrs"
+  ''' },
 ]
 
 [[dimensions]]
@@ -54,7 +66,9 @@ quantity = "default(storage_size_gb, 20)"
 rate     = 'price("storage")'
 
 [fixture]
+# us-east-1: mq.t3.micro ActiveMQ 730 h x $0.02704 + 20 GB EFS x $0.30
+# = $25.739 (https://aws.amazon.com/amazon-mq/pricing/)
 attributes = { deployment_mode = "SINGLE_INSTANCE", engine_type = "ActiveMQ", host_instance_type = "mq.t3.micro", storage_size_gb = 20 }
-expected_monthly_cost = 19.74
+expected_monthly_cost = 25.74
 tolerance = 0.05
 

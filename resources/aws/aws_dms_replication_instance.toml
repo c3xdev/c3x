@@ -27,11 +27,13 @@ attribute_filters = [
   { key = "availabilityZone", const = "Multiple" },
 ]
 
+# Storage rows carry no deploymentOption; Single/Multi-AZ is the same
+# `availabilityZone` attribute the instance rows use.
 [mappings.storage]
 service        = "AWSDatabaseMigrationSvc"
 product_family = "Replication Storage"
 attribute_filters = [
-  { key = "deploymentOption", expr = 'pick(default(multi_az, false), "Multi-AZ", "Single-AZ")' },
+  { key = "availabilityZone", expr = 'pick(default(multi_az, false), "Multiple", "Single")' },
 ]
 
 [[dimensions]]
@@ -41,15 +43,29 @@ unit     = "hours"
 quantity = "monthly_hours()"
 rate     = 'pick(default(multi_az, false), price("instance_multi_az"), price("instance_single_az"))'
 
+# Every replication instance includes GP2 storage: 50 GB on the
+# burstable T classes, 100 GB on the C and R classes. Only storage
+# above that is billed, so an instance at the included size (or with
+# allocated_storage unset, which AWS defaults to the included size)
+# has no storage line.
 [[dimensions]]
 id       = "storage"
-label    = "Storage"
+label    = "Storage (beyond included)"
 unit     = "GB-month"
-quantity = "default(allocated_storage, 50)"
+when     = '''
+  default(allocated_storage, 0) >
+  (strip_prefix(default(replication_instance_class, "dms.t3.micro"), "dms.") startsWith "t" ? 50 : 100)
+'''
+quantity = '''
+  default(allocated_storage, 0) -
+  (strip_prefix(default(replication_instance_class, "dms.t3.micro"), "dms.") startsWith "t" ? 50 : 100)
+'''
 rate     = 'price("storage")'
 
 [fixture]
-attributes = { allocated_storage = 50, multi_az = false, replication_instance_class = "dms.t3.micro" }
-expected_monthly_cost = 13.58
+# us-east-1: dms.t3.micro 730 h x $0.0186 + (100 - 50 included) GB x
+# $0.115 = $19.328 (https://aws.amazon.com/dms/pricing/)
+attributes = { allocated_storage = 100, multi_az = false, replication_instance_class = "dms.t3.micro" }
+expected_monthly_cost = 19.33
 tolerance = 0.05
 

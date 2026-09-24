@@ -2,15 +2,20 @@ kind         = "aws_kms_key"
 display_name = "AWS KMS Key"
 provider     = "aws"
 
+# KMS usagetypes embed the full region code ("us-east-1-KMS-Keys",
+# "eu-west-1-KMS-Keys"), not the USE1- prefix the engine localizes,
+# so they cannot be pinned. Each region has exactly one "Encryption
+# Key" product; requests filter on the region-independent group.
+
 [mappings.key]
 service        = "awskms"
 product_family = "Encryption Key"
-attribute_filters = [{ key = "usagetype", const = "KMS-Keys" }]
+attribute_filters = []
 
 [mappings.requests]
 service        = "awskms"
 product_family = "API Request"
-attribute_filters = []
+attribute_filters = [{ key = "group", const = "awskms-APIRequest-All" }]
 
 [[dimensions]]
 id       = "key_storage"
@@ -27,7 +32,9 @@ quantity = "default(monthly_requests, 0)"
 rate     = 'price("requests")'
 
 [fixture]
+# us-east-1: 1 key x $1 + 1M requests x $0.03 per 10,000 = $4
+# (https://aws.amazon.com/kms/pricing/)
 attributes = { monthly_requests = 1_000_000 }
-expected_monthly_cost = 3
+expected_monthly_cost = 4
 tolerance = 0.05
 

@@ -14,8 +14,8 @@ Verified against `pricing.c3x.dev` on 2026-09-24:
 
 | Result | Kinds |
 |---|---:|
-| **LIVE** (priced from the upstream API, tracks vendor price changes) | 162 |
-| **STATIC** (priced from an inline rate, does not track upstream changes) | 110 |
+| **LIVE** (priced from the upstream API, tracks vendor price changes) | 163 |
+| **STATIC** (priced from an inline rate, does not track upstream changes) | 109 |
 | **FREE** (not charged at the resource level) | 1,068 |
 | **ZERO / DRIFT / NOFIX / STALE / ERRORED** | 0 |
 | **Total** | **1,340** |
@@ -30,7 +30,7 @@ drifted apart from each other and from reality.
 
 ### Two classifications, counted differently
 
-`docs/catalog.md` reports **186 LIVE / 86 STATIC** for the same 1,340
+`docs/catalog.md` reports **187 LIVE / 85 STATIC** for the same 1,340
 kinds. That is not a contradiction, the two tools measure different
 things:
 

@@ -2,30 +2,42 @@ kind         = "aws_cloudwatch_log_group"
 display_name = "AWS CloudWatch Log Group"
 provider     = "aws"
 
+# Every mapping pins the us-east-1 usagetype; the engine rewrites the
+# USE1- prefix to the resource's region (EU-DataProcessing-Bytes in
+# eu-west-1). The `group` attribute cannot be used: it is a display
+# label ("Ingested Logs") shared by the vended-log and Otel variants.
+# There is also an unprefixed legacy "DataProcessing-Bytes" row in
+# us-east-1 only, which the prefixed form avoids.
+
 [mappings.ingestion_standard]
 service        = "AmazonCloudWatch"
 product_family = "Data Payload"
 attribute_filters = [
-  { key = "group", const = "DataProcessing-Bytes" },
+  { key = "usagetype", const = "USE1-DataProcessing-Bytes" },
 ]
 
 [mappings.ingestion_ia]
 service        = "AmazonCloudWatch"
 product_family = "Data Payload"
 attribute_filters = [
-  { key = "group", const = "DataProcessing-Bytes-IA" },
+  { key = "usagetype", const = "USE1-DataProcessingIA-Bytes" },
 ]
 
+# Archived log storage is $0.03/GB-month for both log classes. The
+# family also carries the TimedStorage-IA/-AIA rows, so an empty filter
+# matched them too and only priced correctly because the max won.
 [mappings.storage]
 service        = "AmazonCloudWatch"
 product_family = "Storage Snapshot"
-attribute_filters = []
+attribute_filters = [
+  { key = "usagetype", const = "USE1-TimedStorage-ByteHrs" },
+]
 
 [mappings.insights]
 service        = "AmazonCloudWatch"
 product_family = "Data Payload"
 attribute_filters = [
-  { key = "group", const = "QueryInsights" },
+  { key = "usagetype", const = "USE1-DataScanned-Bytes" },
 ]
 
 [[dimensions]]
@@ -50,7 +62,9 @@ quantity = "default(monthly_data_scanned_gb, 0)"
 rate     = 'price("insights")'
 
 [fixture]
+# us-east-1: 10 GB ingested x $0.50 + 50 GB stored x $0.03 + 1 GB
+# scanned x $0.005 = $6.505 (https://aws.amazon.com/cloudwatch/pricing/)
 attributes = { monthly_data_ingested_gb = 10, monthly_data_scanned_gb = 1, monthly_data_stored_gb = 50 }
-expected_monthly_cost = 1.5
+expected_monthly_cost = 6.51
 tolerance = 0.05
 

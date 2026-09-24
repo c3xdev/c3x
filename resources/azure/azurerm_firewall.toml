@@ -2,36 +2,48 @@ kind         = "azurerm_firewall"
 display_name = "Azure Firewall"
 provider     = "azure"
 
-# Azure Firewall has both a per-deployment hourly fee (~$1.25/hr for
-# Standard) and per-GB data-processed fee ($0.016/GB Standard). The
-# hourly deployment fee meter isn't reliably exposed; fall back to the
-# published rate for the deployment line item and use the live API for
-# data processed.
+# Azure Firewall bills a per-deployment hourly fee and a per-GB
+# data-processed fee, both by sku_tier (Basic / Standard / Premium).
+#
+# The meters are global: the Retail Prices API lists each one as
+# primary under the "Global" region and re-lists it, at the same price,
+# as a non-primary row under every commercial region. The mappings pin
+# region "Global" so they match the primary row whatever the resource's
+# region is.
 
-[mappings.data_processed_standard]
+[mappings.deployment]
 service        = "Azure Firewall"
 product_family = "Networking"
+region         = "Global"
 attribute_filters = [
-  { key = "meterName", const = "Standard Data Processed" },
+  { key = "meterName", expr = 'default(sku_tier, "Standard") + " Deployment"' },
+]
+
+[mappings.data_processed]
+service        = "Azure Firewall"
+product_family = "Networking"
+region         = "Global"
+attribute_filters = [
+  { key = "meterName", expr = 'default(sku_tier, "Standard") + " Data Processed"' },
 ]
 
 [[dimensions]]
 id       = "deployment_hours"
-label    = "Standard deployment"
+label    = "Deployment"
 unit     = "hours"
 quantity = "monthly_hours()"
-rate     = "1.25"
+rate     = 'price("deployment")'
 
 [[dimensions]]
 id       = "data_processed"
 label    = "Data processed"
 unit     = "GB"
 quantity = "default(monthly_data_processed_gb, 0)"
-rate     = 'price("data_processed_standard")'
+rate     = 'price("data_processed")'
 
 [fixture]
+# Standard: 730 h x $1.25 + 100 GB x $0.016 = $914.10
+# (https://azure.microsoft.com/en-us/pricing/details/azure-firewall/)
 attributes = { monthly_data_processed_gb = 100, sku_tier = "Standard" }
-expected_monthly_cost = 912.5
-exact = true
-last_verified = "2026-06-09"
-
+expected_monthly_cost = 914.1
+tolerance = 0.05

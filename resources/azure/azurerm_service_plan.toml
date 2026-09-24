@@ -2,11 +2,35 @@ kind         = "azurerm_service_plan"
 display_name = "Azure App Service Plan"
 provider     = "azure"
 
+# Linux and Windows plans share skuName ("B1") and differ only by
+# productName ("Azure App Service Basic Plan - Linux" vs "... Basic
+# Plan"), so the product name is built from the SKU's tier and os_type.
+# Without it a skuName-only filter matched both OSes and the max price
+# won: a Linux B1 at the Windows rate. Windows Basic, Standard and Premium
+# (v1) rows are non-primary meters in most regions and only appear once
+# the pricing API ingests those.
 [mappings.plan]
 service        = "Azure App Service"
 product_family = "Compute"
 attribute_filters = [
   { key = "skuName", expr = 'default(sku_name, "B1")' },
+  { key = "productName", expr = '''
+      let s = default(sku_name, "B1");
+      let tier =
+        s startsWith "PC"                  ? "Premium Windows Container" :
+        s startsWith "B"                   ? "Basic" :
+        s startsWith "S"                   ? "Standard" :
+        s startsWith "F"                   ? "Free" :
+        s startsWith "P" && s endsWith "v2" ? "Premium v2" :
+        s startsWith "P" && s endsWith "v3" ? "Premium v3" :
+        s startsWith "P" && s endsWith "v4" ? "Premium v4" :
+        s startsWith "P"                   ? "Premium" :
+        s startsWith "I" && s endsWith "v2" ? "Isolated v2" :
+        s startsWith "I" && s endsWith "v4" ? "Isolated v4" :
+        s startsWith "I"                   ? "Isolated" : s;
+      let linux = lower(default(os_type, "Linux")) == "linux" && tier != "Premium Windows Container";
+      "Azure App Service " + tier + " Plan" + (linux ? " - Linux" : "")
+  ''' },
 ]
 
 [[dimensions]]
@@ -17,7 +41,9 @@ quantity = "default(worker_count, 1) * monthly_hours()"
 rate     = 'price("plan")'
 
 [fixture]
-attributes = { sku_name = "B1", worker_count = 1 }
+# eastus Linux B1: 730 h x $0.017 = $12.41
+# (https://azure.microsoft.com/en-us/pricing/details/app-service/linux/)
+attributes = { os_type = "Linux", sku_name = "B1", worker_count = 1 }
 expected_monthly_cost = 12.41
 tolerance = 0.05
 

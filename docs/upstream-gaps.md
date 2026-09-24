@@ -43,14 +43,13 @@ backend exposes the meter, the rate moves from inline literal to
 | `aws_emr_cluster` | `ElasticMapReduce` | Service is entirely absent from the upstream scrape (probed 2026-06-08, 0 products); inline service-charge rate of $0.048/node-hour models the EMR markup on top of underlying EC2 | Add a scraper for the EMR SKUs |
 | `aws_db_proxy` | `AmazonRDS / Database Proxy` | No `DB Proxy`/`Database Proxy` productFamily found in the upstream catalog (probed 2026-06-08); inline rate of $0.015/vCPU-hour from the published RDS Proxy pricing page | Add the `Database Proxy` family or backfill `productFamily` on the existing RDS Proxy SKUs |
 
-## Azure (8)
+## Azure (7)
 
 | Kind | Service / Meter | Why STATIC | Backend fix |
 |---|---|---|---|
 | `azurerm_container_registry` | `Container Registry / Standard Registry Unit` | Standard/Basic-tier connected-registry meters are not in the Retail Prices snapshot | Pull from Retail Prices API with `serviceName = "Container Registry"` |
 | `azurerm_data_factory` | `Azure Data Factory v2 / Pipeline Activity` | Activity-run and DIU meters are not currently scraped | Add scraper for `serviceName = "Azure Data Factory v2"` |
 | `azurerm_eventhub_namespace` | `Event Hubs / Throughput Unit` | Standard Throughput Unit hour meter not present | Add `meterName = "Throughput Unit"` rows |
-| `azurerm_firewall` | `Azure Firewall / Standard Data Processed` | Standard data-processed GB meter not exposed (only deployment-hour is) | Backfill `meterName = "Standard Data Processed"` |
 | `azurerm_key_vault` | `Key Vault / Operations` | Standard operations per-10k meter not exposed | Add `meterName = "Operations"` rows |
 | `azurerm_logic_app_workflow` | `Logic Apps / Consumption Actions` | Consumption-tier Actions meter not indexed (Standard tier IS indexed but billed via App Service Plan) | Add `meterName = "Standard Actions"` (consumption rows) |
 | `azurerm_servicebus_namespace` | `Service Bus / Standard Base` | Standard-namespace base charge has no row | Add `meterName = "Standard Base Unit"` |
