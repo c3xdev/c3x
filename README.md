@@ -39,7 +39,11 @@ credentials or file access (only region, currency, format, budgets and an
 in-project usage file are honoured). Every parse is also bounded — at most
 10,000 instances per resource, 200,000 resources, 5,000 module expansions
 and two minutes — so a hostile configuration fails fast instead of
-exhausting the machine.
+exhausting the machine. Those limits are checked between resources and
+modules; a single expression, such as nested `for` comprehensions, is
+evaluated to completion and can still use significant CPU and memory. If
+you run c3x as a service on untrusted input, give it container memory and
+CPU limits and a wall-clock timeout as well.
 
 ## Install
 

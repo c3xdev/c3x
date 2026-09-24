@@ -40,7 +40,10 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   5,000 module expansions and two minutes per parse, with `range()`
   capped at 1,024 elements as in Terraform and `base64gunzip` at 16 MiB.
   `count = 1000000000` used to grow past 6 GB, and four self-sourcing
-  modules expanded 4^10 times.
+  modules expanded 4^10 times. The limits are checked between
+  resources and modules; one expression (nested comprehensions) still
+  runs to completion, so a service parsing untrusted input should also
+  apply container memory, CPU and time limits. The README says so.
 - Untrusted input may not source local modules from outside the scanned
   directory, whether through `../` or a committed `modules.json`.
 - Module fetching: requests time out, archive downloads are capped, and

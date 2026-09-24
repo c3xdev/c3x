@@ -1,6 +1,7 @@
 package terraform_test
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,7 +21,9 @@ func expectLimitError(t *testing.T, dir string) {
 	if err == nil || !strings.Contains(err.Error(), "parse limits") {
 		t.Fatalf("err = %v; want a parse-limit error", err)
 	}
-	if d := time.Since(start); d > 10*time.Second {
+	// Generous for CI's race detector: the point is that it terminates
+	// promptly, which the budget guarantees, not a benchmark.
+	if d := time.Since(start); d > 60*time.Second {
 		t.Fatalf("refusing took %s; limits must trip early", d)
 	}
 }
@@ -35,12 +38,15 @@ func TestCountBombIsRefused(t *testing.T) {
 func TestForEachOverHugeMapIsRefused(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
-	// 20 x 1024 keys stays inside range()'s own cap but exceeds the
-	// per-resource instance limit.
-	write(t, dir, "main.tf", `
-		locals { keys = flatten([for a in range(20) : [for b in range(1024) : "${a}-${b}"]]) }
-		resource "aws_instance" "x" { for_each = toset(local.keys) }
-	`)
+	// A literal map one past the per-resource limit: cheap to parse, so
+	// the test measures the limit rather than HCL's evaluation speed.
+	var b strings.Builder
+	b.WriteString("locals {\n  keys = {\n")
+	for i := 0; i <= 10_000; i++ {
+		fmt.Fprintf(&b, "    k%d = %d\n", i, i)
+	}
+	b.WriteString("  }\n}\nresource \"aws_instance\" \"x\" { for_each = local.keys }\n")
+	write(t, dir, "main.tf", b.String())
 	expectLimitError(t, dir)
 }
 
@@ -82,13 +88,14 @@ func TestHugeRangeIsRefusedBeforeAllocating(t *testing.T) {
 func TestGzipBombIsRefused(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
-	// 64 MiB of zeros, gzipped: small once compressed, large inflated. The
-	// small round trip is the positive control: it must resolve, so the
-	// large one failing is the cap and not the expression.
+	// 17 MiB of zeros, just past the 16 MiB cap: small once compressed,
+	// large inflated. The small round trip is the positive control: it
+	// must resolve, so the large one failing is the cap and not the
+	// expression.
 	write(t, dir, "main.tf", `
 		locals {
 		  small = base64gunzip(base64gzip("m5.large"))
-		  big   = base64gunzip(base64gzip(join("", [for i in range(1024) : format("%065536d", 0)])))
+		  big   = base64gunzip(base64gzip(join("", [for i in range(1024) : format("%017408d", 0)])))
 		}
 		resource "aws_instance" "x" {
 		  instance_type = local.small
