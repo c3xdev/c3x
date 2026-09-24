@@ -8,6 +8,18 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Azure resources are priced in their own `location`. Azure has no
+  provider-level region, and the resource's `location` was never read, so
+  every Azure resource was priced in eastus, from a directory and from a
+  plan JSON alike. A Standard_D4s_v5 VM in westeurope showed $140.16/mo
+  instead of $167.90. GCP resources are likewise priced in their own
+  `region`, or the region of their `zone` (europe-west4-b → europe-west4),
+  and AWS resources honour a per-resource `region` (AWS provider v6).
+- A resource with no region of its own, and no `--region` for its
+  provider, is priced in that provider's reference region (us-east-1,
+  eastus, us-central1). The single default (us-east-1 unless set) used to
+  be sent to Azure and GCP lookups too, which matched nothing and fell
+  back with a caveat naming an AWS region.
 - AWS resources priced by usagetype now use the region's own rate. The
   catalog writes usagetypes for us-east-1 (`USE1-AmazonEKS-Hours`), so
   every other region missed and was quoted at the us-east-1 rate, marked

@@ -86,6 +86,7 @@ func Parse(path string, opts Options) ([]domain.Resource, error) {
 	// parses goes through it, and so the catalog can stay on expressions
 	// that every released client understands.
 	applyInheritance(resources)
+	applyResourceRegions(resources)
 	return resources, nil
 }
 
@@ -168,6 +169,7 @@ func PlanBaseline(path string, opts Options) ([]domain.Resource, bool, error) {
 		return nil, false, err
 	}
 	applyInheritance(out)
+	applyResourceRegions(out)
 	return out, hasBaseline, nil
 }
 
@@ -188,6 +190,7 @@ func ParsePostApply(path string, opts Options) ([]domain.Resource, error) {
 			return nil, err
 		}
 		applyInheritance(out)
+		applyResourceRegions(out)
 		return out, nil
 	}
 	return Parse(path, opts)

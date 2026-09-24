@@ -147,7 +147,7 @@ func (e *Engine) costFor(ctx context.Context, r domain.Resource) (domain.Cost, s
 	}
 
 	lookup := e.priceLookupFor(ctx, r, def)
-	region := r.ResolveRegion(e.defaultRegion)
+	region := e.regionFor(r, def.Provider)
 
 	var items []domain.LineItem
 	subtotal := decimal.Zero
@@ -231,7 +231,7 @@ func (e *Engine) priceLookupFor(
 	r domain.Resource,
 	def *catalog.Definition,
 ) expr.PriceLookup {
-	region := r.ResolveRegion(e.defaultRegion)
+	region := e.regionFor(r, def.Provider)
 	return func(mappingName string) (decimal.Decimal, string, error) {
 		mapping, ok := def.Mappings[mappingName]
 		if !ok {
