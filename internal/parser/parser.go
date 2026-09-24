@@ -110,8 +110,7 @@ func parseRaw(path string, opts Options) ([]domain.Resource, error) {
 	}
 	lower := strings.ToLower(path)
 	switch {
-	case strings.HasSuffix(lower, ".tf"), strings.HasSuffix(lower, ".tofu"), strings.HasSuffix(lower, ".hcl"),
-		strings.HasSuffix(lower, ".tf.json"), strings.HasSuffix(lower, ".tofu.json"):
+	case strings.HasSuffix(lower, ".tf"), strings.HasSuffix(lower, ".tofu"), strings.HasSuffix(lower, ".hcl"):
 		return terraform.ParseFile(path, toTerraformOptions(opts))
 	case strings.HasSuffix(lower, ".cfn"),
 		strings.HasSuffix(lower, ".cfn.yaml"),

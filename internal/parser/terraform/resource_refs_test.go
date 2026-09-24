@@ -75,3 +75,40 @@ func TestResourceReferencesAreModuleScoped(t *testing.T) {
 		t.Errorf("module.child.ref instance_type = %v; want its own module's t3.nano", it)
 	}
 }
+
+// The pattern nearly every Azure configuration uses: resources take their
+// location from the resource group. With the literal resolved, they are
+// priced in the resource group's region instead of a default.
+func TestAzureLocationFromResourceGroup(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	write(t, dir, "main.tf", `
+		provider "azurerm" {
+		  features {}
+		}
+		resource "azurerm_resource_group" "rg" {
+		  name     = "rg-prod"
+		  location = "westeurope"
+		}
+		resource "azurerm_linux_virtual_machine" "vm" {
+		  name                = "vm1"
+		  resource_group_name = azurerm_resource_group.rg.name
+		  location            = azurerm_resource_group.rg.location
+		  size                = "Standard_D2s_v3"
+		}
+	`)
+	got, err := terraform.ParseDirectory(dir, terraform.Options{Offline: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	vm := byName(got)["vm"]
+	if vm.Attributes["location"] != "westeurope" {
+		t.Errorf("location = %v, want westeurope from azurerm_resource_group.rg", vm.Attributes["location"])
+	}
+	if vm.Attributes["resource_group_name"] != "rg-prod" {
+		t.Errorf("resource_group_name = %v, want rg-prod", vm.Attributes["resource_group_name"])
+	}
+	if slices.Contains(vm.Unresolved, "location") {
+		t.Errorf("location reported unresolved: %v", vm.Unresolved)
+	}
+}
