@@ -168,3 +168,60 @@ func TestGitModuleFromLocalFilesystemIsRefused(t *testing.T) {
 		t.Fatalf("fetched %s from the local filesystem; file:// must be refused", dir)
 	}
 }
+
+// Module count / for_each: every instance is a full parse of the module,
+// so each counts against the module-expansion budget, and a huge count is
+// refused before any instance is built.
+func TestModuleCountBombIsRefused(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	mustMkdir(t, filepath.Join(dir, "m"))
+	write(t, filepath.Join(dir, "m"), "main.tf", `resource "aws_instance" "x" {}`)
+	write(t, dir, "main.tf", `
+		module "a" {
+		  source = "./m"
+		  count  = 1000000000
+		}
+	`)
+	expectLimitError(t, dir)
+}
+
+// Instances x resources stays bounded: 5,000 module instances of a module
+// with 50 x 1,000 resources would be 250 million resources.
+func TestModuleInstancesTimesResourcesIsRefused(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	mustMkdir(t, filepath.Join(dir, "m"))
+	var b strings.Builder
+	for i := 0; i < 50; i++ {
+		fmt.Fprintf(&b, "resource \"aws_instance\" \"r%d\" { count = 1000 }\n", i)
+	}
+	write(t, filepath.Join(dir, "m"), "main.tf", b.String())
+	write(t, dir, "main.tf", `
+		module "a" {
+		  source   = "./m"
+		  for_each = toset([for p in setproduct(range(100), range(40)) : "${p[0]}-${p[1]}"])
+		}
+	`)
+	expectLimitError(t, dir)
+}
+
+func TestDynamicBlockBombIsRefused(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	write(t, dir, "main.tf", `
+		resource "aws_instance" "x" {
+		  count = 1000
+		  dynamic "ebs_block_device" {
+		    for_each = range(1000)
+		    content {
+		      dynamic "tag" {
+		        for_each = range(1000)
+		        content { v = tag.value }
+		      }
+		    }
+		  }
+		}
+	`)
+	expectLimitError(t, dir)
+}

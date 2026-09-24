@@ -29,6 +29,12 @@ func FuzzParseDirectory(f *testing.F) {
 		`# only a comment`,
 		`provider "aws" { region = var.region }`,
 		`resource "aws_instance" "x" { count = length([1,2,3]) }`,
+		`resource "aws_instance" "x" { dynamic "d" { for_each = [1] content { v = d.value } } }`,
+		`data "aws_availability_zones" "a" {}
+resource "aws_nat_gateway" "n" { for_each = toset(data.aws_availability_zones.a.names) }`,
+		`module "m" { source = "./" count = 2 x = count.index }`,
+		`resource "aws_instance" "a" { t = "x" }
+resource "aws_instance" "b" { t = aws_instance.a.t }`,
 	}
 	for _, s := range seeds {
 		f.Add([]byte(s))
@@ -43,6 +49,32 @@ func FuzzParseDirectory(f *testing.F) {
 		// call doesn't panic. A wrapped error or empty result is fine.
 		// Offline: the fuzzer can synthesise registry/git module
 		// sources; resolution must never leave the process.
+		_, _ = terraform.ParseDirectory(dir, terraform.Options{Offline: true})
+	})
+}
+
+// FuzzParseJSONDirectory does the same for the JSON syntax, which is
+// translated to native syntax before parsing: no input may panic the
+// translator or the parse of what it emits.
+func FuzzParseJSONDirectory(f *testing.F) {
+	seeds := []string{
+		`{}`,
+		`{"resource": {"aws_instance": {"x": {"instance_type": "${var.t}"}}}}`,
+		`{"variable": {"t": {"type": "list(string)", "default": ["a"]}}}`,
+		`{"locals": {"a": [1, 2.5e3, null, true, {"k": "v"}]}}`,
+		`{"resource": {"aws_instance": {"x": {"dynamic": {"d": {"for_each": [1], "content": {"v": "${d.value}"}}}}}}}`,
+		`{"module": {"m": {"source": "./", "providers": {"aws": "aws.eu"}}}}`,
+		`{"provider": {"aws": [{"region": "us-east-1"}, {"alias": "eu"}]}}`,
+		`[1]`,
+	}
+	for _, s := range seeds {
+		f.Add([]byte(s))
+	}
+	f.Fuzz(func(t *testing.T, raw []byte) {
+		dir := t.TempDir()
+		if err := os.WriteFile(filepath.Join(dir, "main.tf.json"), raw, 0o644); err != nil {
+			t.Skip(err)
+		}
 		_, _ = terraform.ParseDirectory(dir, terraform.Options{Offline: true})
 	})
 }

@@ -52,40 +52,44 @@ func loadInitModules(baseDir string, logger *slog.Logger) map[string]string {
 	return out
 }
 
+// moduleExpander carries what stays fixed while expanding a module tree.
+type moduleExpander struct {
+	initModules map[string]string
+	offline     bool
+	logger      *slog.Logger
+	out         *[]domain.Resource
+}
+
 // expandModules walks every `module "X" { ... }` block and recursively
 // parses each module's source directory, threading parent inputs in as
 // the child's variables and prefixing emitted Resources with the
 // `module.X.` path.
 //
+// A module block with count or for_each is expanded once per instance,
+// with count.index / each.key / each.value in scope for its inputs, and
+// its resources are addressed module.X[0]. / module.X["a"]., as Terraform
+// addresses them. Every instance counts against the parse budget.
+//
 // Local sources resolve via the filesystem; registry/git sources use
 // the manifest produced by `terraform init`. Sources we can't resolve
 // (no manifest entry) log a loud warning and are skipped — the rest of
 // the config still produces a useful estimate.
-//
-//nolint:gocyclo // The pipeline is naturally a few flat branches.
-func expandModules(
-	scope evalScope,
+func (m moduleExpander) expandModules(
+	env moduleEnv,
 	baseDir string,
 	sources []sourceFile,
-	parentVars map[string]cty.Value,
-	parentLocals map[string]cty.Value,
-	parentData cty.Value,
-	parentRegions providerRegions,
 	namePrefix string,
 	keyPrefix string,
-	initModules map[string]string,
 	depth int,
-	offline bool,
-	logger *slog.Logger,
-	out *[]domain.Resource,
 ) error {
+	logger := m.logger
 	if depth >= MaxModuleDepth {
 		logger.Warn("module nesting exceeded MaxModuleDepth; truncating expansion. "+
 			"likely a self-referential `module \"x\" { source = \".\" }`",
 			"depth", depth, "max", MaxModuleDepth)
 		return nil
 	}
-	parentCtx := scope.evalContext(asObject(parentVars), asObject(parentLocals), parentData, nil)
+	parentCtx := env.evalContext(nil)
 
 	for _, src := range sources {
 		for _, block := range src.Body.Blocks {
@@ -93,8 +97,17 @@ func expandModules(
 				continue
 			}
 			modName := block.Labels[0]
-			if err := scope.budget.moduleCall(namePrefix + "module." + modName); err != nil {
+			address := namePrefix + "module." + modName
+
+			instances, ok := expandInstances(env, block.Body, src.Path, address)
+			if !ok {
+				continue
+			}
+			if err := env.scope.budget.moduleCall(address, len(instances)); err != nil {
 				return err
+			}
+			if len(instances) == 0 {
+				continue
 			}
 
 			source, ok := readModuleSource(block.Body, parentCtx)
@@ -103,12 +116,13 @@ func expandModules(
 			}
 			version := readModuleVersion(block.Body, parentCtx)
 
+			// The init manifest keys modules by name, never by instance.
 			manifestKey := modName
 			if keyPrefix != "" {
 				manifestKey = keyPrefix + "." + modName
 			}
 
-			childDir, ok := resolveModuleSource(source, version, baseDir, manifestKey, initModules, modName, offline, logger)
+			childDir, ok := resolveModuleSource(source, version, baseDir, manifestKey, m.initModules, modName, m.offline, logger)
 			if !ok {
 				continue
 			}
@@ -122,100 +136,127 @@ func expandModules(
 			// .terraform/modules/modules.json pointing there) would fold
 			// another user's infrastructure into this estimate. Terraform
 			// allows ../ sources, so trusted parses keep doing the same.
-			if scope.untrusted && !scope.containsDir(childDir) {
+			if env.scope.untrusted && !env.scope.containsDir(childDir) {
 				logger.Warn("untrusted input: module source is outside the project directory; skipping",
 					"module", modName, "dir", childDir)
 				continue
 			}
 
-			// Evaluate every non-meta attribute against the parent's
-			// scope to build the child's var.x inputs.
-			childInputs := map[string]cty.Value{}
-			for _, attr := range block.Body.Attributes {
-				switch attr.Name {
-				case "source", "version", "count", "for_each", "providers", "depends_on":
-					continue
-				}
-				val, diags := attr.Expr.Value(parentCtx)
-				if diags.HasErrors() {
-					logger.Debug("module input evaluation failed",
-						"module", modName, "input", attr.Name,
-						"diags", formatDiags(diags))
-					continue
-				}
-				childInputs[attr.Name] = val
-			}
-
-			childPaths, err := configFiles(childDir)
+			childSources, err := loadConfigDir(childDir, logger)
 			if err != nil {
 				return fmt.Errorf("module %s: %w", modName, err)
 			}
-			childSources, err := loadFiles(childPaths)
-			if err != nil {
-				return fmt.Errorf("module %s load: %w", modName, err)
+			child := moduleSource{
+				dir:       childDir,
+				sources:   childSources,
+				types:     collectVariableTypes(childSources),
+				resources: collectLiteralResources(childSources),
 			}
-
-			childVars, err := collectVariableDefaults(childSources)
-			if err != nil {
-				return err
-			}
-			if err := applyAutoTfvars(childDir, childVars); err != nil {
-				return err
-			}
-			for k, v := range childInputs {
-				childVars[k] = v
-			}
-			// Normalise the child's inputs (and defaults) to the child's
-			// declared `type` constraints, filling optional() attribute
-			// defaults. This bridges Terraform's runtime type-system and
-			// c3x's static parsing: it applies explicit `optional(t, def)`
-			// defaults and materialises bare `optional(t)` as null, so a
-			// caller value like `instances = { one = {} }` exposes
-			// `each.value.instance_class` instead of erroring inside the
-			// module's expressions.
-			applyVariableTypes(childVars, collectVariableTypes(childSources))
-
-			childData := collectDataBlocks(childSources)
-			childScope := scope.child(childDir)
-			childLocals := resolveLocals(childScope, childSources, childVars, childData, logger)
-			childFallback := findDefaultRegion(childSources, childVars, childLocals, childData, logger)
-			if childFallback == "" {
-				childFallback = parentRegions.fallback
-			}
-			childRegions := parentRegions.forChild(
-				collectProviderRegions(childSources, childVars, childLocals, childData, childFallback, logger),
-				block.Body, parentCtx,
-			)
-
-			childPrefix := namePrefix + "module." + modName + "."
-			for _, csrc := range childSources {
-				for _, cb := range csrc.Body.Blocks {
-					if cb.Type != "resource" || len(cb.Labels) < 2 {
-						continue
-					}
-					kind := cb.Labels[0]
-					nm := cb.Labels[1]
-					if err := emitOne(
-						childScope, csrc.Path, kind, nm, cb.Body,
-						childVars, childLocals, childData, childRegions,
-						childPrefix, logger, out,
-					); err != nil {
-						return err
-					}
+			for _, inst := range instances {
+				if err := m.expandInstance(
+					env, block, child, inst,
+					address+inst.suffix+".", manifestKey, depth,
+				); err != nil {
+					return err
 				}
-			}
-
-			if err := expandModules(
-				childScope, childDir, childSources,
-				childVars, childLocals, childData, childRegions,
-				childPrefix, manifestKey, initModules, depth+1,
-				offline, logger, out,
-			); err != nil {
-				return err
 			}
 		}
 	}
 	return nil
+}
+
+// moduleSource is a module's configuration, loaded once per module block
+// and shared by every instance of it.
+type moduleSource struct {
+	dir       string
+	sources   []sourceFile
+	types     map[string]variableTypeConstraint
+	resources map[string]cty.Value
+}
+
+// expandInstance parses one instance of a module call: its inputs are
+// evaluated in the parent's scope plus the instance's count / each,
+// then the child's resources are emitted under childPrefix and its own
+// module calls recursed into.
+func (m moduleExpander) expandInstance(
+	parent moduleEnv,
+	block *hclsyntax.Block,
+	child moduleSource,
+	inst instance,
+	childPrefix, manifestKey string,
+	depth int,
+) error {
+	logger := m.logger
+	modName := block.Labels[0]
+	instCtx := parent.evalContext(inst.extras)
+
+	// Evaluate every non-meta attribute against the parent's
+	// scope to build the child's var.x inputs.
+	childInputs := map[string]cty.Value{}
+	for _, attr := range block.Body.Attributes {
+		switch attr.Name {
+		case "source", "version", "count", "for_each", "providers", "depends_on":
+			continue
+		}
+		val, diags := attr.Expr.Value(instCtx)
+		if diags.HasErrors() {
+			logger.Debug("module input evaluation failed",
+				"module", modName, "input", attr.Name,
+				"diags", formatDiags(diags))
+			continue
+		}
+		childInputs[attr.Name] = val
+	}
+
+	childVars, err := collectVariableDefaults(child.sources)
+	if err != nil {
+		return err
+	}
+	if err := applyAutoTfvars(child.dir, childVars); err != nil {
+		return err
+	}
+	for k, v := range childInputs {
+		childVars[k] = v
+	}
+	// Normalise the child's inputs (and defaults) to the child's
+	// declared `type` constraints, filling optional() attribute
+	// defaults. This bridges Terraform's runtime type-system and
+	// c3x's static parsing: it applies explicit `optional(t, def)`
+	// defaults and materialises bare `optional(t)` as null, so a
+	// caller value like `instances = { one = {} }` exposes
+	// `each.value.instance_class` instead of erroring inside the
+	// module's expressions.
+	applyVariableTypes(childVars, child.types)
+
+	childFallback := parent.regions.fallback
+	regionHints := parent.regions.forChild(
+		collectProviderRegions(child.sources, childVars, nil, cty.EmptyObjectVal, childFallback, logger),
+		block.Body, instCtx,
+	)
+	childData := collectDataBlocks(child.sources, regionHints)
+	childScope := parent.scope.child(child.dir)
+	childLocals := resolveLocals(childScope, child.sources, childVars, childData, logger)
+	if r := findDefaultRegion(child.sources, childVars, childLocals, childData, logger); r != "" {
+		childFallback = r
+	}
+	childRegions := parent.regions.forChild(
+		collectProviderRegions(child.sources, childVars, childLocals, childData, childFallback, logger),
+		block.Body, instCtx,
+	)
+
+	env := moduleEnv{
+		scope:     childScope,
+		vars:      childVars,
+		locals:    childLocals,
+		data:      childData,
+		resources: child.resources,
+		regions:   childRegions,
+		logger:    logger,
+	}
+	if err := emitResources(env, child.sources, childPrefix, m.out); err != nil {
+		return err
+	}
+	return m.expandModules(env, child.dir, child.sources, childPrefix, manifestKey, depth+1)
 }
 
 // readModuleSource evaluates a module block's `source = "..."` attribute
@@ -239,7 +280,8 @@ func readModuleStringAttr(body *hclsyntax.Body, ctx *hcl.EvalContext, name strin
 		return "", false
 	}
 	val, diags := attr.Expr.Value(ctx)
-	if diags.HasErrors() || val.Type() != cty.String || val.IsNull() {
+	val, _ = stripPlaceholders(val)
+	if diags.HasErrors() || val.Type() != cty.String || val.IsNull() || !val.IsKnown() {
 		return "", false
 	}
 	return val.AsString(), true

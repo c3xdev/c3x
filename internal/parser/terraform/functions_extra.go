@@ -558,8 +558,8 @@ var lengthFunc = function.New(&function.Spec{
 			return stdlib.StrlenFunc.Call(args)
 		case ty.IsObjectType():
 			// { a = 1 } is an object, not a map; Terraform counts its
-			// attributes.
-			return cty.NumberIntVal(int64(len(ty.AttributeTypes()))), nil
+			// attributes. Marks (data source placeholders) carry over.
+			return cty.NumberIntVal(int64(len(ty.AttributeTypes()))).WithMarks(args[0].Marks()), nil
 		}
 		return stdlib.LengthFunc.Call(args)
 	},

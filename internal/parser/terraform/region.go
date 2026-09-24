@@ -36,6 +36,7 @@ func findDefaultRegion(
 			}
 			ctx := buildEvalContext(asObject(vars), asObject(locals), data, nil)
 			val, diags := attr.Expr.Value(ctx)
+			val, _ = stripPlaceholders(val)
 			if diags.HasErrors() {
 				logger.Debug("provider region attr evaluation failed",
 					"provider", block.Labels[0],
@@ -43,7 +44,7 @@ func findDefaultRegion(
 					"diags", formatDiags(diags))
 				continue
 			}
-			if val.Type() == cty.String && !val.IsNull() {
+			if val.Type() == cty.String && !val.IsNull() && val.IsKnown() {
 				return val.AsString()
 			}
 		}

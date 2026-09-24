@@ -52,6 +52,35 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   that. When no baseline can be computed at all, the Action now warns
   instead of skipping the gate silently.
 
+- HCL parser: module `count` and `for_each` are honoured. A module with
+  `count = 0` was still priced and a `for_each` over three items was
+  priced once. Each instance is now parsed with `count.index` /
+  `each.key` / `each.value` in scope and addressed `module.web[0].…` /
+  `module.web["a"].…`; every instance counts against the parse limits.
+- HCL parser: `dynamic` blocks are expanded (iterator, `content`, nested
+  dynamic blocks) into the same shape as the equivalent literal blocks.
+  They used to surface as an attribute named `dynamic`, so volumes and
+  the like declared through them were not priced.
+- HCL parser: override files (`override.tf`, `*_override.tf`, and their
+  `.tofu` and JSON forms) are merged into the blocks they override with
+  Terraform's rules, instead of pricing the overridden resource twice.
+- HCL parser: `.tf.json` and `.tofu.json` files are read. They were
+  ignored entirely. Constructs that can't be represented are skipped
+  with a warning naming the file and key.
+- HCL parser: common data sources have placeholders, so the
+  one-NAT-gateway-per-AZ pattern (`count =
+  length(data.aws_availability_zones.available.names)`) no longer drops
+  the resource: `aws_availability_zones` (three zones in the provider's
+  region), `aws_region`, `aws_caller_identity`, `aws_partition`,
+  `google_client_config`, `google_compute_zones`, `google_project`,
+  `azurerm_client_config` and `azurerm_subscription`. A resource whose
+  count or for_each depends on a placeholder is logged as a warning
+  naming the value assumed; an attribute computed from one stays
+  unresolved (`unresolved_attribute` where the price reads it).
+- HCL parser: a reference to another resource's attribute in the same
+  module (`instance_type = aws_instance.base.instance_type`) resolves
+  when that attribute is a literal.
+
 ### Removed
 
 - The `resources_path` and `verbosity` config keys, which were never read
