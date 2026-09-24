@@ -6,6 +6,8 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-09-24
+
 ### Added
 
 - OpenTofu support. `.tofu` files are read alongside `.tf`, and a
