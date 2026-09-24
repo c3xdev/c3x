@@ -7,7 +7,7 @@ c3x comment gitlab: --base-url --baseline --comment-tag --expand --mr --offline 
 c3x configure: --non-interactive
 c3x diff: --baseline --budget-delta --cache-path --format --no-cache --offline --path --pricing-endpoint --pricing-token --region --var --var-file
 c3x doctor: --quiet
-c3x estimate: --budget --cache-path --currency --format --inline-demo --no-cache --no-remote-modules --offline --path --pricing-endpoint --pricing-token --region --save-baseline --show-delta --show-skipped --usage --var --var-file --what-if
+c3x estimate: --allow-file-functions --budget --cache-path --currency --format --inline-demo --no-cache --no-remote-modules --offline --path --pricing-endpoint --pricing-token --region --save-baseline --show-delta --show-skipped --usage --var --var-file --what-if
 c3x policy: 
 c3x policy eval: --baseline --estimate --offline --path --policy --var --var-file
 c3x pricing: 

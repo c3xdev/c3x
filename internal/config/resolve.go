@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/c3xdev/c3x/internal/domain"
@@ -53,6 +54,12 @@ func Resolve(projectDir string, flags map[string]any) (Resolved, error) {
 		}
 	}
 
+	// allow_file_functions must not come from the project config, which
+	// lives in the scanned directory and so is attacker-controlled on a
+	// pull request. Capture it from defaults + user config now; env and
+	// flags are applied on top below, and the project layer is skipped.
+	allowFileFunctions := v.GetBool("allow_file_functions")
+
 	// Layer 3: project config file (silent if missing).
 	projectPath := ProjectConfigPath(projectDir)
 	if _, statErr := os.Stat(projectPath); statErr == nil {
@@ -76,6 +83,15 @@ func Resolve(projectDir string, flags map[string]any) (Resolved, error) {
 		v.Set(k, val)
 	}
 
+	if env, ok := os.LookupEnv("C3X_ALLOW_FILE_FUNCTIONS"); ok {
+		if b, err := strconv.ParseBool(env); err == nil {
+			allowFileFunctions = b
+		}
+	}
+	if f, ok := flags["allow_file_functions"].(bool); ok {
+		allowFileFunctions = f
+	}
+
 	// Materialise into the Resolved struct.
 	currency, err := domain.ParseCurrency(v.GetString("currency"))
 	if err != nil {
@@ -90,13 +106,15 @@ func Resolve(projectDir string, flags map[string]any) (Resolved, error) {
 		PricingToken:    v.GetString("pricing.token"),
 		Offline:         v.GetBool("offline"),
 		NoRemoteModules: v.GetBool("no_remote_modules"),
-		NoCache:         v.GetBool("no_cache"),
-		CachePath:       v.GetString("cache_path"),
-		UsagePath:       v.GetString("usage_path"),
-		ResourcesPath:   v.GetString("resources_path"),
-		Budget:          v.GetFloat64("budget"),
-		BudgetDelta:     v.GetFloat64("budget_delta"),
-		Verbosity:       v.GetInt("verbosity"),
+		// Untrusted-input mode wins over any opt-in.
+		AllowFileFunctions: allowFileFunctions && !v.GetBool("no_remote_modules"),
+		NoCache:            v.GetBool("no_cache"),
+		CachePath:          v.GetString("cache_path"),
+		UsagePath:          v.GetString("usage_path"),
+		ResourcesPath:      v.GetString("resources_path"),
+		Budget:             v.GetFloat64("budget"),
+		BudgetDelta:        v.GetFloat64("budget_delta"),
+		Verbosity:          v.GetInt("verbosity"),
 	}
 	if err := out.Validate(); err != nil {
 		return Resolved{}, err

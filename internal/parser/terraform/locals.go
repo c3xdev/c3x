@@ -16,14 +16,14 @@ import (
 // longest local→local reference chain. In practice that's < 5 and the
 // per-attribute work is cheap, so we don't bother with a smarter
 // dependency-graph topological sort.
-func resolveLocals(sources []sourceFile, vars map[string]cty.Value, data cty.Value, logger *slog.Logger) map[string]cty.Value {
+func resolveLocals(scope evalScope, sources []sourceFile, vars map[string]cty.Value, data cty.Value, logger *slog.Logger) map[string]cty.Value {
 	pending := collectLocalAttributes(sources)
 	resolved := map[string]cty.Value{}
 	for {
 		progressed := false
 		var still []localAttr
 		for _, la := range pending {
-			ctx := buildEvalContext(asObject(vars), asObject(resolved), data, nil)
+			ctx := scope.evalContext(asObject(vars), asObject(resolved), data, nil)
 			val, diags := la.Expr.Value(ctx)
 			if diags.HasErrors() {
 				still = append(still, la)
@@ -40,7 +40,7 @@ func resolveLocals(sources []sourceFile, vars map[string]cty.Value, data cty.Val
 	// Whatever never resolved: report it if the cause is a function we
 	// don't implement, since every resource reading that local is affected.
 	for _, la := range pending {
-		_, diags := la.Expr.Value(buildEvalContext(asObject(vars), asObject(resolved), data, nil))
+		_, diags := la.Expr.Value(scope.evalContext(asObject(vars), asObject(resolved), data, nil))
 		warnUnknownFunctions(diags, logger, "local."+la.Name)
 	}
 	return resolved

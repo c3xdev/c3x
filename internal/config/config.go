@@ -43,6 +43,19 @@ type Resolved struct {
 	// vector. Distinct from Offline, which also stubs pricing.
 	NoRemoteModules bool
 
+	// AllowFileFunctions enables file(), templatefile(), fileset() and the
+	// other filesystem functions, reading only inside the project
+	// directory. Off by default: on a pull request from a fork the parsed
+	// configuration is attacker-controlled, and a file read, even one
+	// confined to the checkout, can leak a credential written there by an
+	// earlier CI step through the costs posted back to the PR.
+	//
+	// It is taken only from sources the runner controls — the flag,
+	// C3X_ALLOW_FILE_FUNCTIONS, or the user config file — never from the
+	// project's .c3x.toml, which a pull request can edit. NoRemoteModules
+	// (untrusted-input mode) forces it off regardless.
+	AllowFileFunctions bool
+
 	// NoCache disables the on-disk SQLite cache for this run.
 	NoCache bool
 

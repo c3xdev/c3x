@@ -45,6 +45,10 @@ type Options struct {
 	// Offline disables network module fetching in the Terraform
 	// backend. Mapped from the CLI's --offline flag.
 	Offline bool
+	// AllowFileFunctions registers file(), templatefile(), fileset() and
+	// the other filesystem functions, confined to the project directory.
+	// Off by default; see config.Resolved.AllowFileFunctions for why.
+	AllowFileFunctions bool
 }
 
 // Parse auto-detects the input type and returns the parsed resources.
@@ -94,6 +98,8 @@ func parseRaw(path string, opts Options) ([]domain.Resource, error) {
 				Vars:    opts.Vars,
 				Logger:  opts.Logger,
 				Offline: opts.Offline,
+
+				AllowFileFunctions: opts.AllowFileFunctions,
 			})
 		}
 		return terraform.ParseDirectory(path, toTerraformOptions(opts))
@@ -185,6 +191,8 @@ func toTerraformOptions(o Options) terraform.Options {
 		Vars:     o.Vars,
 		Logger:   o.Logger,
 		Offline:  o.Offline,
+
+		AllowFileFunctions: o.AllowFileFunctions,
 	}
 }
 

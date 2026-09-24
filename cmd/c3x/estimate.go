@@ -37,6 +37,7 @@ func newEstimateCmd() *cobra.Command {
 		whatIfs         []string
 		offline         bool
 		noRemoteModules bool
+		allowFileFuncs  bool
 		noCache         bool
 		cachePath       string
 		pricingEndpoint string
@@ -80,6 +81,9 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 			}
 			if offline {
 				flags["offline"] = true
+			}
+			if allowFileFuncs {
+				flags["allow_file_functions"] = true
 			}
 			if noRemoteModules {
 				flags["no_remote_modules"] = true
@@ -125,6 +129,9 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 		"skip the network and use the offline pricing stub (subtotals will be $0 for most resources)")
 	cmd.Flags().BoolVar(&noRemoteModules, "no-remote-modules", false,
 		"disable network module fetching (Registry/Git/HTTP) while keeping live pricing; use when parsing untrusted Terraform")
+	cmd.Flags().BoolVar(&allowFileFuncs, "allow-file-functions", false,
+		"evaluate file(), templatefile() and fileset(), reading only inside the project directory; "+
+			"ignored with --no-remote-modules. Also C3X_ALLOW_FILE_FUNCTIONS=true. Leave off when parsing untrusted input")
 	cmd.Flags().BoolVar(&noCache, "no-cache", false,
 		"bypass the on-disk price cache (every lookup goes to pricing.c3x.dev)")
 	cmd.Flags().StringVar(&cachePath, "cache-path", "",
@@ -175,14 +182,7 @@ func runEstimate(
 	if err != nil {
 		return err
 	}
-	parsed, err := parser.Parse(rawPath, parser.Options{
-		VarFiles: varFiles,
-		Vars:     varMap,
-		// Disable remote module fetching when pricing is offline OR when the
-		// caller opted into untrusted-input mode (--no-remote-modules). The
-		// pricing chain below still honors resolved.Offline independently.
-		Offline: resolved.Offline || resolved.NoRemoteModules,
-	})
+	parsed, err := parser.Parse(rawPath, parserOptions(resolved, varFiles, varMap))
 	if err != nil {
 		return fmt.Errorf("parsing %s: %w", rawPath, err)
 	}

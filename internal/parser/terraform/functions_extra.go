@@ -15,6 +15,7 @@ import (
 	"math/big"
 	"net/netip"
 	"net/url"
+	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -35,10 +36,11 @@ import (
 // NAT gateways that way. These are implemented to the published
 // Terraform/OpenTofu semantics, with the documented examples as tests.
 //
-// Not provided: the filesystem functions (file, templatefile, fileset,
-// ...), which need the module directory threaded through evaluation, and
-// the non-deterministic ones (timestamp, uuid, bcrypt). Calls to any
-// function still missing are reported by warnUnknownFunctions.
+// The filesystem functions live in file_functions.go, because they
+// depend on the directory an expression is evaluated from. Not provided:
+// the non-deterministic ones (timestamp, uuid, bcrypt) and pathexpand,
+// which would put the host's home directory into an estimate. Calls to
+// any function still missing are reported by warnUnknownFunctions.
 func extraFunctions() map[string]function.Function {
 	return map[string]function.Function{
 		// Collections.
@@ -66,6 +68,10 @@ func extraFunctions() map[string]function.Function {
 		"endswith":       stringPredicate(strings.HasSuffix),
 		"strcontains":    stringPredicate(strings.Contains),
 		"templatestring": templateStringFunc(),
+		// Pure path string manipulation; no filesystem access, so not gated
+		// with the file functions.
+		"basename": stringToString(func(s string) (string, error) { return filepath.Base(s), nil }),
+		"dirname":  stringToString(func(s string) (string, error) { return filepath.Dir(s), nil }),
 
 		// Sensitivity markers have no meaning for a static estimate.
 		"sensitive":       identityFunc,
