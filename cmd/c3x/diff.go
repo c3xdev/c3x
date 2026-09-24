@@ -186,11 +186,7 @@ func computeCurrent(
 	if err != nil {
 		return domain.Estimate{}, err
 	}
-	parsed, err := parser.Parse(rawPath, parser.Options{
-		VarFiles: varFiles,
-		Vars:     varMap,
-		Offline:  resolved.Offline,
-	})
+	parsed, err := parser.Parse(rawPath, parserOptions(resolved, varFiles, varMap))
 	if err != nil {
 		return domain.Estimate{}, fmt.Errorf("parsing %s: %w", rawPath, err)
 	}
@@ -220,7 +216,7 @@ func computePlanAware(
 	if err != nil {
 		return domain.Estimate{}, nil, err
 	}
-	opts := parser.Options{VarFiles: varFiles, Vars: varMap, Offline: resolved.Offline}
+	opts := parserOptions(resolved, varFiles, varMap)
 	// Post-apply-only: for a plan this excludes resources scheduled for
 	// deletion, so a removal appears only in the before (baseline) set and
 	// is classified Removed, and the absolute total doesn't count it. For

@@ -26,8 +26,11 @@ No API key, no SaaS account, no telemetry.
 </div>
 
 c3x parses your infrastructure code **statically**. No `terraform init`, no
-providers, no cloud credentials, no state access. That makes it safe to run
-on untrusted input and fast enough to sit in front of every pull request.
+providers, no cloud credentials, no state access, so it is fast enough to
+sit in front of every pull request. For input you don't control, such as
+pull requests from forks, add `--no-remote-modules` (or set
+`C3X_NO_REMOTE_MODULES=true`): c3x then fetches no remote modules and
+reads no files, whatever the configuration asks for.
 
 ## Install
 
@@ -133,6 +136,21 @@ OpenTofu does, so a codebase that ships both is not counted twice.
 Provider `for_each` is supported: each instance of a resource is priced
 in the region of the provider instance it uses. Plan JSON from
 `tofu show -json` works the same as Terraform's.
+
+## File functions
+
+`file()`, `templatefile()`, `fileset()` and the other filesystem
+functions are **off by default**, because on a pull request from a fork
+the configuration is untrusted, and a file read could leak something an
+earlier CI step wrote into the workspace. Configurations that load
+settings from files, such as `yamldecode(file("${path.module}/fleet.yaml"))`,
+get a warning naming the function instead of a silently wrong estimate.
+
+For your own repository, turn them on with `--allow-file-functions` or
+`C3X_ALLOW_FILE_FUNCTIONS=true`. Reads stay inside the project directory,
+with symlinks resolved first. The setting is not read from a project's
+`.c3x.toml`, since a pull request can edit that file, and
+`--no-remote-modules` always turns it off.
 
 ## Output formats
 

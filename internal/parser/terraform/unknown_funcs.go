@@ -3,6 +3,7 @@ package terraform
 import (
 	"log/slog"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/hashicorp/hcl/v2"
@@ -24,6 +25,13 @@ var warnedUnknown sync.Map
 // resource that depends on it. where names the attribute or local.
 func warnUnknownFunctions(diags hcl.Diagnostics, logger *slog.Logger, where string) {
 	for _, d := range diags {
+		if strings.Contains(d.Detail, outsideProjectMsg) {
+			if _, seen := warnedUnknown.LoadOrStore("outside:"+d.Detail, true); !seen {
+				logger.Warn("refused to read a file outside the project directory; the value is left unresolved",
+					"in", where, "detail", d.Detail)
+			}
+			continue
+		}
 		if d.Summary != "Call to unknown function" {
 			continue
 		}
@@ -38,8 +46,25 @@ func warnUnknownFunctions(diags hcl.Diagnostics, logger *slog.Logger, where stri
 		if d.Subject != nil {
 			file = d.Subject.String()
 		}
+		if fileFunctionNames[name] {
+			logger.Warn("file functions are off by default; the value is left unresolved, so dependent "+
+				"attributes fall back to catalog defaults and dependent resources may be omitted. "+
+				"To evaluate them for your own configuration, pass --allow-file-functions or set "+
+				"C3X_ALLOW_FILE_FUNCTIONS=true (not honoured from .c3x.toml, and never with --no-remote-modules)",
+				"function", name, "in", where, "at", file)
+			continue
+		}
 		logger.Warn("c3x does not support this function; the value it produces is left unresolved, "+
 			"so dependent attributes fall back to catalog defaults and dependent resources may be omitted",
 			"function", name, "in", where, "at", file)
 	}
+}
+
+// fileFunctionNames are the functions registered only when file functions
+// are allowed (see evalScope.fileFunctions); a call to one while they are
+// off gets a warning that says how to turn them on.
+var fileFunctionNames = map[string]bool{
+	"file": true, "filebase64": true, "fileexists": true, "fileset": true, "templatefile": true,
+	"filemd5": true, "filesha1": true, "filesha256": true, "filesha512": true,
+	"filebase64sha256": true, "filebase64sha512": true, "abspath": true,
 }

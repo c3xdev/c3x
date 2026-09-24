@@ -37,6 +37,10 @@ type Options struct {
 	// estimates; tests should always set it so module resolution
 	// never surprises CI with a network call.
 	Offline bool
+	// AllowFileFunctions registers file(), templatefile(), fileset() and
+	// the other filesystem functions, confined to the project directory.
+	// Off by default; see config.Resolved.AllowFileFunctions for why.
+	AllowFileFunctions bool
 }
 
 // ParseDirectory loads every `*.tf` and OpenTofu `*.tofu` file in `dir`
@@ -102,6 +106,10 @@ func parseSources(sources []sourceFile, baseDir string, opts Options) ([]domain.
 		logger = slog.Default()
 	}
 
+	// Where expressions are evaluated from: path.module / path.root and
+	// the filesystem functions, confined to the project directory.
+	scope := newRootScope(baseDir, opts.AllowFileFunctions)
+
 	// Stage 0: terraform-init module manifest, if present.
 	initModules := loadInitModules(baseDir, logger)
 
@@ -136,7 +144,7 @@ func parseSources(sources []sourceFile, baseDir string, opts Options) ([]domain.
 	data := collectDataBlocks(sources)
 
 	// Stage 4: locals — fixed-point against (var, data).
-	locals := resolveLocals(sources, variables, data, logger)
+	locals := resolveLocals(scope, sources, variables, data, logger)
 
 	// Stage 5: provider regions (after vars/locals/data are populated so
 	// `provider "aws" { region = var.region }` resolves). Each resource is
@@ -147,14 +155,14 @@ func parseSources(sources []sourceFile, baseDir string, opts Options) ([]domain.
 
 	// Stage 6: walk resource blocks; each contributes one or more
 	// domain.Resource entries depending on count / for_each.
-	resources, err := emitResources(sources, variables, locals, data, regions, logger)
+	resources, err := emitResources(scope, sources, variables, locals, data, regions, logger)
 	if err != nil {
 		return nil, err
 	}
 
 	// Stage 7: recursively expand modules.
 	if err := expandModules(
-		baseDir, sources,
+		scope, baseDir, sources,
 		variables, locals, data, regions,
 		"", "", initModules, 0,
 		opts.Offline, logger, &resources,
