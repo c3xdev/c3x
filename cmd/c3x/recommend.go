@@ -148,7 +148,7 @@ non-prod, GCP pd-standard → pd-balanced.`,
 			return writeRecommendations(cmd, recs, resolved.Currency, resolved.Format)
 		},
 	}
-	cmd.Flags().StringVar(&path, "path", ".", "Terraform input (directory, .tf, or plan JSON)")
+	cmd.Flags().StringVar(&path, "path", ".", "Terraform or OpenTofu input (directory, .tf, .tofu, .hcl, or plan JSON)")
 	cmd.Flags().StringVar(&format, "format", "", "output format: text, markdown, json")
 	cmd.Flags().StringVar(&region, "region", "", "default region when the IaC source doesn't declare one")
 	cmd.Flags().StringArrayVar(&varFiles, "var-file", nil, "tfvars files (repeatable)")

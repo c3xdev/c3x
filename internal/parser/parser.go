@@ -2,7 +2,7 @@
 // dispatcher in this file picks the right backend by inspecting the
 // path; per-format work lives in the subpackages:
 //
-//	parser/terraform        — .tf / .hcl files (and directories of them)
+//	parser/terraform        — .tf / .tofu / .hcl files (and directories of them)
 //	parser/plan             — terraform-show -json output
 //	parser/cloudformation   — CloudFormation YAML / JSON
 //
@@ -50,8 +50,8 @@ type Options struct {
 // Parse auto-detects the input type and returns the parsed resources.
 //
 // Detection rules:
-//   - directory                    → Terraform .tf files
-//   - .tf / .hcl                   → single Terraform file
+//   - directory                    → Terraform .tf / OpenTofu .tofu files
+//   - .tf / .tofu / .hcl           → single Terraform or OpenTofu file
 //   - .json                        → Terraform plan JSON (Terraform shape
 //     detected by `resource_changes` key
 //     pre-emptively; CloudFormation JSON
@@ -100,7 +100,7 @@ func parseRaw(path string, opts Options) ([]domain.Resource, error) {
 	}
 	lower := strings.ToLower(path)
 	switch {
-	case strings.HasSuffix(lower, ".tf"), strings.HasSuffix(lower, ".hcl"):
+	case strings.HasSuffix(lower, ".tf"), strings.HasSuffix(lower, ".tofu"), strings.HasSuffix(lower, ".hcl"):
 		return terraform.ParseFile(path, toTerraformOptions(opts))
 	case strings.HasSuffix(lower, ".cfn"),
 		strings.HasSuffix(lower, ".cfn.yaml"),
@@ -118,7 +118,7 @@ func parseRaw(path string, opts Options) ([]domain.Resource, error) {
 		}
 		return plan.ParseFile(path, opts.Logger)
 	default:
-		return nil, fmt.Errorf("unsupported input %q (want a directory, .tf, .hcl, .yaml, .yml, .json)",
+		return nil, fmt.Errorf("unsupported input %q (want a directory, .tf, .tofu, .hcl, .yaml, .yml, .json)",
 			filepath.Base(path))
 	}
 }

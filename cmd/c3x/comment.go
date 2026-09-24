@@ -168,7 +168,7 @@ token reads from AZURE_DEVOPS_TOKEN or SYSTEM_ACCESSTOKEN.`,
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&path, "path", ".", "Terraform input (directory, .tf, plan JSON)")
+	cmd.Flags().StringVar(&path, "path", ".", "Terraform or OpenTofu input (directory, .tf, .tofu, .hcl, or plan JSON)")
 	cmd.Flags().StringVar(&token, "token", "",
 		"Azure DevOps PAT (default: $AZURE_DEVOPS_TOKEN or $SYSTEM_ACCESSTOKEN)")
 	cmd.Flags().StringVar(&org, "org", "", "organisation (default: auto-detect)")
@@ -287,7 +287,7 @@ by a dedicated implementation.`,
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&path, "path", ".", "Terraform input (directory, .tf, plan JSON)")
+	cmd.Flags().StringVar(&path, "path", ".", "Terraform or OpenTofu input (directory, .tf, .tofu, .hcl, or plan JSON)")
 	cmd.Flags().StringVar(&user, "user", "", "Bitbucket username (default: $BITBUCKET_USERNAME)")
 	cmd.Flags().StringVar(&password, "token", "",
 		"Bitbucket app password (default: $BITBUCKET_APP_PASSWORD)")
@@ -400,7 +400,7 @@ or CI_JOB_TOKEN, or pass --token.`,
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&path, "path", ".", "Terraform input (directory, .tf, plan JSON)")
+	cmd.Flags().StringVar(&path, "path", ".", "Terraform or OpenTofu input (directory, .tf, .tofu, .hcl, or plan JSON)")
 	cmd.Flags().StringVar(&token, "token", "",
 		"GitLab API token (default: $GITLAB_TOKEN or $CI_JOB_TOKEN)")
 	cmd.Flags().StringVar(&project, "project", "",
@@ -504,7 +504,7 @@ The token reads from GITHUB_TOKEN (set automatically by Actions) or
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&path, "path", ".", "Terraform input (directory, .tf, plan JSON)")
+	cmd.Flags().StringVar(&path, "path", ".", "Terraform or OpenTofu input (directory, .tf, .tofu, .hcl, or plan JSON)")
 	cmd.Flags().StringVar(&token, "token", "",
 		"GitHub API token (default: $GITHUB_TOKEN)")
 	cmd.Flags().StringVar(&owner, "owner", "", "GitHub repository owner (default: auto-detect from GITHUB_REPOSITORY)")
