@@ -8,6 +8,15 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- AWS resources priced by usagetype now use the region's own rate. The
+  catalog writes usagetypes for us-east-1 (`USE1-AmazonEKS-Hours`), so
+  every other region missed and was quoted at the us-east-1 rate, marked
+  `region_fallback`. The lookup now tries the region's prefix first
+  (`EU-` in eu-west-1, `SAE1-` in sa-east-1, taken from the pricing data)
+  and falls back as before only when that misses. Across the 31 affected
+  resource kinds, fallback lines in eu-west-1, ap-southeast-1 and
+  sa-east-1 dropped from 117 to 13, and regional prices changed where
+  AWS's do: MSK in sa-east-1 is $733.65/mo against $459.90 in us-east-1.
 - `budget`, `budget_delta` and `usage_path` in `.c3x.toml` now take
   effect. They were documented, but only the `--budget`,
   `--budget-delta` and `--usage` flags were read. An explicit
