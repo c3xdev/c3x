@@ -88,37 +88,82 @@ inputs:
   currency:
     description: Display currency (USD, EUR, GBP, ...).
     default: ""
+  untrusted:
+    description: >-
+      Treat the input as untrusted (--no-remote-modules): no remote module
+      fetches, no file functions, and the repository's .c3x.toml may not
+      redirect pricing or file access. "auto" enables it for pull requests
+      from forks, whose content you do not control; "true" / "false" force it.
+    default: auto
 
 runs:
   using: composite
   steps:
     - name: Install c3x
       shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
       run: |
         set -euo pipefail
-        VERSION="${{ inputs.version }}"
         if [ "$VERSION" = "latest" ]; then
           VERSION=$(curl -fsSL https://api.github.com/repos/c3xdev/c3x/releases/latest | grep -o '"tag_name": *"[^"]*"' | cut -d'"' -f4)
         fi
         OS=$(uname -s | tr '[:upper:]' '[:lower:]')
         ARCH=$(uname -m); case "$ARCH" in x86_64) ARCH=amd64;; aarch64|arm64) ARCH=arm64;; esac
-        URL="https://github.com/c3xdev/c3x/releases/download/${VERSION}/c3x_${VERSION#v}_${OS}_${ARCH}.tar.gz"
+        ASSET="c3x_${VERSION#v}_${OS}_${ARCH}.tar.gz"
+        BASE="https://github.com/c3xdev/c3x/releases/download/${VERSION}"
         echo "Installing c3x ${VERSION} (${OS}/${ARCH})"
-        curl -fsSL "$URL" | tar -xz -C /tmp c3x
-        sudo install /tmp/c3x /usr/local/bin/c3x
+        WORK=$(mktemp -d)
+        curl -fsSL -o "$WORK/$ASSET" "$BASE/$ASSET"
+        curl -fsSL -o "$WORK/checksums.txt" "$BASE/checksums.txt"
+        # Verify before anything runs. A missing entry is a failure, not a
+        # skip: installing an unverified binary is what this step prevents.
+        EXPECTED=$(awk -v f="$ASSET" '$2 == f { print $1 }' "$WORK/checksums.txt")
+        if [ -z "$EXPECTED" ]; then
+          echo "::error::no checksum for $ASSET in checksums.txt"; exit 1
+        fi
+        if command -v sha256sum >/dev/null 2>&1; then
+          ACTUAL=$(sha256sum "$WORK/$ASSET" | awk '{print $1}')
+        else
+          ACTUAL=$(shasum -a 256 "$WORK/$ASSET" | awk '{print $1}')
+        fi
+        if [ "$ACTUAL" != "$EXPECTED" ]; then
+          echo "::error::checksum mismatch for $ASSET (expected $EXPECTED, got $ACTUAL)"; exit 1
+        fi
+        tar -xzf "$WORK/$ASSET" -C "$WORK" c3x
+        sudo install "$WORK/c3x" /usr/local/bin/c3x
         c3x --version
+
+    - name: Untrusted-input mode
+      if: inputs.install-only != 'true'
+      shell: bash
+      env:
+        UNTRUSTED: ${{ inputs.untrusted }}
+        IS_FORK: ${{ github.event.pull_request.head.repo.fork || 'false' }}
+      run: |
+        set -euo pipefail
+        if [ "$UNTRUSTED" = "true" ] || { [ "$UNTRUSTED" = "auto" ] && [ "$IS_FORK" = "true" ]; }; then
+          # Exported to every later step, including your own c3x calls.
+          echo "C3X_NO_REMOTE_MODULES=true" >> "$GITHUB_ENV"
+          echo "c3x: untrusted-input mode on (pull request from a fork, or untrusted: true)"
+        fi
 
     - name: Estimate
       if: inputs.install-only != 'true'
       shell: bash
+      env:
+        IN_PATH: ${{ inputs.path }}
+        IN_FORMAT: ${{ inputs.format }}
+        IN_BUDGET: ${{ inputs.budget }}
+        IN_CURRENCY: ${{ inputs.currency }}
       run: |
         set -euo pipefail
-        ARGS=(estimate --path "${{ inputs.path }}" --format "${{ inputs.format }}")
-        if [ "${{ inputs.budget }}" != "0" ]; then
-          ARGS+=(--budget "${{ inputs.budget }}")
+        ARGS=(estimate --path "$IN_PATH" --format "$IN_FORMAT")
+        if [ "$IN_BUDGET" != "0" ]; then
+          ARGS+=(--budget "$IN_BUDGET")
         fi
-        if [ -n "${{ inputs.currency }}" ]; then
-          ARGS+=(--currency "${{ inputs.currency }}")
+        if [ -n "$IN_CURRENCY" ]; then
+          ARGS+=(--currency "$IN_CURRENCY")
         fi
         c3x "${ARGS[@]}"
 
@@ -128,6 +173,7 @@ runs:
       shell: bash
       env:
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        IN_PATH: ${{ inputs.path }}
       run: |
         # Estimate the PR's BASE branch so the comment / gate can report
         # the delta this PR introduces ("+$144 vs main") rather than the
@@ -137,7 +183,7 @@ runs:
         out=/tmp/c3x-base.json
         if git fetch --no-tags --depth=1 origin "$BASE_SHA" >/dev/null 2>&1 \
            && git worktree add --detach /tmp/c3x-base "$BASE_SHA" >/dev/null 2>&1; then
-          if c3x estimate --path "/tmp/c3x-base/${{ inputs.path }}" --save-baseline "$out" >/dev/null 2>&1; then
+          if c3x estimate --path "/tmp/c3x-base/$IN_PATH" --save-baseline "$out" >/dev/null 2>&1; then
             echo "baseline=$out" >> "$GITHUB_OUTPUT"
             echo "Computed cost baseline from base $BASE_SHA"
           else
@@ -151,11 +197,13 @@ runs:
     - name: Budget delta gate
       if: inputs.install-only != 'true' && inputs.budget-delta != '0' && steps.baseline.outputs.baseline != ''
       shell: bash
+      env:
+        IN_PATH: ${{ inputs.path }}
+        BASELINE: ${{ steps.baseline.outputs.baseline }}
+        IN_BUDGET_DELTA: ${{ inputs.budget-delta }}
       run: |
         set -euo pipefail
-        c3x diff --path "${{ inputs.path }}" \
-          --baseline "${{ steps.baseline.outputs.baseline }}" \
-          --budget-delta "${{ inputs.budget-delta }}"
+        c3x diff --path "$IN_PATH" --baseline "$BASELINE" --budget-delta "$IN_BUDGET_DELTA"
 
     - name: PR comment
       if: inputs.install-only != 'true' && inputs.comment == 'true' && github.event_name == 'pull_request'
@@ -165,6 +213,8 @@ runs:
         BRANDED: ${{ inputs.branded-comments }}
         TOKEN_SERVICE: ${{ inputs.token-service }}
         OIDC_AUDIENCE: c3x-cloud
+        IN_PATH: ${{ inputs.path }}
+        BASELINE: ${{ steps.baseline.outputs.baseline }}
       run: |
         set -euo pipefail
         TOKEN="$GH_DEFAULT_TOKEN"
@@ -196,9 +246,9 @@ runs:
             echo "::warning::branded comment unavailable (${err:-unknown}); posting as github-actions instead"
           fi
         fi
-        ARGS=(comment github --path "${{ inputs.path }}")
-        if [ -n "${{ steps.baseline.outputs.baseline }}" ]; then
+        ARGS=(comment github --path "$IN_PATH")
+        if [ -n "$BASELINE" ]; then
           # A baseline was computed from the base branch — post the delta.
-          ARGS+=(--baseline "${{ steps.baseline.outputs.baseline }}")
+          ARGS+=(--baseline "$BASELINE")
         fi
         GITHUB_TOKEN="$TOKEN" c3x "${ARGS[@]}"

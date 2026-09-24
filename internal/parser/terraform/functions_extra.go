@@ -22,6 +22,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/function"
+	"github.com/zclconf/go-cty/cty/function/stdlib"
 	ctyjson "github.com/zclconf/go-cty/cty/json"
 	"sigs.k8s.io/yaml"
 )
@@ -113,8 +114,15 @@ func extraFunctions() map[string]function.Function {
 			if err != nil {
 				return "", err
 			}
-			out, err := io.ReadAll(r)
-			return string(out), err
+			// A few hundred bytes of gzip can expand to gigabytes.
+			out, err := io.ReadAll(io.LimitReader(r, maxGunzipBytes+1))
+			if err != nil {
+				return "", err
+			}
+			if len(out) > maxGunzipBytes {
+				return "", fmt.Errorf("decompressed data exceeds %d bytes", maxGunzipBytes)
+			}
+			return string(out), nil
 		}),
 		"urlencode":  stringToString(func(s string) (string, error) { return url.QueryEscape(s), nil }),
 		"urldecode":  stringToString(url.QueryUnescape), // OpenTofu
@@ -498,5 +506,61 @@ var cidrContainsFunc = function.New(&function.Spec{
 			return cty.NilVal, fmt.Errorf("invalid IP address: %w", err)
 		}
 		return cty.BoolVal(outer.Contains(a)), nil
+	},
+})
+
+// maxGunzipBytes caps base64gunzip's output.
+const maxGunzipBytes = 16 << 20
+
+// maxRangeElements matches Terraform's own limit on range(): building the
+// list happens before any count or for_each limit can see it, so an
+// unbounded range(100000000) would allocate first and be refused after.
+const maxRangeElements = 1024
+
+var boundedRangeFunc = function.New(&function.Spec{
+	VarParam: &function.Parameter{Name: "params", Type: cty.Number},
+	Type:     function.StaticReturnType(cty.List(cty.Number)),
+	Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+		start, limit, step := 0.0, 0.0, 1.0
+		switch len(args) {
+		case 1:
+			limit, _ = args[0].AsBigFloat().Float64()
+		case 2, 3:
+			start, _ = args[0].AsBigFloat().Float64()
+			limit, _ = args[1].AsBigFloat().Float64()
+			if len(args) == 3 {
+				step, _ = args[2].AsBigFloat().Float64()
+			} else if limit < start {
+				step = -1
+			}
+		default:
+			return cty.NilVal, fmt.Errorf("range requires one, two or three arguments")
+		}
+		if step != 0 {
+			if n := (limit - start) / step; n > maxRangeElements {
+				return cty.NilVal, fmt.Errorf("range would produce more than %d elements", maxRangeElements)
+			}
+		}
+		return stdlib.RangeFunc.Call(args)
+	},
+})
+
+// lengthFunc is Terraform's length(): the stdlib version rejects strings
+// (Terraform counts their characters) and objects (their attributes), so
+// length("abc") and length({ a = 1 }) failed and the values depending on
+// them silently went unresolved.
+var lengthFunc = function.New(&function.Spec{
+	Params: []function.Parameter{{Name: "value", Type: cty.DynamicPseudoType, AllowUnknown: true, AllowMarked: true}},
+	Type:   function.StaticReturnType(cty.Number),
+	Impl: func(args []cty.Value, _ cty.Type) (cty.Value, error) {
+		switch ty := args[0].Type(); {
+		case ty == cty.String:
+			return stdlib.StrlenFunc.Call(args)
+		case ty.IsObjectType():
+			// { a = 1 } is an object, not a map; Terraform counts its
+			// attributes.
+			return cty.NumberIntVal(int64(len(ty.AttributeTypes()))), nil
+		}
+		return stdlib.LengthFunc.Call(args)
 	},
 })

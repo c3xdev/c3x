@@ -93,6 +93,9 @@ func expandModules(
 				continue
 			}
 			modName := block.Labels[0]
+			if err := scope.budget.moduleCall(namePrefix + "module." + modName); err != nil {
+				return err
+			}
 
 			source, ok := readModuleSource(block.Body, parentCtx)
 			if !ok {
@@ -111,6 +114,16 @@ func expandModules(
 			}
 			if info, err := os.Stat(childDir); err != nil || !info.IsDir() {
 				logger.Warn("module source path is not a directory; skipping",
+					"module", modName, "dir", childDir)
+				continue
+			}
+			// Untrusted input may not pull configuration from outside its own
+			// tree: on a server, source = "../other-upload" (or a committed
+			// .terraform/modules/modules.json pointing there) would fold
+			// another user's infrastructure into this estimate. Terraform
+			// allows ../ sources, so trusted parses keep doing the same.
+			if scope.untrusted && !scope.containsDir(childDir) {
+				logger.Warn("untrusted input: module source is outside the project directory; skipping",
 					"module", modName, "dir", childDir)
 				continue
 			}
