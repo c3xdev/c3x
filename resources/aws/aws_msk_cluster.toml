@@ -2,41 +2,67 @@ kind         = "aws_msk_cluster"
 display_name = "AWS MSK Cluster (Kafka)"
 provider     = "aws"
 
-# MSK broker pricing key off `usagetype` (e.g. USE1-Kafka.m5.large) — the
-# instance type returned by Terraform is in form "kafka.m5.large" so we
-# strip the kafka. prefix and prepend the region code. For simplicity,
-# default to m5.large in us-east-1.
+# Provisioned MSK bills two things per broker: broker-hours at the rate of
+# broker_node_group_info.instance_type, and the EBS data volume each broker
+# carries, per GB-month.
+#
+# Brokers are matched on `computeFamily` + `operation = RunBroker` rather
+# than `usagetype`, because usagetype carries a region prefix
+# (USE1-Kafka.m5.large, EU-Kafka.m5.large) and would only match us-east-1.
+# Terraform writes the instance type as "kafka.m5.large"; the upstream
+# computeFamily is "m5.large", so the "kafka." prefix is stripped. Express
+# brokers ("express.m7g.large") keep their prefix, which is how the
+# upstream names them too.
+#
+# Storage: Standard brokers bill the provisioned EBS volume (volume_size is
+# per broker) at the GP2 broker-storage rate. The volume is read from
+# storage_info.ebs_storage_info.volume_size, falling back to the deprecated
+# ebs_volume_size, then to 1000 GiB, the MSK console default. Express
+# brokers have no provisioned volume (storage bills on data retained), so
+# they get no storage line here. Provisioned storage throughput
+# (ebs_storage_info.provisioned_throughput) is not modelled.
 
-[mappings.broker_m5_large]
+[mappings.broker]
 service        = "AmazonMSK"
 product_family = "Managed Streaming for Apache Kafka (MSK)"
 attribute_filters = [
-  { key = "usagetype", const = "USE1-Kafka.m5.large" },
+  { key = "computeFamily", expr = 'strip_prefix(default(broker_node_group_info_instance_type, "kafka.m5.large"), "kafka.")' },
+  { key = "operation",     const = "RunBroker" },
 ]
 
 [mappings.storage]
 service        = "AmazonMSK"
 product_family = "Managed Streaming for Apache Kafka (MSK)"
 attribute_filters = [
-  { key = "usagetype", const = "USE1-Kafka-Broker-Storage" },
+  { key = "operation",     const = "RunVolume" },
+  { key = "storageFamily", const = "GP2" },
 ]
 
 [[dimensions]]
 id       = "broker_hours"
-label    = "MSK brokers (m5.large)"
+label    = "MSK brokers"
 unit     = "broker-hours"
 quantity = "default(number_of_broker_nodes, 3) * monthly_hours()"
-rate     = 'price("broker_m5_large")'
+rate     = 'price("broker")'
 
 [[dimensions]]
 id       = "broker_storage"
-label    = "Broker storage"
+label    = "Broker storage (EBS, per broker)"
 unit     = "GB-month"
-quantity = "default(number_of_broker_nodes, 3) * default(broker_node_group_info_ebs_volume_size, 100)"
+when     = 'not (default(broker_node_group_info_instance_type, "kafka.m5.large") startsWith "express.")'
+quantity = '''
+  default(number_of_broker_nodes, 3) *
+  (sum_field(broker_node_group_info_storage_info_ebs_storage_info, "volume_size") > 0 ?
+     sum_field(broker_node_group_info_storage_info_ebs_storage_info, "volume_size") :
+     default(broker_node_group_info_ebs_volume_size, 1000))
+'''
 rate     = 'price("storage")'
 
 [fixture]
-attributes = { broker_node_group_info_ebs_volume_size = 100, broker_node_group_info_instance_type = "kafka.m5.large", number_of_broker_nodes = 3 }
-expected_monthly_cost = 459.9
+# 3 x kafka.m5.4xlarge with 1000 GB per broker, us-east-1.
+# https://aws.amazon.com/msk/pricing/ : kafka.m5.4xlarge $1.68/hr,
+# broker storage $0.10/GB-month.
+# 3 x 730 x 1.68 = 3679.20; 3 x 1000 x 0.10 = 300.00; total 3979.20.
+attributes = { broker_node_group_info_instance_type = "kafka.m5.4xlarge", number_of_broker_nodes = 3, broker_node_group_info_storage_info_ebs_storage_info = { volume_size = 1000 } }
+expected_monthly_cost = 3979.2
 tolerance = 0.05
-

@@ -32,41 +32,58 @@ unit     = "hours"
 quantity = "monthly_hours()"
 rate     = 'price("compute_dsv5")'
 
+# Managed disks bill a flat monthly price per size tier: the smallest tier
+# that holds disk_size_gb (P/E 1, 2, 3, 4, 6, 10, 15, 20, 30, 40, 50, 60,
+# 70, 80 for 4 GiB .. 32 TiB; Standard HDD starts at S4 = 32 GiB).
+# storage_account_type picks the family and redundancy:
+#   Premium_LRS / Premium_ZRS          Premium SSD   (P, LRS / ZRS)
+#   StandardSSD_LRS / StandardSSD_ZRS  Standard SSD  (E, LRS / ZRS)
+#   Standard_LRS                       Standard HDD  (S, LRS)
+# PremiumV2_LRS and UltraSSD_LRS bill per GiB, IOPS and throughput instead
+# of by tier and are not priced here. Standard HDD and Standard SSD
+# transaction charges are usage-driven and not modelled.
+#
+# When os_disk.disk_size_gb is unset the disk takes the size of the
+# image. It is assumed to be 127 GiB, the size of the common Windows
+# marketplace images, which lands in tier 10 (128 GiB).
 [mappings.os_disk]
 service        = "Storage"
 product_family = "Storage"
 attribute_filters = [
-  # Managed disks bill per tier; map disk_size_gb to the smallest
-  # tier that fits (P/E/S × 4..50), mirroring Azure's tier ladder.
-  { key = "meterName", expr = """
-      (default(os_disk_storage_account_type, "Premium_LRS") == "Premium_LRS" ? "P" :
-       default(os_disk_storage_account_type, "Premium_LRS") == "StandardSSD_LRS" ? "E" : "S") +
-      (default(os_disk_disk_size_gb, 128) <= 32 ? "4" :
-       default(os_disk_disk_size_gb, 128) <= 64 ? "6" :
-       default(os_disk_disk_size_gb, 128) <= 128 ? "10" :
-       default(os_disk_disk_size_gb, 128) <= 256 ? "15" :
-       default(os_disk_disk_size_gb, 128) <= 512 ? "20" :
-       default(os_disk_disk_size_gb, 128) <= 1024 ? "30" :
-       default(os_disk_disk_size_gb, 128) <= 2048 ? "40" : "50") +
-      " LRS Disk"
-  """ },
-  { key = "productName", expr = """
-      default(os_disk_storage_account_type, "Premium_LRS") == "Premium_LRS" ? "Premium SSD Managed Disks" :
-      default(os_disk_storage_account_type, "Premium_LRS") == "StandardSSD_LRS" ? "Standard SSD Managed Disks" :
-                                                                                  "Standard HDD Managed Disks"
-  """ },
+  { key = "meterName", expr = '''
+      let t = default(os_disk_storage_account_type, "Premium_LRS");
+      let gb = default(os_disk_disk_size_gb, 127);
+      let fam = t startsWith "Premium" ? "P" : t startsWith "StandardSSD" ? "E" : "S";
+      let n =
+        gb <= 4     ? 1  : gb <= 8     ? 2  : gb <= 16    ? 3  : gb <= 32   ? 4  :
+        gb <= 64    ? 6  : gb <= 128   ? 10 : gb <= 256   ? 15 : gb <= 512  ? 20 :
+        gb <= 1024  ? 30 : gb <= 2048  ? 40 : gb <= 4096  ? 50 : gb <= 8192 ? 60 :
+        gb <= 16384 ? 70 : 80;
+      fam + string(fam == "S" && n < 4 ? 4 : n) + " " +
+      (t endsWith "_ZRS" ? "ZRS" : "LRS") + " Disk"
+  ''' },
+  { key = "productName", expr = '''
+      let t = default(os_disk_storage_account_type, "Premium_LRS");
+      t startsWith "Premium"     ? "Premium SSD Managed Disks" :
+      t startsWith "StandardSSD" ? "Standard SSD Managed Disks" :
+                                   "Standard HDD Managed Disks"
+  ''' },
 ]
 
 [[dimensions]]
 id       = "os_disk"
 label    = "OS disk (managed)"
 unit     = "disk-months"
-when     = "default(os_disk_disk_size_gb, 0) > 0"
+when     = 'default(os_disk_storage_account_type, "Premium_LRS") in ["Premium_LRS", "Premium_ZRS", "StandardSSD_LRS", "StandardSSD_ZRS", "Standard_LRS"]'
 quantity = "1"
 rate     = 'price("os_disk")'
 
 [fixture]
-attributes = { size = "Standard_D2s_v5" }
-expected_monthly_cost = 137.24
+# Standard_D2s_v5 Windows $0.188/hr x 730 = 137.24, plus a Premium SSD OS
+# disk of the default 127 GiB image size, billed as P10: $19.71/month
+# (https://azure.microsoft.com/en-us/pricing/details/managed-disks/,
+# meter "P10 LRS Disk" in the Azure Retail Prices API). Total 156.95.
+attributes = { size = "Standard_D2s_v5", os_disk_storage_account_type = "Premium_LRS" }
+expected_monthly_cost = 156.95
 tolerance = 0.05
 

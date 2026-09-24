@@ -2,8 +2,29 @@ kind         = "google_cloud_run_v2_service"
 display_name = "GCP Cloud Run Service (v2)"
 provider     = "gcp"
 
-# Request-based billing: vCPU-second + memory GiB-second while
-# handling requests. Usage-driven; zero at idle (scale-to-zero).
+# Request-based billing (the default, cpu_idle = true), Tier 1 rates:
+#
+#   vCPU active time      $0.000024  / vCPU-second     monthly_vcpu_seconds
+#   memory active time    $0.0000025 / GiB-second      monthly_memory_gib_seconds
+#   requests              $0.40      / million         monthly_requests
+#   idle min instances    $0.0000025 / vCPU-second and / GiB-second
+#
+# Active time and requests are usage-driven: supply them in a usage file.
+# The lines are always emitted, so a service without usage shows "usage not
+# provided" instead of disappearing from the estimate.
+#
+# Minimum instances are known from the configuration and bill even with no
+# traffic. They are priced as idle for the whole month, at the size of the
+# first container's resources.limits (Cloud Run defaults: cpu "1",
+# memory "512Mi"). min_instance_count is read from template.scaling, or
+# from the service-level scaling block. Services with cpu_idle = false use
+# instance-based billing, whose rates are published per region; their
+# minimum instances are not priced here.
+#
+# Rates are the Tier 1 ones (matched with region = "global"); Tier 2
+# regions are dearer and are not distinguished. The monthly free tier
+# (180,000 vCPU-s, 360,000 GiB-s, 2M requests per billing account) is not
+# subtracted.
 
 [mappings.vcpu]
 service        = "Cloud Run"
@@ -21,23 +42,103 @@ attribute_filters = [
   { key = "description", const = "Services Memory (Request-based billing)" },
 ]
 
+[mappings.requests]
+service        = "Cloud Run"
+product_family = "ApplicationServices"
+region         = "global"
+attribute_filters = [
+  { key = "description", const = "Requests" },
+]
+
+[mappings.min_instance_cpu]
+service        = "Cloud Run"
+product_family = "ApplicationServices"
+region         = "global"
+attribute_filters = [
+  { key = "description", const = "Services Min Instance CPU (Request-based billing)" },
+]
+
+[mappings.min_instance_memory]
+service        = "Cloud Run"
+product_family = "ApplicationServices"
+region         = "global"
+attribute_filters = [
+  { key = "description", const = "Services Min Instance Memory (Request-based billing)" },
+]
+
 [[dimensions]]
 id       = "vcpu"
-label    = "vCPU allocation time"
+label    = "vCPU active time"
 unit     = "vCPU-seconds"
 quantity = "default(monthly_vcpu_seconds, 0)"
 rate     = 'price("vcpu")'
-when     = "default(monthly_vcpu_seconds, 0) > 0"
 
 [[dimensions]]
 id       = "memory"
-label    = "Memory allocation time"
+label    = "Memory active time"
 unit     = "GiB-seconds"
 quantity = "default(monthly_memory_gib_seconds, 0)"
 rate     = 'price("memory")'
-when     = "default(monthly_memory_gib_seconds, 0) > 0"
+
+[[dimensions]]
+id       = "requests"
+label    = "Requests"
+unit     = "requests"
+quantity = "default(monthly_requests, 0)"
+rate     = 'price("requests")'
+
+[[dimensions]]
+id       = "min_instance_cpu"
+label    = "Minimum instances, idle vCPU"
+unit     = "vCPU-seconds"
+when     = '''
+  default(template_scaling_min_instance_count, default(scaling_min_instance_count, 0)) > 0 and
+  (let r = template_containers_resources; let x = type(r) == "array" ? r[0] : r;
+   (x?.cpu_idle ?? true) != false)
+'''
+quantity = '''
+  let r = template_containers_resources;
+  let x = type(r) == "array" ? r[0] : r;
+  let c = string(x?.limits?.cpu ?? "1");
+  default(template_scaling_min_instance_count, default(scaling_min_instance_count, 0)) *
+  (c endsWith "m" ? float(trimSuffix(c, "m")) / 1000 : float(c)) *
+  monthly_hours() * 3600
+'''
+rate     = 'price("min_instance_cpu")'
+
+[[dimensions]]
+id       = "min_instance_memory"
+label    = "Minimum instances, idle memory"
+unit     = "GiB-seconds"
+when     = '''
+  default(template_scaling_min_instance_count, default(scaling_min_instance_count, 0)) > 0 and
+  (let r = template_containers_resources; let x = type(r) == "array" ? r[0] : r;
+   (x?.cpu_idle ?? true) != false)
+'''
+quantity = '''
+  let r = template_containers_resources;
+  let x = type(r) == "array" ? r[0] : r;
+  let m = string(x?.limits?.memory ?? "512Mi");
+  let gib =
+    m endsWith "Gi" ? float(trimSuffix(m, "Gi")) :
+    m endsWith "Mi" ? float(trimSuffix(m, "Mi")) / 1024 :
+    m endsWith "G"  ? float(trimSuffix(m, "G")) * 1000000000 / 1073741824 :
+    m endsWith "M"  ? float(trimSuffix(m, "M")) * 1000000 / 1073741824 :
+                      float(m) / 1073741824;
+  default(template_scaling_min_instance_count, default(scaling_min_instance_count, 0)) *
+  gib * monthly_hours() * 3600
+'''
+rate     = 'price("min_instance_memory")'
 
 [fixture]
-attributes = { monthly_vcpu_seconds = 1000000, monthly_memory_gib_seconds = 2000000 }
-expected_monthly_cost = 29.0
-tolerance = 0.10
+# https://cloud.google.com/run/pricing (Tier 1, request-based billing):
+#   1,000,000 vCPU-s x $0.000024            = 24.00
+#   2,000,000 GiB-s  x $0.0000025           =  5.00
+#   5,000,000 requests x $0.40/M            =  2.00
+#   1 min instance, 1 vCPU, idle all month:
+#     2,628,000 vCPU-s x $0.0000025         =  6.57
+#     0.5 GiB x 2,628,000 s x $0.0000025    =  3.285
+#   total                                     40.855
+attributes = { monthly_vcpu_seconds = 1000000, monthly_memory_gib_seconds = 2000000, monthly_requests = 5000000, template_scaling_min_instance_count = 1, template_containers_resources = { limits = { cpu = "1", memory = "512Mi" } } }
+expected_monthly_cost = 40.86
+tolerance = 0.05

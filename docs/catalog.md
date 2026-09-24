@@ -735,18 +735,18 @@ Status meaning:
 | `azurerm_container_registry_webhook` | FREE | azurerm_container_registry_webhook |
 | `azurerm_cosmosdb_account` | LIVE | Azure Cosmos DB Account |
 | `azurerm_cosmosdb_cassandra_cluster` | LIVE | Azure Managed Cassandra Cluster |
-| `azurerm_cosmosdb_cassandra_keyspace` | FREE | azurerm_cosmosdb_cassandra_keyspace |
-| `azurerm_cosmosdb_cassandra_table` | FREE | azurerm_cosmosdb_cassandra_table |
-| `azurerm_cosmosdb_gremlin_database` | FREE | azurerm_cosmosdb_gremlin_database |
-| `azurerm_cosmosdb_gremlin_graph` | FREE | azurerm_cosmosdb_gremlin_graph |
-| `azurerm_cosmosdb_mongo_collection` | FREE | azurerm_cosmosdb_mongo_collection |
-| `azurerm_cosmosdb_mongo_database` | FREE | azurerm_cosmosdb_mongo_database |
-| `azurerm_cosmosdb_sql_container` | FREE | azurerm_cosmosdb_sql_container |
-| `azurerm_cosmosdb_sql_database` | FREE | azurerm_cosmosdb_sql_database |
+| `azurerm_cosmosdb_cassandra_keyspace` | LIVE | Azure Cosmos DB Cassandra Keyspace |
+| `azurerm_cosmosdb_cassandra_table` | LIVE | Azure Cosmos DB Cassandra Table |
+| `azurerm_cosmosdb_gremlin_database` | LIVE | Azure Cosmos DB Gremlin Database |
+| `azurerm_cosmosdb_gremlin_graph` | LIVE | Azure Cosmos DB Gremlin Graph |
+| `azurerm_cosmosdb_mongo_collection` | LIVE | Azure Cosmos DB for MongoDB Collection |
+| `azurerm_cosmosdb_mongo_database` | LIVE | Azure Cosmos DB for MongoDB Database |
+| `azurerm_cosmosdb_sql_container` | LIVE | Azure Cosmos DB SQL (NoSQL) Container |
+| `azurerm_cosmosdb_sql_database` | LIVE | Azure Cosmos DB SQL (NoSQL) Database |
 | `azurerm_cosmosdb_sql_function` | FREE | azurerm_cosmosdb_sql_function |
 | `azurerm_cosmosdb_sql_stored_procedure` | FREE | azurerm_cosmosdb_sql_stored_procedure |
 | `azurerm_cosmosdb_sql_trigger` | FREE | azurerm_cosmosdb_sql_trigger |
-| `azurerm_cosmosdb_table` | FREE | azurerm_cosmosdb_table |
+| `azurerm_cosmosdb_table` | LIVE | Azure Cosmos DB Table |
 | `azurerm_dashboard_grafana` | LIVE | Azure Managed Grafana |
 | `azurerm_dashboard_grafana_managed_private_endpoint` | FREE | azurerm_dashboard_grafana_managed_private_endpoint |
 | `azurerm_data_factory` | STATIC | Azure Data Factory |
@@ -905,7 +905,7 @@ Status meaning:
 | `azurerm_monitor_metric_alert` | LIVE | Azure Monitor Metric Alert |
 | `azurerm_monitor_private_link_scope` | FREE | azurerm_monitor_private_link_scope |
 | `azurerm_monitor_private_link_scoped_service` | FREE | azurerm_monitor_private_link_scoped_service |
-| `azurerm_mssql_database` | STATIC | Azure SQL Database |
+| `azurerm_mssql_database` | LIVE | Azure SQL Database |
 | `azurerm_mssql_database_extended_auditing_policy` | FREE | azurerm_mssql_database_extended_auditing_policy |
 | `azurerm_mssql_database_vulnerability_assessment_rule_baseline` | FREE | azurerm_mssql_database_vulnerability_assessment_rule_baseline |
 | `azurerm_mssql_elasticpool` | STATIC | Azure SQL Elastic Pool |
@@ -1056,7 +1056,7 @@ Status meaning:
 | `azurerm_windows_virtual_machine_scale_set` | STATIC | Azure Windows VM Scale Set |
 | `azurerm_windows_web_app_slot` | FREE | azurerm_windows_web_app_slot |
 
-**AZURE totals:** 57 LIVE · 46 STATIC · 306 FREE
+**AZURE totals:** 67 LIVE · 45 STATIC · 297 FREE
 
 ## GCP (306 resources)
 
@@ -1373,4 +1373,4 @@ Status meaning:
 
 ---
 
-**Grand total: 1340 resources.** 176 LIVE · 87 STATIC · 1077 FREE.
+**Grand total: 1340 resources.** 186 LIVE · 86 STATIC · 1068 FREE.

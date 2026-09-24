@@ -1,0 +1,99 @@
+kind         = "azurerm_cosmosdb_table"
+display_name = "Azure Cosmos DB Table"
+provider     = "azure"
+
+# Provisioned throughput set on this container (throughput, or
+# autoscale_settings.max_throughput). With neither, the container draws on
+# throughput provisioned elsewhere (a shared-throughput database, or a
+# serverless account) and costs nothing itself, which the $0
+# shared_throughput line records instead of reporting the resource as
+# unpriced.
+#
+# Rates, per 100 RU/s per hour, per account region:
+#   standard (manual), single write region   "100 RU/s"               $0.008
+#   autoscale, single write region           "AP1 100 RUs"            $0.012
+#   multi-region writes, manual or autoscale "100 Multi-master RU/s"  $0.016
+# (For multi-region-write accounts autoscale carries no premium; it bills
+# at the multi-region write rate.)
+#
+# Autoscale bills each hour for the highest RU/s it scaled to, between 10%
+# and 100% of max_throughput. With no usage it is priced at
+# max_throughput, the most the container can cost; set
+# monthly_autoscale_ru_per_sec in a usage file for an observed average.
+#
+# Throughput bills once per account region. geo_location and the
+# multi-region-write flag are declared on the azurerm_cosmosdb_account;
+# the parser copies them onto this resource (internal/parser/inherit.go).
+# Without them (no account in the set, or an older client) one region at
+# the single-write rate is assumed. Every region is priced at the rate of
+# the region being estimated.
+
+[mappings.standard]
+service        = "Azure Cosmos DB"
+product_family = "Databases"
+attribute_filters = [
+  { key = "productName", const = "Azure Cosmos DB" },
+  { key = "skuName",     const = "RUs" },
+  { key = "meterName",   const = "100 RU/s" },
+]
+
+[mappings.autoscale]
+service        = "Azure Cosmos DB"
+product_family = "Databases"
+attribute_filters = [
+  { key = "productName", const = "Azure Cosmos DB autoscale" },
+  { key = "skuName",     const = "AP1" },
+  { key = "meterName",   const = "AP1 100 RUs" },
+]
+
+[mappings.multi_region_write]
+service        = "Azure Cosmos DB"
+product_family = "Databases"
+attribute_filters = [
+  { key = "productName", const = "Azure Cosmos DB" },
+  { key = "skuName",     const = "mRUs" },
+  { key = "meterName",   const = "100 Multi-master RU/s" },
+]
+
+[[dimensions]]
+id       = "manual_throughput"
+label    = "Provisioned throughput (manual)"
+unit     = "100 RU/s-hours"
+when     = "default(autoscale_settings_max_throughput, 0) == 0 and default(throughput, 0) > 0"
+quantity = """
+  default(throughput, 0) / 100 * monthly_hours() *
+  (count_blocks(geo_location) > 0 ? count_blocks(geo_location) : 1)
+"""
+rate     = """
+  default(multiple_write_locations_enabled, default(enable_multiple_write_locations, false)) == true ?
+    price("multi_region_write") : price("standard")
+"""
+
+[[dimensions]]
+id       = "autoscale_throughput"
+label    = "Provisioned throughput (autoscale, at max RU/s unless usage is given)"
+unit     = "100 RU/s-hours"
+when     = "default(autoscale_settings_max_throughput, 0) > 0"
+quantity = """
+  default(monthly_autoscale_ru_per_sec, autoscale_settings_max_throughput) / 100 * monthly_hours() *
+  (count_blocks(geo_location) > 0 ? count_blocks(geo_location) : 1)
+"""
+rate     = """
+  default(multiple_write_locations_enabled, default(enable_multiple_write_locations, false)) == true ?
+    price("multi_region_write") : price("autoscale")
+"""
+
+[[dimensions]]
+id       = "shared_throughput"
+label    = "No dedicated throughput (shared or serverless)"
+unit     = "n/a"
+when     = "default(autoscale_settings_max_throughput, 0) == 0 and default(throughput, 0) == 0"
+quantity = "0"
+rate     = "0"
+
+[fixture]
+# 400 RU/s manual, one region, East US: 4 x 730 x $0.008 = $23.36
+# (https://azure.microsoft.com/en-us/pricing/details/cosmos-db/autoscale-provisioned/).
+attributes = { throughput = 400 }
+expected_monthly_cost = 23.36
+tolerance = 0.05

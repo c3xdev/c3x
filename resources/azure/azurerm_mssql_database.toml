@@ -2,35 +2,198 @@ kind         = "azurerm_mssql_database"
 display_name = "Azure SQL Database"
 provider     = "azure"
 
-# Azure SQL Database vCore pricing for General Purpose (Gen5).
-# Discriminate by skuName ("X vCore"). Storage bills separately at
-# ~$0.115/GB/month — modelled as a second dimension.
+# Everything is driven by sku_name, which azurerm_mssql_database takes in
+# the Azure form:
+#
+#   vCore, provisioned  <tier>_<family>_<vcores>     GP_Gen5_2, BC_Gen5_8, HS_Gen5_4,
+#                                                    GP_Fsv2_8, GP_DC_2, BC_M_128,
+#                                                    HS_PRMS_4, HS_MOPRMS_4
+#   vCore, serverless   <tier>_S_<family>_<maxvcores> GP_S_Gen5_2, HS_S_Gen5_4
+#   DTU                 Basic, S0..S12, P1..P15
+#
+# An unset sku_name is priced as GP_Gen5_2 (General Purpose, 2 vCores).
+# A database placed in an elastic pool (elastic_pool_id set, or
+# sku_name = "ElasticPool") is billed on the azurerm_mssql_elastic_pool, so
+# it gets a single $0 line here.
+#
+# vCore provisioned compute is priced per vCore from the "1 vCore" SKU of
+# the family's compute product, times the vCore count in sku_name; Azure's
+# per-size SKUs are exact multiples of it. General Purpose and Business
+# Critical also bill a SQL Server license per vCore-hour unless
+# license_type = "BasePrice" (Azure Hybrid Benefit). Hyperscale has had no
+# license charge since the December 2023 pricing change.
+#
+# Serverless compute is billed per vCore-second actually used, between
+# min_capacity and the SKU's max. With no usage, it is priced at
+# min_capacity (default 0.5 vCores) for the whole month: the floor while
+# the database is online. Set monthly_vcore_hours in a usage file for a
+# real figure. Serverless rates already include the license.
+#
+# Storage: GP and BC bill the configured max_size_gb (default 32 GB);
+# Hyperscale bills allocated storage, estimated from max_size_gb too.
+# DTU tiers include storage (Basic 2 GB, Standard 250 GB, Premium 500 GB),
+# and extra DTU storage is not modelled. Zone-redundant GP compute and
+# storage surcharges, backup storage and Premium RS are not modelled.
 
-[mappings.compute]
+# --- vCore, provisioned -----------------------------------------------------
+
+[mappings.vcore_compute]
 service        = "SQL Database"
 product_family = "Databases"
 attribute_filters = [
-  { key = "productName", const = "SQL Database Single/Elastic Pool General Purpose - Compute Gen5" },
-  { key = "skuName",     expr = 'string(default(vcores, 2)) + " vCore"' },
+  { key = "productName", expr = '''
+      let p = split(default(sku_name, "GP_Gen5_2"), "_");
+      let fam = p[1];
+      let suffix =
+        fam == "Gen5"   ? "Compute Gen5" :
+        fam == "DC"     ? "Compute DC-Series" :
+        fam == "Fsv2"   ? "Compute FSv2 Series" :
+        fam == "M"      ? "Compute M Series" :
+        fam == "PRMS"   ? "Premium Series Compute" :
+        fam == "MOPRMS" ? "Premium Series Memory Optimized Compute" : fam;
+      p[0] == "GP" ? "SQL Database Single/Elastic Pool General Purpose - " + suffix :
+      p[0] == "BC" ? "SQL Database Single/Elastic Pool Business Critical - " + suffix :
+      fam == "Gen5" ? "SQL Database SingleDB/Elastic Pool Hyperscale - Compute Gen5" :
+                      "SQL Database Single/Elastic Pool Hyperscale - " + suffix
+  ''' },
+  { key = "skuName", const = "1 vCore" },
+]
+
+[mappings.vcore_license]
+service        = "SQL Database"
+product_family = "Databases"
+region         = "Global"
+attribute_filters = [
+  { key = "productName", expr = '''
+      split(default(sku_name, "GP_Gen5_2"), "_")[0] == "BC" ?
+        "SQL Database Single/Elastic Pool Business Critical - SQL License" :
+        "SQL Database Single/Elastic Pool General Purpose - SQL License"
+  ''' },
+  { key = "skuName", const = "vCore" },
+]
+
+# --- vCore, serverless ------------------------------------------------------
+
+[mappings.serverless_compute]
+service        = "SQL Database"
+product_family = "Databases"
+attribute_filters = [
+  { key = "productName", expr = '''
+      split(default(sku_name, "GP_Gen5_2"), "_")[0] == "HS" ?
+        "SQL Database Hyperscale - Serverless - Compute Gen5" :
+        "SQL Database General Purpose - Serverless - Compute Gen5"
+  ''' },
+  { key = "skuName", const = "1 vCore" },
+]
+
+# --- storage ----------------------------------------------------------------
+
+[mappings.storage]
+service        = "SQL Database"
+product_family = "Databases"
+attribute_filters = [
+  { key = "productName", expr = '''
+      let t = split(default(sku_name, "GP_Gen5_2"), "_")[0];
+      t == "BC" ? "SQL Database Single/Elastic Pool Business Critical - Storage" :
+      t == "HS" ? "SQL Database Hyperscale - Storage" :
+                  "SQL Database Single/Elastic Pool General Purpose - Storage"
+  ''' },
+  { key = "meterName", expr = '''
+      let t = split(default(sku_name, "GP_Gen5_2"), "_")[0];
+      t == "BC" ? "Business Critical Data Stored" :
+      t == "HS" ? "Hyperscale Data Stored" :
+                  "General Purpose Data Stored"
+  ''' },
+]
+
+# --- DTU --------------------------------------------------------------------
+
+[mappings.dtu]
+service        = "SQL Database"
+product_family = "Databases"
+attribute_filters = [
+  { key = "productName", expr = '''
+      sku_name == "Basic"        ? "SQL Database Single Basic" :
+      sku_name startsWith "P"    ? "SQL Database Single Premium" :
+                                   "SQL Database Single Standard"
+  ''' },
+  { key = "skuName", expr = 'sku_name == "Basic" ? "B" : sku_name' },
 ]
 
 [[dimensions]]
-id       = "compute_hours"
-label    = "SQL DB compute"
+id       = "vcore_compute"
+label    = "SQL DB compute (provisioned vCores)"
 unit     = "vCore-hours"
-quantity = "monthly_hours()"
-rate     = 'price("compute")'
+when     = '''
+  default(elastic_pool_id, "") == "" and
+  default(sku_name, "GP_Gen5_2") matches "^(GP|BC|HS)_" and
+  split(default(sku_name, "GP_Gen5_2"), "_")[1] != "S"
+'''
+quantity = 'float(last(split(default(sku_name, "GP_Gen5_2"), "_"))) * monthly_hours()'
+rate     = 'price("vcore_compute")'
+
+[[dimensions]]
+id       = "vcore_license"
+label    = "SQL Server license (license included)"
+unit     = "vCore-hours"
+when     = '''
+  default(elastic_pool_id, "") == "" and
+  default(sku_name, "GP_Gen5_2") matches "^(GP|BC)_" and
+  split(default(sku_name, "GP_Gen5_2"), "_")[1] != "S" and
+  default(license_type, "LicenseIncluded") != "BasePrice"
+'''
+quantity = 'float(last(split(default(sku_name, "GP_Gen5_2"), "_"))) * monthly_hours()'
+rate     = 'price("vcore_license")'
+
+[[dimensions]]
+id       = "serverless_compute"
+label    = "SQL DB compute (serverless, at min_capacity unless usage is given)"
+unit     = "vCore-hours"
+when     = '''
+  default(elastic_pool_id, "") == "" and
+  default(sku_name, "") matches "^(GP|HS)_S_Gen5_"
+'''
+quantity = 'default(monthly_vcore_hours, default(min_capacity, 0.5) * monthly_hours())'
+rate     = 'price("serverless_compute")'
 
 [[dimensions]]
 id       = "storage"
-label    = "Storage"
+label    = "Data storage"
 unit     = "GB-month"
+when     = '''
+  default(elastic_pool_id, "") == "" and
+  default(sku_name, "GP_Gen5_2") matches "^(GP|BC|HS)_"
+'''
 quantity = "default(max_size_gb, 32)"
-rate     = "0.115"
+rate     = 'price("storage")'
+
+[[dimensions]]
+id       = "dtu"
+label    = "SQL DB (DTU tier)"
+unit     = "days"
+when     = '''
+  default(elastic_pool_id, "") == "" and
+  default(sku_name, "") matches "^(Basic|S[0-9]+|P[0-9]+)$"
+'''
+quantity = "monthly_hours() / 24"
+rate     = 'price("dtu")'
+
+[[dimensions]]
+id       = "elastic_pool"
+label    = "Billed on the elastic pool"
+unit     = "n/a"
+when     = 'default(elastic_pool_id, "") != "" or default(sku_name, "") == "ElasticPool"'
+quantity = "0"
+rate     = "0"
 
 [fixture]
-attributes = { max_size_gb = 32, vcores = 2 }
-expected_monthly_cost = 225.92
-exact = true
-last_verified = "2026-06-09"
-
+# BC_Gen5_8, 32 GB, license included, East US
+# (https://azure.microsoft.com/en-us/pricing/details/azure-sql-database/single/,
+# Azure Retail Prices API):
+#   compute  8 x 730 x $0.304435 = 1777.90
+#   license  8 x 730 x $0.375    = 2190.00
+#   storage  32 x $0.25          =    8.00
+#   total                          3975.90
+attributes = { sku_name = "BC_Gen5_8", max_size_gb = 32 }
+expected_monthly_cost = 3975.9
+tolerance = 0.05

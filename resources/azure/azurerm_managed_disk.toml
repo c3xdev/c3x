@@ -2,30 +2,56 @@ kind         = "azurerm_managed_disk"
 display_name = "Azure Managed Disk"
 provider     = "azure"
 
-# Azure managed disks are priced per-tier as flat monthly fees, where the
-# tier is determined by disk size (E1 = 4 GB, E10 = 128 GB, E20 = 512 GB,
-# etc.). The catalog returns one entry per tier. We default to E10 LRS
-# (128 GB Standard SSD) since 128 GB is the most common default; this is
-# documented as approximate. For exact pricing, the engine would need a
-# size-to-tier lookup table.
+# Managed disks bill a flat monthly price per size tier: the smallest tier
+# that holds disk_size_gb (P/E 1, 2, 3, 4, 6, 10, 15, 20, 30, 40, 50, 60,
+# 70, 80 for 4 GiB .. 32 TiB; Standard HDD starts at S4 = 32 GiB).
+# storage_account_type picks the family and redundancy:
+#   Premium_LRS / Premium_ZRS          Premium SSD   (P, LRS / ZRS)
+#   StandardSSD_LRS / StandardSSD_ZRS  Standard SSD  (E, LRS / ZRS)
+#   Standard_LRS                       Standard HDD  (S, LRS)
+# PremiumV2_LRS and UltraSSD_LRS bill per GiB, IOPS and throughput instead
+# of by tier and are not priced here. Standard HDD and Standard SSD
+# transaction charges are usage-driven and not modelled.
+#
+# An unset disk_size_gb (a copy or import that takes the source's size) is
+# assumed to be 128 GiB.
 
-[mappings.disk_e10]
+[mappings.disk]
 service        = "Storage"
 product_family = "Storage"
 attribute_filters = [
-  { key = "meterName",   const = "E10 LRS Disk" },
-  { key = "productName", const = "Standard SSD Managed Disks" },
+  { key = "meterName", expr = '''
+      let t = default(storage_account_type, "Premium_LRS");
+      let gb = default(disk_size_gb, 128);
+      let fam = t startsWith "Premium" ? "P" : t startsWith "StandardSSD" ? "E" : "S";
+      let n =
+        gb <= 4     ? 1  : gb <= 8     ? 2  : gb <= 16    ? 3  : gb <= 32   ? 4  :
+        gb <= 64    ? 6  : gb <= 128   ? 10 : gb <= 256   ? 15 : gb <= 512  ? 20 :
+        gb <= 1024  ? 30 : gb <= 2048  ? 40 : gb <= 4096  ? 50 : gb <= 8192 ? 60 :
+        gb <= 16384 ? 70 : 80;
+      fam + string(fam == "S" && n < 4 ? 4 : n) + " " +
+      (t endsWith "_ZRS" ? "ZRS" : "LRS") + " Disk"
+  ''' },
+  { key = "productName", expr = '''
+      let t = default(storage_account_type, "Premium_LRS");
+      t startsWith "Premium"     ? "Premium SSD Managed Disks" :
+      t startsWith "StandardSSD" ? "Standard SSD Managed Disks" :
+                                   "Standard HDD Managed Disks"
+  ''' },
 ]
 
 [[dimensions]]
 id       = "disk"
-label    = "Managed disk (E10 LRS, approximate)"
-unit     = "disk-month"
+label    = "Managed disk"
+unit     = "disk-months"
+when     = 'default(storage_account_type, "Premium_LRS") in ["Premium_LRS", "Premium_ZRS", "StandardSSD_LRS", "StandardSSD_ZRS", "Standard_LRS"]'
 quantity = "1"
-rate     = 'price("disk_e10")'
+rate     = 'price("disk")'
 
 [fixture]
-attributes = { disk_size_gb = 128, storage_account_type = "Standard_LRS" }
-expected_monthly_cost = 9.6
+# 512 GiB Premium SSD, LRS, East US: P20 $73.22/month
+# (https://azure.microsoft.com/en-us/pricing/details/managed-disks/,
+# meter "P20 LRS Disk" in the Azure Retail Prices API).
+attributes = { disk_size_gb = 512, storage_account_type = "Premium_LRS" }
+expected_monthly_cost = 73.22
 tolerance = 0.05
-

@@ -2,8 +2,21 @@ kind         = "azurerm_cosmosdb_account"
 display_name = "Azure Cosmos DB Account"
 provider     = "azure"
 
-# Standard provisioned throughput: $0.008 per 100 RU/s per hour,
-# plus $0.25/GB-month of transactional storage.
+# The account itself has no fixed charge. What it bills depends on usage:
+#
+# - Provisioned throughput normally lives on the databases and containers
+#   (azurerm_cosmosdb_sql_database, _sql_container, _mongo_*, ...), which
+#   price their own throughput / autoscale_settings. The request_units line
+#   here is only for throughput modelled at account level through a usage
+#   file (monthly_provisioned_ru_per_sec), so it is not double-counted with
+#   those resources unless the usage file says so.
+# - Serverless accounts (capabilities { name = "EnableServerless" }) bill
+#   per million request units consumed (monthly_serverless_request_units).
+# - Transactional storage bills per GB-month, once per account region
+#   (monthly_storage_gb x the number of geo_location blocks).
+#
+# These lines are always emitted, so an account with no usage file reports
+# "usage not provided" rather than being silently skipped.
 
 [mappings.throughput]
 service        = "Azure Cosmos DB"
@@ -12,6 +25,15 @@ attribute_filters = [
   { key = "productName", const = "Azure Cosmos DB" },
   { key = "skuName",     const = "RUs" },
   { key = "meterName",   const = "100 RU/s" },
+]
+
+[mappings.serverless]
+service        = "Azure Cosmos DB"
+product_family = "Databases"
+attribute_filters = [
+  { key = "productName", const = "Azure Cosmos DB serverless" },
+  { key = "skuName",     const = "RUs" },
+  { key = "meterName",   const = "1M RUs" },
 ]
 
 [mappings.storage]
@@ -25,22 +47,30 @@ attribute_filters = [
 
 [[dimensions]]
 id       = "request_units"
-label    = "Provisioned throughput (Standard)"
+label    = "Account-level provisioned throughput (usage file)"
 unit     = "100 RU/s-hours"
+when     = 'default(monthly_provisioned_ru_per_sec, 0) > 0'
 quantity = "default(monthly_provisioned_ru_per_sec, 0) / 100 * monthly_hours()"
 rate     = 'price("throughput")'
-when     = "default(monthly_provisioned_ru_per_sec, 0) > 0"
+
+[[dimensions]]
+id       = "serverless_request_units"
+label    = "Serverless request units"
+unit     = "1M RUs"
+when     = 'toJSON(default(capabilities, "")) contains "EnableServerless"'
+quantity = "default(monthly_serverless_request_units, 0) / 1000000"
+rate     = 'price("serverless")'
 
 [[dimensions]]
 id       = "storage"
 label    = "Transactional storage"
 unit     = "GB-month"
-quantity = "default(monthly_storage_gb, 0)"
+quantity = "default(monthly_storage_gb, 0) * (count_blocks(geo_location) > 0 ? count_blocks(geo_location) : 1)"
 rate     = 'price("storage")'
-when     = "default(monthly_storage_gb, 0) > 0"
 
 [fixture]
-# 1000 RU/s: 10 × 730 × $0.008 = $58.40
+# 1000 RU/s: 10 x 730 x $0.008 = $58.40
+# (https://azure.microsoft.com/en-us/pricing/details/cosmos-db/autoscale-provisioned/)
 attributes = { monthly_provisioned_ru_per_sec = 1000 }
 expected_monthly_cost = 58.4
 tolerance = 0.05
