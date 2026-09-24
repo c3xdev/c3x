@@ -202,7 +202,9 @@ runs:
         out=/tmp/c3x-base.json
         if git fetch --no-tags --depth=1 origin "$BASE_SHA" >/dev/null 2>&1 \
            && git worktree add --detach /tmp/c3x-base "$BASE_SHA" >/dev/null 2>&1; then
-          if c3x estimate --path "/tmp/c3x-base/$IN_PATH" --save-baseline "$out" >/dev/null 2>&1; then
+          # --budget 0: a base branch already over a budget set in its
+          # .c3x.toml must still produce a baseline.
+          if c3x estimate --path "/tmp/c3x-base/$IN_PATH" --budget 0 --save-baseline "$out" >/dev/null 2>&1; then
             echo "baseline=$out" >> "$GITHUB_OUTPUT"
             echo "Computed cost baseline from base $BASE_SHA"
           else

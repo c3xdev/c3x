@@ -246,11 +246,17 @@ Project config example (`.c3x.toml`):
 ```toml
 region = "us-east-1"
 format = "markdown"
-budget = 1000.0
+budget = 1000.0              # same as --budget; --budget 0 overrides it
+budget_delta = 50.0          # same as --budget-delta on c3x diff
+usage_path = "c3x-usage.yml" # relative to this file; used by every command
 
 [pricing]
 endpoint = "https://pricing.c3x.dev/graphql"
 ```
+
+The other keys are `currency`, `offline`, `no_cache`, `cache_path`,
+`no_remote_modules`, and `pricing.token` (keep that one out of the
+repository). c3x warns about any key it doesn't recognise.
 
 Self-hosting the pricing API? Point `pricing.endpoint` at it and set
 `C3X_PRICING_TOKEN` if it runs with `API_KEY` enabled. See

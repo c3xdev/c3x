@@ -64,22 +64,18 @@ type Resolved struct {
 	CachePath string
 
 	// UsagePath is the path to a `c3x-usage.yml` file with runtime usage
-	// quantities. Empty means no usage file.
+	// quantities (--usage or usage_path). Empty means no usage file. A
+	// relative usage_path in .c3x.toml is taken relative to that file's
+	// directory.
 	UsagePath string
 
-	// ResourcesPath overrides the embedded TOML catalog with an
-	// on-disk directory. Empty means use the embedded one.
-	ResourcesPath string
-
-	// Budget, when > 0, fails the run if the project total exceeds it.
-	// Used by `c3x estimate --budget`.
+	// Budget, when > 0, fails `c3x estimate` if the project total exceeds
+	// it (--budget or budget).
 	Budget float64
 
-	// BudgetDelta, when > 0, fails `c3x diff` if the delta exceeds it.
+	// BudgetDelta, when > 0, fails `c3x diff` if the increase exceeds it
+	// (--budget-delta or budget_delta).
 	BudgetDelta float64
-
-	// Verbosity is the count of -v CLI flags (0..3).
-	Verbosity int
 }
 
 // Defaults returns a Resolved populated with the c3x defaults. This is
@@ -95,10 +91,8 @@ func Defaults() Resolved {
 		NoCache:         false,
 		CachePath:       "",
 		UsagePath:       "",
-		ResourcesPath:   "",
 		Budget:          0,
 		BudgetDelta:     0,
-		Verbosity:       0,
 	}
 }
 
@@ -118,6 +112,9 @@ func (r Resolved) Validate() error {
 	}
 	if r.Budget < 0 {
 		return fmt.Errorf("budget must be non-negative, got %v", r.Budget)
+	}
+	if r.BudgetDelta < 0 {
+		return fmt.Errorf("budget_delta must be non-negative, got %v", r.BudgetDelta)
 	}
 	if r.PricingEndpoint == "" && !r.Offline {
 		return fmt.Errorf("pricing endpoint is empty and offline mode is not set")

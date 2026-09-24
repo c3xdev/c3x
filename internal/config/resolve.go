@@ -39,10 +39,8 @@ func Resolve(projectDir string, flags map[string]any) (Resolved, error) {
 	v.SetDefault("no_cache", d.NoCache)
 	v.SetDefault("cache_path", d.CachePath)
 	v.SetDefault("usage_path", d.UsagePath)
-	v.SetDefault("resources_path", d.ResourcesPath)
 	v.SetDefault("budget", d.Budget)
 	v.SetDefault("budget_delta", d.BudgetDelta)
-	v.SetDefault("verbosity", d.Verbosity)
 	v.SetDefault("pricing.endpoint", d.PricingEndpoint)
 	v.SetDefault("pricing.token", d.PricingToken)
 
@@ -84,6 +82,12 @@ func Resolve(projectDir string, flags map[string]any) (Resolved, error) {
 		pv.SetConfigFile(projectPath)
 		if err := pv.ReadInConfig(); err != nil {
 			return Resolved{}, fmt.Errorf("project config %s: %w", projectPath, err)
+		}
+		for _, key := range pv.AllKeys() {
+			if !knownKeys[key] {
+				slog.Warn("unknown setting in the project's .c3x.toml; it has no effect",
+					"key", key, "file", projectPath)
+			}
 		}
 		settings, ignored := projectSettings(pv, projectDir, untrusted)
 		if err := v.MergeConfigMap(settings); err != nil {
@@ -138,10 +142,8 @@ func Resolve(projectDir string, flags map[string]any) (Resolved, error) {
 		NoCache:            v.GetBool("no_cache"),
 		CachePath:          v.GetString("cache_path"),
 		UsagePath:          v.GetString("usage_path"),
-		ResourcesPath:      v.GetString("resources_path"),
 		Budget:             v.GetFloat64("budget"),
 		BudgetDelta:        v.GetFloat64("budget_delta"),
-		Verbosity:          v.GetInt("verbosity"),
 	}
 	if err := out.Validate(); err != nil {
 		return Resolved{}, err
@@ -157,8 +159,18 @@ var ErrNoProjectDir = errors.New("project directory is empty")
 // is untrusted: they shape how an estimate is presented or gated, and
 // cannot redirect network traffic, credentials or file access.
 var projectSafeKeys = map[string]bool{
-	"region": true, "currency": true, "format": true, "verbosity": true,
+	"region": true, "currency": true, "format": true,
 	"budget": true, "budget_delta": true, "no_cache": true, "usage_path": true,
+}
+
+// knownKeys is every setting c3x reads from a config file. Anything else
+// in .c3x.toml is a typo or a removed key, and is reported rather than
+// silently doing nothing.
+var knownKeys = map[string]bool{
+	"region": true, "currency": true, "format": true,
+	"budget": true, "budget_delta": true, "no_cache": true, "usage_path": true,
+	"offline": true, "no_remote_modules": true, "allow_file_functions": true,
+	"cache_path": true, "pricing.endpoint": true, "pricing.token": true,
 }
 
 // projectSettings returns the project config as a nested map to merge,
@@ -169,8 +181,7 @@ var projectSafeKeys = map[string]bool{
 // limited to projectSafeKeys, because a pull request from a fork can
 // edit it: pricing.endpoint would send the pricing token and every price
 // lookup to a server of the attacker's choosing (and could fake prices
-// to pass a budget gate), cache_path and resources_path point c3x at
-// arbitrary paths, and offline swaps real prices for stubs. usage_path is
+// to pass a budget gate), cache_path points c3x at an arbitrary path, and offline swaps real prices for stubs. usage_path is
 // kept only when it stays inside the project, since a parse error on an
 // arbitrary file would quote its contents. no_remote_modules may only be
 // turned on, never off.
@@ -193,6 +204,11 @@ func projectSettings(pv *viper.Viper, projectDir string, untrusted bool) (map[st
 		if !keep {
 			ignored = append(ignored, key)
 			continue
+		}
+		// The file sits in the project, so its relative paths are relative
+		// to the project, not to wherever c3x was started.
+		if p, ok := val.(string); ok && key == "usage_path" && p != "" && !filepath.IsAbs(p) {
+			val = filepath.Join(projectDir, p)
 		}
 		setNested(out, strings.Split(key, "."), val)
 	}

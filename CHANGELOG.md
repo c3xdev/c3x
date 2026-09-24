@@ -6,6 +6,24 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `budget`, `budget_delta` and `usage_path` in `.c3x.toml` now take
+  effect. They were documented, but only the `--budget`,
+  `--budget-delta` and `--usage` flags were read. An explicit
+  `--budget 0` switches a configured gate off. A relative `usage_path`
+  is taken relative to the `.c3x.toml` that sets it. The usage file now
+  applies to `diff`, `comment`, `top` and `policy` too, so the two sides
+  of a delta are priced with the same usage as the baseline.
+- The GitHub Action's base-branch baseline passes `--budget 0`, so a base
+  branch already over a configured budget still produces a baseline.
+
+### Removed
+
+- The `resources_path` and `verbosity` config keys, which were never read
+  (use `-v` for verbosity). c3x now warns about unrecognised keys in
+  `.c3x.toml` instead of silently ignoring them.
+
 ## [0.3.9] - 2026-09-24
 
 ### Added
