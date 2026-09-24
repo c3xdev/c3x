@@ -18,6 +18,7 @@ import (
 // manages it (see providerRegions). The calculator falls back to its own
 // configured default when the Resource has none, so we don't pad here.
 func emitResources(
+	scope evalScope,
 	sources []sourceFile,
 	vars map[string]cty.Value,
 	locals map[string]cty.Value,
@@ -33,7 +34,7 @@ func emitResources(
 			}
 			kind := block.Labels[0]
 			name := block.Labels[1]
-			if err := emitOne(src.Path, kind, name, block.Body, vars, locals, data, regions, "", logger, &out); err != nil {
+			if err := emitOne(scope, src.Path, kind, name, block.Body, vars, locals, data, regions, "", logger, &out); err != nil {
 				return nil, err
 			}
 		}
@@ -45,6 +46,7 @@ func emitResources(
 // block and pushes domain.Resources onto `out`. namePrefix is the
 // module-path prefix (e.g. `module.vpc.`); empty for top-level blocks.
 func emitOne(
+	scope evalScope,
 	srcPath, kind, name string,
 	body *hclsyntax.Body,
 	vars, locals map[string]cty.Value,
@@ -59,7 +61,7 @@ func emitOne(
 
 	switch {
 	case countAttr != nil:
-		baseCtx := buildEvalContext(asObject(vars), asObject(locals), data, nil)
+		baseCtx := scope.evalContext(asObject(vars), asObject(locals), data, nil)
 		val, diags := countAttr.Expr.Value(baseCtx)
 		if diags.HasErrors() {
 			logger.Warn("count evaluation failed; resource omitted",
@@ -77,7 +79,7 @@ func emitOne(
 					"index": cty.NumberIntVal(int64(i)),
 				}),
 			}
-			ctx := buildEvalContext(asObject(vars), asObject(locals), data, extras)
+			ctx := scope.evalContext(asObject(vars), asObject(locals), data, extras)
 			attrs, err := extractAttributes(body, ctx, logger, kind+"."+name)
 			if err != nil {
 				return fmt.Errorf("%s.%s[%d]: %w", kind, name, i, err)
@@ -87,7 +89,7 @@ func emitOne(
 		return nil
 
 	case foreachAttr != nil:
-		baseCtx := buildEvalContext(asObject(vars), asObject(locals), data, nil)
+		baseCtx := scope.evalContext(asObject(vars), asObject(locals), data, nil)
 		val, diags := foreachAttr.Expr.Value(baseCtx)
 		if diags.HasErrors() {
 			logger.Warn("for_each evaluation failed; resource omitted",
@@ -103,7 +105,7 @@ func emitOne(
 					"value": p.Value,
 				}),
 			}
-			ctx := buildEvalContext(asObject(vars), asObject(locals), data, extras)
+			ctx := scope.evalContext(asObject(vars), asObject(locals), data, extras)
 			attrs, err := extractAttributes(body, ctx, logger, kind+"."+name)
 			if err != nil {
 				return fmt.Errorf("%s.%s[%q]: %w", kind, name, p.Key, err)
@@ -117,7 +119,7 @@ func emitOne(
 		return nil
 	}
 
-	ctx := buildEvalContext(asObject(vars), asObject(locals), data, nil)
+	ctx := scope.evalContext(asObject(vars), asObject(locals), data, nil)
 	attrs, err := extractAttributes(body, ctx, logger, kind+"."+name)
 	if err != nil {
 		return fmt.Errorf("%s.%s: %w", kind, name, err)

@@ -6,6 +6,38 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `file()`, `templatefile()`, `fileset()`, `fileexists()`, `filebase64()`,
+  the `file*sha*`/`filemd5` hashes and `abspath()`, behind a new opt-in:
+  `--allow-file-functions` or `C3X_ALLOW_FILE_FUNCTIONS=true`. Configs that
+  load settings from files (`yamldecode(file("${path.module}/fleet.yaml"))`
+  feeding a `for_each`) are priced instead of dropped; one such project
+  went from $23.03 to $815.52. Reads are confined to the project
+  directory, with symlinks resolved first, and capped at 4 MiB.
+- `path.module`, `path.root` and `path.cwd`, with Terraform's semantics.
+- `basename()` and `dirname()`, which are always available.
+
+### Security
+
+- File functions are off by default, because on a pull request from a
+  fork the configuration is untrusted and a read, even one confined to
+  the checkout, could leak a credential an earlier CI step wrote there
+  through the posted costs. The opt-in is read only from sources the
+  runner controls (flag, environment, user config), never from the
+  project's `.c3x.toml`, which a pull request can edit, and untrusted-input
+  mode (`no_remote_modules`) always turns it off. The existing invariant
+  that a default parse reads no files is unchanged.
+- `no_remote_modules` is now enforced by every command. Only `estimate`
+  honoured it: `diff`, `recommend` and the plan-aware path behind
+  `comment` would still fetch remote modules with it set in config or the
+  environment.
+
+### Changed
+
+- The README no longer says c3x is safe on untrusted input without
+  qualification; it names `--no-remote-modules` as the mode for that.
+
 ## [0.3.8] - 2026-09-24
 
 ### Added

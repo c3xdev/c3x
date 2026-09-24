@@ -82,11 +82,7 @@ non-prod, GCP pd-standard → pd-balanced.`,
 			if err != nil {
 				return err
 			}
-			parsed, err := parser.Parse(path, parser.Options{
-				VarFiles: varFiles,
-				Vars:     varMap,
-				Offline:  resolved.Offline,
-			})
+			parsed, err := parser.Parse(path, parserOptions(resolved, varFiles, varMap))
 			if err != nil {
 				return fmt.Errorf("parsing %s: %w", path, err)
 			}

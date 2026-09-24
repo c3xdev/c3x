@@ -64,6 +64,7 @@ func loadInitModules(baseDir string, logger *slog.Logger) map[string]string {
 //
 //nolint:gocyclo // The pipeline is naturally a few flat branches.
 func expandModules(
+	scope evalScope,
 	baseDir string,
 	sources []sourceFile,
 	parentVars map[string]cty.Value,
@@ -84,7 +85,7 @@ func expandModules(
 			"depth", depth, "max", MaxModuleDepth)
 		return nil
 	}
-	parentCtx := buildEvalContext(asObject(parentVars), asObject(parentLocals), parentData, nil)
+	parentCtx := scope.evalContext(asObject(parentVars), asObject(parentLocals), parentData, nil)
 
 	for _, src := range sources {
 		for _, block := range src.Body.Blocks {
@@ -162,7 +163,8 @@ func expandModules(
 			applyVariableTypes(childVars, collectVariableTypes(childSources))
 
 			childData := collectDataBlocks(childSources)
-			childLocals := resolveLocals(childSources, childVars, childData, logger)
+			childScope := scope.child(childDir)
+			childLocals := resolveLocals(childScope, childSources, childVars, childData, logger)
 			childFallback := findDefaultRegion(childSources, childVars, childLocals, childData, logger)
 			if childFallback == "" {
 				childFallback = parentRegions.fallback
@@ -181,7 +183,7 @@ func expandModules(
 					kind := cb.Labels[0]
 					nm := cb.Labels[1]
 					if err := emitOne(
-						csrc.Path, kind, nm, cb.Body,
+						childScope, csrc.Path, kind, nm, cb.Body,
 						childVars, childLocals, childData, childRegions,
 						childPrefix, logger, out,
 					); err != nil {
@@ -191,7 +193,7 @@ func expandModules(
 			}
 
 			if err := expandModules(
-				childDir, childSources,
+				childScope, childDir, childSources,
 				childVars, childLocals, childData, childRegions,
 				childPrefix, manifestKey, initModules, depth+1,
 				offline, logger, out,
