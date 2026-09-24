@@ -47,11 +47,26 @@ var awsUsagetypePrefix = map[string]string{
 	"cn-northwest-1": "CNW1",
 }
 
-// localizeAWSUsagetype rewrites a us-east-1 usagetype filter
-// ("USE1-AmazonEKS-Hours:perCluster") to the query region's equivalent.
-// The catalog writes usagetypes against us-east-1; without this, every
-// other region missed and was priced at the us-east-1 rate. ok is false
-// when there is nothing to rewrite.
+// awsKnownPrefixes is the set of region prefixes, to tell a prefixed
+// usagetype ("EU-NatGateway-Hours") from an unprefixed one.
+var awsKnownPrefixes = func() map[string]bool {
+	m := make(map[string]bool, len(awsUsagetypePrefix))
+	for _, p := range awsUsagetypePrefix {
+		m[p] = true
+	}
+	return m
+}()
+
+// localizeAWSUsagetype rewrites a us-east-1 usagetype filter to the query
+// region's equivalent. The catalog writes usagetypes as they appear in
+// us-east-1, which is either with a USE1- prefix
+// ("USE1-AmazonEKS-Hours:perCluster") or, for some services, with none
+// ("Aurora:ServerlessV2Usage", "NatGateway-Hours"), while every other
+// region prefixes them ("EU-Aurora:ServerlessV2Usage"). Without this,
+// every other region missed and was priced at the us-east-1 rate. ok is
+// false when there is nothing to rewrite. A rewrite can be wrong for a
+// service whose usagetypes are unprefixed everywhere; the caller retries
+// the original query when the rewritten one misses.
 func localizeAWSUsagetype(q Query) (Query, bool) {
 	if q.Provider != "aws" || q.Region == "us-east-1" {
 		return q, false
@@ -62,13 +77,21 @@ func localizeAWSUsagetype(q Query) (Query, bool) {
 	}
 	var out []KV
 	for i, f := range q.AttributeFilters {
-		if !strings.EqualFold(f.Key, "usagetype") || !strings.HasPrefix(f.Value, "USE1-") {
+		if !strings.EqualFold(f.Key, "usagetype") || f.Value == "" {
 			continue
+		}
+		var localized string
+		if rest, ok := strings.CutPrefix(f.Value, "USE1-"); ok {
+			localized = prefix + "-" + rest
+		} else if head, _, _ := strings.Cut(f.Value, "-"); !awsKnownPrefixes[head] {
+			localized = prefix + "-" + f.Value
+		} else {
+			continue // already names a region
 		}
 		if out == nil {
 			out = append([]KV(nil), q.AttributeFilters...)
 		}
-		out[i].Value = prefix + strings.TrimPrefix(f.Value, "USE1")
+		out[i].Value = localized
 	}
 	if out == nil {
 		return q, false

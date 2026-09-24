@@ -8,6 +8,14 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- AWS usagetypes that carry no prefix in us-east-1 (`Aurora:ServerlessV2Usage`,
+  `LoadBalancerUsage`) are localized too: other regions prefix them
+  (`EU-Aurora:ServerlessV2Usage`). ALB, ElastiCache, DocumentDB, Aurora
+  Serverless v2, Glacier, EBS snapshots and others now price in their own
+  region instead of falling back to us-east-1; across all AWS fixtures in
+  eu-west-1 and sa-east-1, fallback lines went from 35 to 7 with no change
+  in us-east-1. If the prefixed form misses, the original query is tried
+  in the resource's own region before falling back.
 - A single `.tf.json` or `.tofu.json` file passed as `--path` is parsed as
   configuration; it was sent to the plan-JSON parser and priced nothing.
 - Azure resources are priced in their own `location`. Azure has no

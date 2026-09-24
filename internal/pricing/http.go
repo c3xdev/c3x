@@ -103,11 +103,14 @@ func (s *HTTPSource) setRequestHeaders(req *http.Request) {
 // paid rate). Zeros are skipped, falling back to zero only if every
 // price is zero.
 func (s *HTTPSource) Lookup(ctx context.Context, q Query) (decimal.Decimal, string, error) {
-	lq := q
-	if localized, ok := localizeAWSUsagetype(q); ok {
-		lq = localized
+	localized, ok := localizeAWSUsagetype(q)
+	if ok {
+		rate, src, err := s.lookupOnce(ctx, localized)
+		if err != nil || !rate.IsZero() {
+			return rate, src, err
+		}
 	}
-	rate, src, err := s.lookupOnce(ctx, lq)
+	rate, src, err := s.lookupOnce(ctx, q)
 	if err != nil || !rate.IsZero() {
 		return rate, src, err
 	}
