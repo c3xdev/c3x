@@ -50,6 +50,11 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   one: a PR comment for a plan downsizing `web["b"]` listed both
   instances as unchanged while its total showed the saving. Names now
   also match what the `.tf` parser produces.
+  The same loss affected `c3x top --format targets` since it shipped in
+  v0.3.5: from a plan JSON, the most expensive instance of a `for_each`
+  resource was emitted as `-target=aws_instance.web`, which covers every
+  instance, instead of `-target=aws_instance.web["b"]`. Reading a `.tf`
+  directory was not affected.
 
 ### Changed
 
