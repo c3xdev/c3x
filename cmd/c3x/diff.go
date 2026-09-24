@@ -132,7 +132,7 @@ monthly spend by more than the configured amount fail the job.`,
 		},
 	}
 
-	cmd.Flags().StringVar(&path, "path", ".", "Terraform or OpenTofu input (directory, .tf, .tofu, .hcl, or plan JSON)")
+	cmd.Flags().StringVar(&path, "path", ".", "Terraform or OpenTofu input (directory, .tf, .tofu, .tf.json, .hcl, or plan JSON)")
 	cmd.Flags().StringVar(&baselinePath, "baseline", "", "path to the saved baseline JSON (optional when --path is a plan JSON: the plan's prior state is the baseline)")
 	cmd.Flags().StringVar(&format, "format", "", "output format: text, markdown, json, junit, html, csv, sarif (overrides config)")
 	cmd.Flags().StringVar(&region, "region", "", "default region when the IaC source doesn't declare one")
