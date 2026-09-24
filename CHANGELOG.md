@@ -6,6 +6,8 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.9] - 2026-09-24
+
 ### Added
 
 - Caveats: every part of an estimate that rests on an assumption is now
@@ -28,22 +30,6 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `comment` posts first so reviewers see them. JSON output gains
   `caveat_count` and per-line and per-resource `caveats`. The GitHub
   Action gains a `strict` input.
-
-### Fixed
-
-- Stub prices were labelled `live`: the calculator stamped "live" on
-  any line that called `price()`, whatever the lookup reported. Lines now
-  carry the source the lookup actually returned.
-- A pricing-API outage no longer fails every estimate once the cache
-  expires: an expired price is served, marked stale, when the API cannot
-  be reached.
-- $0 results are cached for an hour instead of seven days, so a wrong $0
-  does not persist on a user's machine after the data is fixed.
-- The price cache is versioned, so entries written without the new source
-  markers are re-fetched online. Offline caches from `c3x pricing sync`
-  keep working after upgrade.
-
-### Added
 
 - `file()`, `templatefile()`, `fileset()`, `fileexists()`, `filebase64()`,
   the `file*sha*`/`filemd5` hashes and `abspath()`, behind a new opt-in:
@@ -97,6 +83,18 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   environment.
 
 ### Fixed
+
+- Stub prices were labelled `live`: the calculator stamped "live" on
+  any line that called `price()`, whatever the lookup reported. Lines now
+  carry the source the lookup actually returned.
+- A pricing-API outage no longer fails every estimate once the cache
+  expires: an expired price is served, marked stale, when the API cannot
+  be reached.
+- $0 results are cached for an hour instead of seven days, so a wrong $0
+  does not persist on a user's machine after the data is fixed.
+- The price cache is versioned, so entries written without the new source
+  markers are re-fetched online. Offline caches from `c3x pricing sync`
+  keep working after upgrade.
 
 - `length()` accepts strings and objects, as Terraform's does.
   `length("abc")` and `length({ a = 1 })` failed, leaving the values that
