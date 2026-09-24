@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	gcpRegion = regexp.MustCompile(`^[a-z]+-[a-z]+[0-9]+$`)
-	gcpZone   = regexp.MustCompile(`^([a-z]+-[a-z]+[0-9]+)-[a-z]$`)
+	gcpRegion = regexp.MustCompile(`^[a-z]+-[a-z]+\d+$`)
+	gcpZone   = regexp.MustCompile(`^([a-z]+-[a-z]+\d+)-[a-z]$`)
 )
 
 // applyResourceRegions sets each resource's region from its own

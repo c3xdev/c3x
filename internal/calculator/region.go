@@ -9,9 +9,9 @@ import (
 // Region-name shapes per provider, loose enough to accept any real
 // region and strict enough to tell the three apart.
 var providerRegionShape = map[string]*regexp.Regexp{
-	"aws":   regexp.MustCompile(`^[a-z]{2}(-gov|-iso[a-z]*)?-[a-z]+-[0-9]+$`), // eu-west-1
-	"azure": regexp.MustCompile(`^[a-z]+[a-z0-9]*$`),                        // westeurope, eastus2
-	"gcp":   regexp.MustCompile(`^[a-z]+-[a-z]+[0-9]+$`),                     // europe-west4
+	"aws":   regexp.MustCompile(`^[a-z]{2}(-gov|-iso[a-z]*)?-[a-z]+-\d+$`), // eu-west-1
+	"azure": regexp.MustCompile(`^[a-z]+[a-z0-9]*$`),                       // westeurope, eastus2
+	"gcp":   regexp.MustCompile(`^[a-z]+-[a-z]+\d+$`),                      // europe-west4
 }
 
 // referenceRegions are the regions the catalog's filters are written
