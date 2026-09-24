@@ -83,3 +83,18 @@ func ctyToJSONString(t *testing.T, v cty.Value) string {
 	}
 	return string(b)
 }
+
+func TestLengthAcceptsStringsLikeTerraform(t *testing.T) {
+	ctx := &hcl.EvalContext{Functions: terraformFunctions()}
+	for expr, want := range map[string]int64{`length("hello")`: 5, `length(["a", "b"])`: 2, `length({ a = 1 })`: 1, `length("héllo")`: 5} {
+		e, _ := hclsyntax.ParseExpression([]byte(expr), "t", hcl.InitialPos)
+		v, diags := e.Value(ctx)
+		if diags.HasErrors() {
+			t.Errorf("%s: %s", expr, diags)
+			continue
+		}
+		if got, _ := v.AsBigFloat().Int64(); got != want {
+			t.Errorf("%s = %d, want %d", expr, got, want)
+		}
+	}
+}

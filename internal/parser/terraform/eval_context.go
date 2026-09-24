@@ -44,7 +44,7 @@ func buildEvalContext(
 func terraformFunctions() map[string]function.Function {
 	fns := map[string]function.Function{
 		// Collection helpers.
-		"length":          stdlib.LengthFunc,
+		"length":          lengthFunc,
 		"concat":          stdlib.ConcatFunc,
 		"contains":        stdlib.ContainsFunc,
 		"distinct":        stdlib.DistinctFunc,
@@ -53,7 +53,7 @@ func terraformFunctions() map[string]function.Function {
 		"keys":            stdlib.KeysFunc,
 		"lookup":          stdlib.LookupFunc,
 		"merge":           stdlib.MergeFunc,
-		"range":           stdlib.RangeFunc,
+		"range":           boundedRangeFunc,
 		"reverse":         stdlib.ReverseListFunc,
 		"setintersection": stdlib.SetIntersectionFunc,
 		"setproduct":      stdlib.SetProductFunc,

@@ -28,15 +28,47 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   project's `.c3x.toml`, which a pull request can edit, and untrusted-input
   mode (`no_remote_modules`) always turns it off. The existing invariant
   that a default parse reads no files is unchanged.
+- In untrusted-input mode the project's `.c3x.toml` can no longer redirect
+  pricing, credentials or file access. A pull request from a fork could
+  set `pricing.endpoint` there and receive `C3X_PRICING_TOKEN` along with
+  every price lookup, and could answer them with fake prices to pass a
+  budget gate; `cache_path`, `resources_path` and `offline` were open the
+  same way. Only presentation and gating keys are honoured in that mode,
+  a usage file must sit inside the project, and the project can turn
+  untrusted mode on but never off. Trusted parses are unchanged.
+- Parses are bounded: 10,000 instances per resource, 200,000 resources,
+  5,000 module expansions and two minutes per parse, with `range()`
+  capped at 1,024 elements as in Terraform and `base64gunzip` at 16 MiB.
+  `count = 1000000000` used to grow past 6 GB, and four self-sourcing
+  modules expanded 4^10 times. The limits are checked between
+  resources and modules; one expression (nested comprehensions) still
+  runs to completion, so a service parsing untrusted input should also
+  apply container memory, CPU and time limits. The README says so.
+- Untrusted input may not source local modules from outside the scanned
+  directory, whether through `../` or a committed `modules.json`.
+- Module fetching: requests time out, archive downloads are capped, and
+  git may only use https, ssh and git transports, which rules out
+  `file://` and command-running remote helpers such as `ext::`. A source
+  needing credentials fails instead of waiting on a prompt.
+- The GitHub Action verifies the downloaded binary against the release's
+  `checksums.txt`, enables untrusted-input mode for pull requests from
+  forks (new `untrusted` input, default `auto`), and passes inputs to its
+  scripts through the environment rather than interpolating them.
 - `no_remote_modules` is now enforced by every command. Only `estimate`
   honoured it: `diff`, `recommend` and the plan-aware path behind
   `comment` would still fetch remote modules with it set in config or the
   environment.
 
+### Fixed
+
+- `length()` accepts strings and objects, as Terraform's does.
+  `length("abc")` and `length({ a = 1 })` failed, leaving the values that
+  depend on them unresolved.
+
 ### Changed
 
 - The README no longer says c3x is safe on untrusted input without
-  qualification; it names `--no-remote-modules` as the mode for that.
+  qualification; it describes untrusted-input mode and what it guarantees.
 
 ## [0.3.8] - 2026-09-24
 

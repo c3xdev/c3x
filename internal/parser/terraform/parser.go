@@ -41,6 +41,9 @@ type Options struct {
 	// the other filesystem functions, confined to the project directory.
 	// Off by default; see config.Resolved.AllowFileFunctions for why.
 	AllowFileFunctions bool
+	// Untrusted marks input the runner does not control (untrusted-input
+	// mode): local module sources are confined to the root directory.
+	Untrusted bool
 }
 
 // ParseDirectory loads every `*.tf` and OpenTofu `*.tofu` file in `dir`
@@ -108,7 +111,7 @@ func parseSources(sources []sourceFile, baseDir string, opts Options) ([]domain.
 
 	// Where expressions are evaluated from: path.module / path.root and
 	// the filesystem functions, confined to the project directory.
-	scope := newRootScope(baseDir, opts.AllowFileFunctions)
+	scope := newRootScope(baseDir, opts.AllowFileFunctions, opts.Untrusted)
 
 	// Stage 0: terraform-init module manifest, if present.
 	initModules := loadInitModules(baseDir, logger)

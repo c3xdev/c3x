@@ -3,7 +3,9 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -60,12 +62,37 @@ func Resolve(projectDir string, flags map[string]any) (Resolved, error) {
 	// flags are applied on top below, and the project layer is skipped.
 	allowFileFunctions := v.GetBool("allow_file_functions")
 
-	// Layer 3: project config file (silent if missing).
+	// Is the runner treating this input as untrusted? Decided only from
+	// sources outside the scanned directory — defaults and user config so
+	// far, then the environment and flags — because the project config is
+	// part of the input being judged.
+	untrusted := v.GetBool("no_remote_modules")
+	if env, ok := os.LookupEnv("C3X_NO_REMOTE_MODULES"); ok {
+		if b, err := strconv.ParseBool(env); err == nil {
+			untrusted = b
+		}
+	}
+	if f, ok := flags["no_remote_modules"].(bool); ok {
+		untrusted = f
+	}
+
+	// Layer 3: project config file (silent if missing), filtered.
 	projectPath := ProjectConfigPath(projectDir)
 	if _, statErr := os.Stat(projectPath); statErr == nil {
-		v.SetConfigFile(projectPath)
-		if err := v.MergeInConfig(); err != nil {
+		pv := viper.New()
+		pv.SetConfigType("toml")
+		pv.SetConfigFile(projectPath)
+		if err := pv.ReadInConfig(); err != nil {
 			return Resolved{}, fmt.Errorf("project config %s: %w", projectPath, err)
+		}
+		settings, ignored := projectSettings(pv, projectDir, untrusted)
+		if err := v.MergeConfigMap(settings); err != nil {
+			return Resolved{}, fmt.Errorf("project config %s: %w", projectPath, err)
+		}
+		for _, key := range ignored {
+			slog.Warn("ignoring a setting in the project's .c3x.toml; set it with a flag, "+
+				"a C3X_ environment variable or your user config instead",
+				"key", key, "file", projectPath, "untrusted_input", untrusted)
 		}
 	}
 
@@ -125,3 +152,78 @@ func Resolve(projectDir string, flags map[string]any) (Resolved, error) {
 // ErrNoProjectDir is returned by helpers that need a project directory
 // when the caller failed to supply one.
 var ErrNoProjectDir = errors.New("project directory is empty")
+
+// projectSafeKeys may come from a project's .c3x.toml even when the input
+// is untrusted: they shape how an estimate is presented or gated, and
+// cannot redirect network traffic, credentials or file access.
+var projectSafeKeys = map[string]bool{
+	"region": true, "currency": true, "format": true, "verbosity": true,
+	"budget": true, "budget_delta": true, "no_cache": true, "usage_path": true,
+}
+
+// projectSettings returns the project config as a nested map to merge,
+// and the keys it dropped.
+//
+// allow_file_functions is always dropped: it would let a pull request
+// enable file reads on itself. In untrusted-input mode the file is
+// limited to projectSafeKeys, because a pull request from a fork can
+// edit it: pricing.endpoint would send the pricing token and every price
+// lookup to a server of the attacker's choosing (and could fake prices
+// to pass a budget gate), cache_path and resources_path point c3x at
+// arbitrary paths, and offline swaps real prices for stubs. usage_path is
+// kept only when it stays inside the project, since a parse error on an
+// arbitrary file would quote its contents. no_remote_modules may only be
+// turned on, never off.
+func projectSettings(pv *viper.Viper, projectDir string, untrusted bool) (map[string]any, []string) {
+	out := map[string]any{}
+	var ignored []string
+	for _, key := range pv.AllKeys() {
+		val := pv.Get(key)
+		keep := key != "allow_file_functions"
+		if keep && untrusted {
+			switch key {
+			case "no_remote_modules":
+				keep = pv.GetBool(key)
+			case "usage_path":
+				keep = insideDir(projectDir, pv.GetString(key))
+			default:
+				keep = projectSafeKeys[key]
+			}
+		}
+		if !keep {
+			ignored = append(ignored, key)
+			continue
+		}
+		setNested(out, strings.Split(key, "."), val)
+	}
+	return out, ignored
+}
+
+func setNested(m map[string]any, path []string, val any) {
+	for _, k := range path[:len(path)-1] {
+		next, ok := m[k].(map[string]any)
+		if !ok {
+			next = map[string]any{}
+			m[k] = next
+		}
+		m = next
+	}
+	m[path[len(path)-1]] = val
+}
+
+// insideDir reports whether p, taken relative to dir when not absolute,
+// stays within dir.
+func insideDir(dir, p string) bool {
+	if p == "" {
+		return true
+	}
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return false
+	}
+	if !filepath.IsAbs(p) {
+		p = filepath.Join(absDir, p)
+	}
+	rel, err := filepath.Rel(absDir, filepath.Clean(p))
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}

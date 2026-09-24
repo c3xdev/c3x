@@ -73,6 +73,9 @@ func emitOne(
 		if !ok {
 			return nil
 		}
+		if err := scope.budget.instances(namePrefix+kind+"."+name, count); err != nil {
+			return err
+		}
 		for i := 0; i < count; i++ {
 			extras := map[string]cty.Value{
 				"count": cty.ObjectVal(map[string]cty.Value{
@@ -98,6 +101,9 @@ func emitOne(
 			return nil
 		}
 		pairs := foreachPairs(val)
+		if err := scope.budget.instances(namePrefix+kind+"."+name, len(pairs)); err != nil {
+			return err
+		}
 		for _, p := range pairs {
 			extras := map[string]cty.Value{
 				"each": cty.ObjectVal(map[string]cty.Value{
@@ -119,6 +125,9 @@ func emitOne(
 		return nil
 	}
 
+	if err := scope.budget.instances(namePrefix+kind+"."+name, 1); err != nil {
+		return err
+	}
 	ctx := scope.evalContext(asObject(vars), asObject(locals), data, nil)
 	attrs, err := extractAttributes(body, ctx, logger, kind+"."+name)
 	if err != nil {
