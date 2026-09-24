@@ -136,6 +136,10 @@ func parseRaw(path string, opts Options) ([]domain.Resource, error) {
 // isPlanFile reports whether path is a Terraform plan JSON (a .json file
 // that isn't a CloudFormation template). Shared by [PlanBaseline] and
 // [ParsePostApply] so plan detection stays in one place.
+// IsPlanFile reports whether path is a Terraform or OpenTofu plan JSON
+// (a .json file that is not a CloudFormation template).
+func IsPlanFile(path string) bool { return isPlanFile(path) }
+
 func isPlanFile(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil || info.IsDir() {

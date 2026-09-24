@@ -45,11 +45,16 @@ func newDiffCmd() *cobra.Command {
 ` + "`c3x estimate --save-baseline`" + `), runs a fresh estimate against
 the supplied --path, and prints the delta resource-by-resource.
 
+With a plan JSON as --path, --baseline is optional: the plan carries the
+prior state of every resource, so the delta is computed from the plan
+itself (for a plan that creates everything, the whole total is the
+increase).
+
 Together with --budget-delta this is the CI gate: PRs that increase
 monthly spend by more than the configured amount fail the job.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if baselinePath == "" {
-				return fmt.Errorf("--baseline is required")
+			if baselinePath == "" && !parser.IsPlanFile(path) {
+				return fmt.Errorf("--baseline is required unless --path is a plan JSON")
 			}
 			projectDir, err := resolveProjectDir(path)
 			if err != nil {
@@ -86,14 +91,27 @@ monthly spend by more than the configured amount fail the job.`,
 				return fmt.Errorf("resolving config: %w", err)
 			}
 
-			baseline, err := loadBaseline(baselinePath)
-			if err != nil {
-				return fmt.Errorf("loading baseline %s: %w", baselinePath, err)
-			}
-
-			current, err := computeCurrent(cmd.Context(), path, resolved, varFiles, vars)
-			if err != nil {
-				return err
+			var baseline, current domain.Estimate
+			if baselinePath != "" {
+				baseline, err = loadBaseline(baselinePath)
+				if err != nil {
+					return fmt.Errorf("loading baseline %s: %w", baselinePath, err)
+				}
+				current, err = computeCurrent(cmd.Context(), path, resolved, varFiles, vars)
+				if err != nil {
+					return err
+				}
+			} else {
+				var before *domain.Estimate
+				current, before, err = computePlanAware(cmd.Context(), path, resolved, varFiles, vars)
+				if err != nil {
+					return err
+				}
+				// No prior state: everything in the plan is new.
+				baseline = domain.Estimate{Currency: current.Currency}
+				if before != nil {
+					baseline = *before
+				}
 			}
 
 			diff := domain.ComputeDiff(baseline, current)
@@ -115,7 +133,7 @@ monthly spend by more than the configured amount fail the job.`,
 	}
 
 	cmd.Flags().StringVar(&path, "path", ".", "Terraform or OpenTofu input (directory, .tf, .tofu, .hcl, or plan JSON)")
-	cmd.Flags().StringVar(&baselinePath, "baseline", "", "path to the saved baseline JSON (required)")
+	cmd.Flags().StringVar(&baselinePath, "baseline", "", "path to the saved baseline JSON (optional when --path is a plan JSON: the plan's prior state is the baseline)")
 	cmd.Flags().StringVar(&format, "format", "", "output format: text, markdown, json, junit, html, csv, sarif (overrides config)")
 	cmd.Flags().StringVar(&region, "region", "", "default region when the IaC source doesn't declare one")
 	cmd.Flags().StringArrayVar(&varFiles, "var-file", nil, "tfvars files (repeatable)")

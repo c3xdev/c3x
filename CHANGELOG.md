@@ -22,6 +22,15 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The GitHub Action's base-branch baseline passes `--budget 0`, so a base
   branch already over a configured budget still produces a baseline.
 
+- `budget-delta` in the GitHub Action was silently skipped when `path`
+  was a plan JSON. The plan is generated in CI, so the base branch has
+  no copy to estimate, and the gate only ran with a base-branch
+  baseline. `c3x diff` now accepts a plan JSON without `--baseline`,
+  using the plan's prior state (all of the plan's cost counts as the
+  increase when nothing existed before), and the Action falls back to
+  that. When no baseline can be computed at all, the Action now warns
+  instead of skipping the gate silently.
+
 ### Removed
 
 - The `resources_path` and `verbosity` config keys, which were never read

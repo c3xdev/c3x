@@ -122,6 +122,20 @@ The same gates work from the CLI: `--budget` caps the absolute monthly cost
 and `--budget-delta` caps the increase a single change may introduce. Both
 exit non-zero, so a pull request that blows the budget fails the build.
 
+**If your pipeline already runs `terraform plan`, give c3x the plan.**
+A directory is evaluated statically, with no cloud credentials. That is
+convenient, but values Terraform only knows at plan time are estimated:
+data sources, module outputs computed from them, and some counts. Those
+lines are marked `unresolved_attribute`. The plan has the real values:
+
+```yaml
+- run: terraform plan -out=tfplan && terraform show -json tfplan > plan.json
+- uses: c3xdev/c3x@v0
+  with:
+    path: plan.json
+    budget-delta: "50"   # the plan's prior state is the baseline
+```
+
 See the [CI/CD guide](https://c3x.dev/docs/ci-cd) for GitLab CI, Bitbucket
 Pipelines, Azure Pipelines, Atlantis and Spacelift recipes.
 
