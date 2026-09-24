@@ -105,3 +105,43 @@ func queryKey(q Query) string {
 	}
 	return b.String()
 }
+
+// Source strings may carry markers after the base label, separated by
+// ';': "live;nomatch" when a lookup matched no product, and
+// "live;fallback=us-east-1" when the rate was quoted from the provider's
+// reference region because the requested region had none. They are
+// strings so they persist through the disk cache unchanged.
+const (
+	FlagNoMatch  = "nomatch"
+	FlagFallback = "fallback"
+	// FlagStale marks a cached price served past its freshness window
+	// because the pricing API could not be reached; the value is its age.
+	FlagStale = "stale"
+)
+
+// SourceWith appends a marker to a source label. value is "" for flags
+// without one.
+func SourceWith(base, flag, value string) string {
+	if value != "" {
+		return base + ";" + flag + "=" + value
+	}
+	return base + ";" + flag
+}
+
+// BaseSource strips any markers: "live;fallback=us-east-1" -> "live".
+func BaseSource(src string) string {
+	base, _, _ := strings.Cut(src, ";")
+	return base
+}
+
+// SourceFlag reports whether src carries flag, and its value if any.
+func SourceFlag(src, flag string) (string, bool) {
+	parts := strings.Split(src, ";")
+	for _, p := range parts[1:] {
+		name, value, _ := strings.Cut(p, "=")
+		if name == flag {
+			return value, true
+		}
+	}
+	return "", false
+}

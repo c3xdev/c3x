@@ -53,6 +53,9 @@ type Diff struct {
 	TotalDelta    decimal.Decimal
 	Resources     []ResourceDelta
 	Currency      Currency
+	// Caveats are the current estimate's: they qualify the numbers this
+	// change leads to, which is what a reviewer is deciding on.
+	Caveats []LabeledCaveat
 }
 
 // ComputeDiff compares two Estimates and returns a Diff whose Resources
@@ -101,5 +104,6 @@ func ComputeDiff(baseline, current Estimate) Diff {
 		TotalDelta:    current.ProjectTotal.Sub(baseline.ProjectTotal),
 		Resources:     deltas,
 		Currency:      current.Currency,
+		Caveats:       current.AllCaveats(),
 	}
 }

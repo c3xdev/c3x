@@ -44,6 +44,7 @@ func newEstimateCmd() *cobra.Command {
 		pricingToken    string
 		saveBaseline    string
 		budget          float64
+		strict          bool
 		inlineDemo      bool
 		currency        string
 		showSkipped     bool
@@ -114,7 +115,7 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 			}
 
 			_ = projectDir // resolved.* already carries the project config
-			return runEstimate(cmd, path, resolved, varFiles, vars, usagePath, whatIfs, saveBaseline, budget, showSkipped, showDelta)
+			return runEstimate(cmd, path, resolved, varFiles, vars, usagePath, whatIfs, saveBaseline, budget, showSkipped, showDelta, strict)
 		},
 	}
 
@@ -147,6 +148,7 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 		"override an attribute: `kind.name.attr=value` (repeatable; bool/int/float/string coercion)")
 	cmd.Flags().StringVar(&saveBaseline, "save-baseline", "",
 		"after the estimate, write the JSON representation to this path for use as a `c3x diff` baseline")
+	cmd.Flags().BoolVar(&strict, "strict", false, strictHelp)
 	cmd.Flags().Float64Var(&budget, "budget", 0,
 		"fail with exit code 1 when the project total exceeds this monthly budget (0 disables the gate)")
 	cmd.Flags().StringVar(&currency, "currency", "",
@@ -177,6 +179,7 @@ func runEstimate(
 	budget float64,
 	showSkipped bool,
 	showDelta bool,
+	strict bool,
 ) error {
 	varMap, err := parseVarFlags(rawVars)
 	if err != nil {
@@ -270,7 +273,10 @@ func runEstimate(
 		fmt.Fprintf(cmd.ErrOrStderr(), "baseline saved to %s\n", saveBaseline)
 	}
 
-	return enforceBudget(cmd, est, budget)
+	if err := enforceBudget(cmd, est, budget); err != nil {
+		return err
+	}
+	return enforceStrict(cmd, est.AllCaveats(), strict)
 }
 
 // writeBaseline persists the estimate to disk as JSON, the input

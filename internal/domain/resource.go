@@ -95,6 +95,14 @@ type Resource struct {
 	Attributes map[string]any
 	Region     *string
 	Action     PlanAction
+	// Unresolved lists attributes the configuration sets but the parser
+	// could not evaluate statically (a reference to another resource's
+	// output, a data source, an unsupported function). Paths are dotted
+	// for nested blocks: "root_block_device.volume_size". Their value in
+	// Attributes is nil, so a catalog default applies; the calculator
+	// reports it rather than pricing silently. Only the HCL parser fills
+	// this: in plan JSON every value is already resolved.
+	Unresolved []string
 }
 
 // PlanAction describes what Terraform intends to do with a resource.

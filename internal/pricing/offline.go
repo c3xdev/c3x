@@ -41,7 +41,7 @@ func (o *OfflineSource) Lookup(ctx context.Context, q Query) (decimal.Decimal, s
 		fq := q
 		fq.Region = ref
 		if frate, fsrc, ferr := o.cache.Lookup(ctx, fq); ferr == nil && !frate.IsZero() {
-			return frate, fsrc, nil
+			return frate, SourceWith(BaseSource(fsrc), FlagFallback, ref), nil
 		}
 	}
 	return rate, src, err

@@ -141,6 +141,31 @@ Pipelines, Azure Pipelines, Atlantis and Spacelift recipes.
 
 Full flag reference: [c3x.dev/docs/cli](https://c3x.dev/docs/cli).
 
+## How much to trust a number
+
+c3x prices at public on-demand list rates, in USD, before any discount
+(reserved instances, savings plans, committed use, negotiated rates). For
+compute and managed databases in the provider's main region, expect
+estimates within a few percent of the list price; treat them as an upper
+bound on what a team with commitments pays.
+
+When part of an estimate rests on an assumption, c3x says so on the line
+and in the total, marked ⚠, in every output format including the PR
+comment:
+
+| Caveat | Meaning |
+|---|---|
+| `region_fallback` | No price for your region under the catalog's filters, so the reference region's (us-east-1, eastus, us-central1) is shown |
+| `no_price` | The lookup matched nothing, so a non-free resource shows $0 |
+| `usage_not_provided` | A usage-driven cost (requests, GB processed, LCUs) is $0 because no usage was given; supply it with `--usage` |
+| `unresolved_attribute` | An attribute the price depends on could not be evaluated statically, so a default was used; a plan JSON input avoids this |
+| `stale_price` | The pricing API was unreachable, so a cached price past its freshness window was used |
+
+`--strict` makes any of these fail the run with exit code 3, distinct
+from a budget breach (1), so a pipeline can require an estimate with no
+assumptions in it. JSON output carries `caveat_count` and per-line
+`caveats`.
+
 ## OpenTofu
 
 c3x reads OpenTofu projects directly. `.tofu` files are loaded alongside

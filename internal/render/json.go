@@ -19,6 +19,7 @@ func RenderJSON(est domain.Estimate) (string, error) {
 		ProjectTotal: est.ProjectTotal.String(),
 		Currency:     est.Currency.String(),
 		GeneratedAt:  est.GeneratedAt.UTC().Format("2006-01-02T15:04:05Z"),
+		CaveatCount:  est.CaveatCount(),
 	}
 	b, err := json.MarshalIndent(view, "", "  ")
 	if err != nil {
@@ -138,6 +139,26 @@ type estimateView struct {
 	ProjectTotal string     `json:"project_total"`
 	Currency     string     `json:"currency"`
 	GeneratedAt  string     `json:"generated_at"`
+	// CaveatCount is the number of caveats across the estimate: zero
+	// means every line is a matched price for the resource as
+	// configured. Always present so pipelines can gate on it.
+	CaveatCount int `json:"caveat_count"`
+}
+
+type caveatView struct {
+	Code   string `json:"code"`
+	Detail string `json:"detail"`
+}
+
+func toCaveatViews(cs []domain.Caveat) []caveatView {
+	if len(cs) == 0 {
+		return nil
+	}
+	out := make([]caveatView, len(cs))
+	for i, c := range cs {
+		out[i] = caveatView{Code: c.Code, Detail: c.Detail}
+	}
+	return out
 }
 
 type costView struct {
@@ -147,16 +168,18 @@ type costView struct {
 	LineItems       []lineItemView `json:"line_items"`
 	MonthlySubtotal string         `json:"monthly_subtotal"`
 	Currency        string         `json:"currency"`
+	Caveats         []caveatView   `json:"caveats,omitempty"`
 }
 
 type lineItemView struct {
-	Dimension   string `json:"dimension"`
-	Description string `json:"description"`
-	Unit        string `json:"unit"`
-	Quantity    string `json:"quantity"`
-	UnitRate    string `json:"unit_rate"`
-	MonthlyCost string `json:"monthly_cost"`
-	PriceSource string `json:"price_source"`
+	Dimension   string       `json:"dimension"`
+	Description string       `json:"description"`
+	Unit        string       `json:"unit"`
+	Quantity    string       `json:"quantity"`
+	UnitRate    string       `json:"unit_rate"`
+	MonthlyCost string       `json:"monthly_cost"`
+	PriceSource string       `json:"price_source"`
+	Caveats     []caveatView `json:"caveats,omitempty"`
 }
 
 type diffView struct {
@@ -188,6 +211,7 @@ func toCostViews(costs []domain.Cost) []costView {
 				UnitRate:    li.UnitRate.String(),
 				MonthlyCost: li.MonthlyCost.String(),
 				PriceSource: li.PriceSource,
+				Caveats:     toCaveatViews(li.Caveats),
 			})
 		}
 		out = append(out, costView{
@@ -197,6 +221,7 @@ func toCostViews(costs []domain.Cost) []costView {
 			LineItems:       items,
 			MonthlySubtotal: c.MonthlySubtotal.String(),
 			Currency:        c.Currency.String(),
+			Caveats:         toCaveatViews(c.ResourceCaveats),
 		})
 	}
 	return out

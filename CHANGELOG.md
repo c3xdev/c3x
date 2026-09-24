@@ -8,6 +8,43 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Caveats: every part of an estimate that rests on an assumption is now
+  marked, on the line and in the total, in text, markdown, JSON and PR
+  comments. A cost tool's failure mode is a confident wrong number, and
+  these used to render exactly like accurate lines:
+  - `region_fallback`: no price for the resource's region, so the
+    reference region's rate was quoted (ALB, Fargate and ElastiCache in
+    sa-east-1 were showing us-east-1 prices unmarked).
+  - `no_price`: the lookup matched nothing, so a non-free resource was $0.
+  - `usage_not_provided`: a usage-driven line (NAT data processed, LCUs,
+    requests) was $0 because no usage was given.
+  - `unresolved_attribute`: an attribute the price reads could not be
+    evaluated statically, so a catalog default was used. It is reported
+    only when the kind's pricing actually reads that attribute.
+  - `stale_price`: a cached price past its freshness window, used
+    because the pricing API was unreachable.
+- `--strict` on `estimate`, `diff` and every `comment` forge fails the run
+  with exit code 3 (a budget breach stays 1) when there are caveats;
+  `comment` posts first so reviewers see them. JSON output gains
+  `caveat_count` and per-line and per-resource `caveats`. The GitHub
+  Action gains a `strict` input.
+
+### Fixed
+
+- Stub prices were labelled `live`: the calculator stamped "live" on
+  any line that called `price()`, whatever the lookup reported. Lines now
+  carry the source the lookup actually returned.
+- A pricing-API outage no longer fails every estimate once the cache
+  expires: an expired price is served, marked stale, when the API cannot
+  be reached.
+- $0 results are cached for an hour instead of seven days, so a wrong $0
+  does not persist on a user's machine after the data is fixed.
+- The price cache is versioned, so entries written without the new source
+  markers are re-fetched online. Offline caches from `c3x pricing sync`
+  keep working after upgrade.
+
+### Added
+
 - `file()`, `templatefile()`, `fileset()`, `fileexists()`, `filebase64()`,
   the `file*sha*`/`filemd5` hashes and `abspath()`, behind a new opt-in:
   `--allow-file-functions` or `C3X_ALLOW_FILE_FUNCTIONS=true`. Configs that

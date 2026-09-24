@@ -120,7 +120,10 @@ func (s *HTTPSource) Lookup(ctx context.Context, q Query) (decimal.Decimal, stri
 		fq.Region = ref
 		frate, fsrc, ferr := s.lookupOnce(ctx, fq)
 		if ferr == nil && !frate.IsZero() {
-			return frate, fsrc, nil
+			// Quoting another region is the right degradation, but it must
+			// not look like a regional price: the marker travels with the
+			// rate, through the caches, to the rendered line.
+			return frate, SourceWith(BaseSource(fsrc), FlagFallback, ref), nil
 		}
 	}
 	return rate, src, err
@@ -188,6 +191,11 @@ func (s *HTTPSource) lookupOnce(ctx context.Context, q Query) (decimal.Decimal, 
 	rate, err := pickNonZeroPrice(decoded.Data)
 	if err != nil {
 		return decimal.Zero, domain.PriceSourceLive, err
+	}
+	if decoded.Data == nil || len(decoded.Data.Products) == 0 {
+		// Nothing matched, as opposed to a product priced at $0. The
+		// distinction is what lets a $0 line be reported as unpriced.
+		return decimal.Zero, SourceWith(domain.PriceSourceLive, FlagNoMatch, ""), nil
 	}
 	return rate, domain.PriceSourceLive, nil
 }

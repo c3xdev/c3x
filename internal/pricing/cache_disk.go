@@ -22,6 +22,20 @@ import (
 // public catalogs.
 const DefaultCacheTTL = 7 * 24 * time.Hour
 
+// zeroResultTTL is the freshness window for a $0 result. A $0 is often a
+// failed match rather than a free product, and caching it for the full
+// week kept a wrong answer on a user's machine long after the pricing
+// data was fixed.
+const zeroResultTTL = time.Hour
+
+// cacheKeyVersion is prefixed to every key. It changes when what a cached
+// row means changes: entries written before price sources carried
+// region-fallback and no-match markers record a bare "live" for results
+// that were really fallbacks, so they must be re-fetched, not trusted.
+const cacheKeyVersion = "v2|"
+
+func diskKey(q Query) string { return cacheKeyVersion + queryKey(q) }
+
 // DiskCache wraps a Source with a SQLite-backed cache. Hits within TTL
 // return without touching the inner Source; misses (or stale entries)
 // fall through, then write back so subsequent runs hit.
@@ -87,29 +101,53 @@ func OpenDiskCache(path string, inner Source, opts ...DiskCacheOption) (*DiskCac
 // Close releases the SQLite handle. Idempotent.
 func (c *DiskCache) Close() error { return c.db.Close() }
 
-// Lookup implements [Source]. On a fresh hit it returns the cached
-// value directly. On miss or stale, it delegates to the inner Source,
-// writes the result back, then returns it.
+// Lookup implements [Source]. A fresh hit returns directly. On a miss or
+// an expired entry it asks the inner Source and writes the answer back.
 //
-// We intentionally cache zero-priced results too: ACM public certs,
-// "no matching products" responses, and similar zero rows are the
-// correct steady-state answer for those queries.
+// If the inner Source fails and an expired entry exists, the expired
+// value is returned, marked stale, instead of the error. A pricing
+// outage used to fail every estimate once the week-long TTL lapsed, even
+// with a perfectly usable price on disk; a slightly old price, labelled
+// as such, is far more useful than no estimate.
+//
+// $0 results are cached, but only for zeroResultTTL.
 func (c *DiskCache) Lookup(ctx context.Context, q Query) (decimal.Decimal, string, error) {
-	key := queryKey(q)
-	if v, src, ok := c.read(key); ok {
-		return v, src, nil
+	key := diskKey(q)
+	cached, found := c.read(key)
+	if !found && c.ttl <= 0 {
+		// Offline caches never expire and are filled by `c3x pricing
+		// sync`. One synced before keys were versioned would otherwise
+		// miss on every lookup after an upgrade and price everything at
+		// $0, so read its unversioned rows. Online caches re-fetch
+		// instead, since those rows lack the region-fallback marker.
+		cached, found = c.read(queryKey(q))
+	}
+	if found && cached.fresh {
+		return cached.price, cached.source, nil
 	}
 	v, src, err := c.inner.Lookup(ctx, q)
 	if err != nil {
+		if found {
+			age := c.now().Sub(time.Unix(cached.fetchedAt, 0)).Round(time.Hour)
+			return cached.price, SourceWith(BaseSource(cached.source), FlagStale, age.String()), nil
+		}
 		return v, src, err
 	}
 	c.write(key, v, src, summary(q))
 	return v, src, nil
 }
 
-// read returns the cached entry if it's present and fresh. Stale rows
-// are reported as misses (the caller will refresh and overwrite).
-func (c *DiskCache) read(key string) (decimal.Decimal, string, bool) {
+type cachedPrice struct {
+	price     decimal.Decimal
+	source    string
+	fetchedAt int64
+	fresh     bool
+}
+
+// read returns the cached entry, if any, and whether it is still fresh.
+// Expired rows are returned too, so Lookup can fall back to them when
+// the upstream is unreachable.
+func (c *DiskCache) read(key string) (cachedPrice, bool) {
 	row := c.db.QueryRow(
 		`SELECT price, source, fetched_at FROM prices WHERE cache_key = ?`,
 		key,
@@ -117,19 +155,18 @@ func (c *DiskCache) read(key string) (decimal.Decimal, string, bool) {
 	var priceStr, source string
 	var fetchedAt int64
 	if err := row.Scan(&priceStr, &source, &fetchedAt); err != nil {
-		return decimal.Zero, "", false
-	}
-	if c.ttl > 0 {
-		age := c.now().Unix() - fetchedAt
-		if age > int64(c.ttl.Seconds()) {
-			return decimal.Zero, "", false
-		}
+		return cachedPrice{}, false
 	}
 	d, err := decimal.NewFromString(priceStr)
 	if err != nil {
-		return decimal.Zero, "", false
+		return cachedPrice{}, false
 	}
-	return d, source, true
+	ttl := c.ttl
+	if d.IsZero() && ttl > zeroResultTTL {
+		ttl = zeroResultTTL
+	}
+	fresh := ttl <= 0 || c.now().Unix()-fetchedAt <= int64(ttl.Seconds())
+	return cachedPrice{price: d, source: source, fetchedAt: fetchedAt, fresh: fresh}, true
 }
 
 func (c *DiskCache) write(key string, price decimal.Decimal, source, summary string) {
@@ -189,7 +226,7 @@ func (c *DiskCache) PutBatch(entries []CacheEntry) (int, error) {
 		if s == "" {
 			s = domain.PriceSourceLive
 		}
-		if _, err := stmt.Exec(queryKey(e.Query), e.Rate.String(), s, now, summary(e.Query)); err != nil {
+		if _, err := stmt.Exec(diskKey(e.Query), e.Rate.String(), s, now, summary(e.Query)); err != nil {
 			_ = tx.Rollback()
 			return 0, fmt.Errorf("warm write: %w", err)
 		}

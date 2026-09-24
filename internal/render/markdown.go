@@ -34,6 +34,7 @@ func RenderMarkdown(est domain.Estimate) string {
 	}
 	b.WriteString(tables)
 	fmt.Fprintf(&b, "**Project total: %s%s/mo**\n", cur.Symbol(), est.ProjectTotal)
+	b.WriteString(caveatsMarkdown(est.AllCaveats()))
 	return b.String()
 }
 
@@ -98,6 +99,7 @@ func RenderMarkdownComment(est domain.Estimate) string {
 	b.WriteString("<details><summary>Estimate details</summary>\n\n")
 	b.WriteString(tables)
 	b.WriteString("</details>\n")
+	b.WriteString(caveatsMarkdown(est.AllCaveats()))
 	return b.String()
 }
 
@@ -115,6 +117,7 @@ func RenderMarkdownDiff(d domain.Diff) string {
 		cur.Symbol(), d.CurrentTotal,
 		signedWithIndicator(cur.Symbol(), d.TotalDelta.String()))
 	b.WriteString(markdownDiffGroups(d))
+	b.WriteString(caveatsMarkdown(d.Caveats))
 	return b.String()
 }
 
@@ -193,11 +196,12 @@ func RenderMarkdownDiffComment(d domain.Diff) string {
 	groups := markdownDiffGroups(d)
 	if groups == "" {
 		b.WriteString("_No line-item changes._\n")
-		return b.String()
+	} else {
+		b.WriteString("<details><summary>Estimate details</summary>\n\n")
+		b.WriteString(groups)
+		b.WriteString("</details>\n")
 	}
-	b.WriteString("<details><summary>Estimate details</summary>\n\n")
-	b.WriteString(groups)
-	b.WriteString("</details>\n")
+	b.WriteString(caveatsMarkdown(d.Caveats))
 	return b.String()
 }
 
@@ -223,3 +227,31 @@ func diffPercent(d domain.Diff) string {
 func escapeMD(s string) string {
 	return strings.ReplaceAll(s, "|", `\|`)
 }
+
+// caveatsMarkdown is the caveat section appended to every markdown
+// layout, PR comments included: one visible line saying the total rests
+// on assumptions, and the list behind a <details> so a long one doesn't
+// flood the thread. Empty when there is nothing to qualify.
+func caveatsMarkdown(cs []domain.LabeledCaveat) string {
+	if len(cs) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	noun := "caveats"
+	if len(cs) == 1 {
+		noun = "caveat"
+	}
+	fmt.Fprintf(&b, "\n> ⚠️ **%d %s:** parts of this estimate rest on assumptions (a price from another region, usage not provided, an attribute that could not be evaluated), so it may misstate the real cost.\n\n", len(cs), noun)
+	b.WriteString("<details><summary>Caveats</summary>\n\n| Resource | Line | Caveat |\n|---|---|---|\n")
+	for _, c := range cs {
+		line := c.Line
+		if line == "" {
+			line = "—"
+		}
+		fmt.Fprintf(&b, "| `%s` | %s | %s |\n", c.Resource.Label(), escapeCell(line), escapeCell(c.Detail))
+	}
+	b.WriteString("\n</details>\n")
+	return b.String()
+}
+
+func escapeCell(s string) string { return strings.ReplaceAll(s, "|", "\\|") }
