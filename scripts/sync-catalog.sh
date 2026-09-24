@@ -2,7 +2,8 @@
 # Syncs the vendored catalog snapshot from the knowledge base
 # (c3x-pricing-api/catalog → resources/). The pricing-api repo is the
 # source of truth; this snapshot only serves --offline and the
-# no-network fallback, refreshed at release time.
+# no-network fallback. The catalog-sync workflow fails when the two
+# differ, so run this after every catalog change lands in the pricing API.
 set -euo pipefail
 SRC="${1:-../c3x-pricing-api/catalog}"
 DST="$(cd "$(dirname "$0")/.." && pwd)/resources"

@@ -1,0 +1,54 @@
+# Catalog copy check.
+#
+# The pricing API (c3xdev/c3x-pricing-api, catalog/) is the source of
+# truth for the resource catalog: it is what pricing.c3x.dev/catalog
+# serves, and the CLI fetches it from there first. resources/ here is the
+# embedded copy used offline and when the endpoint is unreachable, so a
+# difference between the two means offline and online estimates
+# disagree. This fails when they differ.
+#
+# A catalog change lands in the pricing API first; then run
+# scripts/sync-catalog.sh here.
+name: catalog-sync
+
+on:
+  pull_request:
+    paths: ['resources/**', 'scripts/sync-catalog.sh', '.github/workflows/catalog-sync.yml']
+  push:
+    branches: [main]
+    paths: ['resources/**']
+  schedule:
+    - cron: '0 13 * * *' # daily: catches the pricing API moving ahead
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: c3xdev/c3x-pricing-api
+          path: _pricing-api
+      - name: Compare resources/ with the pricing API's catalog/
+        run: |
+          set -euo pipefail
+          if diff -r -x '*.go' _pricing-api/catalog resources > catalog.diff; then
+            echo "resources/ matches c3x-pricing-api@$(git -C _pricing-api rev-parse --short HEAD) catalog/"
+            exit 0
+          fi
+          {
+            echo "## resources/ differs from the pricing API's catalog/"
+            echo
+            echo 'Land catalog changes in c3x-pricing-api first, then run `scripts/sync-catalog.sh`.'
+            echo
+            echo '```diff'
+            head -200 catalog.diff
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat catalog.diff
+          echo "::error::resources/ differs from c3x-pricing-api catalog/ (see the job summary)"
+          exit 1

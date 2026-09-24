@@ -64,12 +64,23 @@ go vet ./...
    go run ./cmd/verify_catalog | grep aws_widget
    ```
 
-4. Update the fixture's `expected_monthly_cost` to that value. The
-   verifier now enforces it on every run as a snapshot.
+4. Check that value against the vendor's public pricing page or
+   calculator for the same configuration and region, then set the
+   fixture's `expected_monthly_cost` to the vendor's number, not to
+   c3x's output. A fixture copied from the engine only proves the
+   engine agrees with itself. The verifier then enforces it on every
+   run as a snapshot.
 
 5. Add the kind to the appropriate parser's attribute extractor if
    the Terraform attribute names need normalization (see
    `internal/parser/terraform/resources.go` for examples).
+
+6. Land the TOML in
+   [c3x-pricing-api](https://github.com/c3xdev/c3x-pricing-api)'s
+   `catalog/` first. That repository is the source of truth, and
+   pricing.c3x.dev serves its catalog to every CLI. Then copy it here
+   with `scripts/sync-catalog.sh`. The `catalog-sync` check fails
+   while the two copies differ.
 
 If the upstream returns no products, fall back to inline rates:
 
