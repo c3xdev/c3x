@@ -6,16 +6,22 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Fixed
+## [0.3.10] - 2026-09-24
 
-- AWS usagetypes that carry no prefix in us-east-1 (`Aurora:ServerlessV2Usage`,
-  `LoadBalancerUsage`) are localized too: other regions prefix them
-  (`EU-Aurora:ServerlessV2Usage`). ALB, ElastiCache, DocumentDB, Aurora
-  Serverless v2, Glacier, EBS snapshots and others now price in their own
-  region instead of falling back to us-east-1; across all AWS fixtures in
-  eu-west-1 and sa-east-1, fallback lines went from 35 to 7 with no change
-  in us-east-1. If the prefixed form misses, the original query is tried
-  in the resource's own region before falling back.
+This release is about the accuracy of the numbers. Estimates for any
+region other than us-east-1 / eastus / us-central1 change, most Azure
+estimates change (they were all priced in eastus), and several catalog
+entries that were far off are corrected. Compare a few totals before and
+after upgrading.
+
+The catalog corrections are served to every c3x version by the pricing
+API, so they apply once pricing.c3x.dev is updated, with or without
+upgrading the CLI. The region, parser and config fixes need this CLI, as
+does reading Aurora Serverless v2 capacity and Cosmos DB account regions
+from the parent resource.
+
+### Fixed: catalog prices
+
 - Catalog lines that priced at $0 with a `no_price` caveat in every
   region, because their price lookup matched no product, now price from
   the right product:
@@ -47,80 +53,6 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Windows rate. A Windows Basic, Standard or Premium (v1) plan has no
   price until the pricing API ingests Azure's non-primary regional
   meters.
-- A single `.tf.json` or `.tofu.json` file passed as `--path` is parsed as
-  configuration; it was sent to the plan-JSON parser and priced nothing.
-- Azure resources are priced in their own `location`. Azure has no
-  provider-level region, and the resource's `location` was never read, so
-  every Azure resource was priced in eastus, from a directory and from a
-  plan JSON alike. A Standard_D4s_v5 VM in westeurope showed $140.16/mo
-  instead of $167.90. GCP resources are likewise priced in their own
-  `region`, or the region of their `zone` (europe-west4-b → europe-west4),
-  and AWS resources honour a per-resource `region` (AWS provider v6).
-- A resource with no region of its own, and no `--region` for its
-  provider, is priced in that provider's reference region (us-east-1,
-  eastus, us-central1). The single default (us-east-1 unless set) used to
-  be sent to Azure and GCP lookups too, which matched nothing and fell
-  back with a caveat naming an AWS region.
-- AWS resources priced by usagetype now use the region's own rate. The
-  catalog writes usagetypes for us-east-1 (`USE1-AmazonEKS-Hours`), so
-  every other region missed and was quoted at the us-east-1 rate, marked
-  `region_fallback`. The lookup now tries the region's prefix first
-  (`EU-` in eu-west-1, `SAE1-` in sa-east-1, taken from the pricing data)
-  and falls back as before only when that misses. Across the 31 affected
-  resource kinds, fallback lines in eu-west-1, ap-southeast-1 and
-  sa-east-1 dropped from 117 to 13, and regional prices changed where
-  AWS's do: MSK in sa-east-1 is $733.65/mo against $459.90 in us-east-1.
-- `budget`, `budget_delta` and `usage_path` in `.c3x.toml` now take
-  effect. They were documented, but only the `--budget`,
-  `--budget-delta` and `--usage` flags were read. An explicit
-  `--budget 0` switches a configured gate off. A relative `usage_path`
-  is taken relative to the `.c3x.toml` that sets it. The usage file now
-  applies to `diff`, `comment`, `top` and `policy` too, so the two sides
-  of a delta are priced with the same usage as the baseline.
-- CloudFormation's `AWS::Region` pseudo parameter now follows `--region`
-  (or `region` in config); it was always `us-east-1`. Pricing already
-  used the configured region; values built from `AWS::Region`, such as
-  `!Sub "${AWS::Region}a"`, did not.
-- The GitHub Action's base-branch baseline passes `--budget 0`, so a base
-  branch already over a configured budget still produces a baseline.
-
-- `budget-delta` in the GitHub Action was silently skipped when `path`
-  was a plan JSON. The plan is generated in CI, so the base branch has
-  no copy to estimate, and the gate only ran with a base-branch
-  baseline. `c3x diff` now accepts a plan JSON without `--baseline`,
-  using the plan's prior state (all of the plan's cost counts as the
-  increase when nothing existed before), and the Action falls back to
-  that. When no baseline can be computed at all, the Action now warns
-  instead of skipping the gate silently.
-
-- HCL parser: module `count` and `for_each` are honoured. A module with
-  `count = 0` was still priced and a `for_each` over three items was
-  priced once. Each instance is now parsed with `count.index` /
-  `each.key` / `each.value` in scope and addressed `module.web[0].…` /
-  `module.web["a"].…`; every instance counts against the parse limits.
-- HCL parser: `dynamic` blocks are expanded (iterator, `content`, nested
-  dynamic blocks) into the same shape as the equivalent literal blocks.
-  They used to surface as an attribute named `dynamic`, so volumes and
-  the like declared through them were not priced.
-- HCL parser: override files (`override.tf`, `*_override.tf`, and their
-  `.tofu` and JSON forms) are merged into the blocks they override with
-  Terraform's rules, instead of pricing the overridden resource twice.
-- HCL parser: `.tf.json` and `.tofu.json` files are read. They were
-  ignored entirely. Constructs that can't be represented are skipped
-  with a warning naming the file and key.
-- HCL parser: common data sources have placeholders, so the
-  one-NAT-gateway-per-AZ pattern (`count =
-  length(data.aws_availability_zones.available.names)`) no longer drops
-  the resource: `aws_availability_zones` (three zones in the provider's
-  region), `aws_region`, `aws_caller_identity`, `aws_partition`,
-  `google_client_config`, `google_compute_zones`, `google_project`,
-  `azurerm_client_config` and `azurerm_subscription`. A resource whose
-  count or for_each depends on a placeholder is logged as a warning
-  naming the value assumed; an attribute computed from one stays
-  unresolved (`unresolved_attribute` where the price reads it).
-- HCL parser: a reference to another resource's attribute in the same
-  module (`instance_type = aws_instance.base.instance_type`) resolves
-  when that attribute is a literal.
 - Catalog pricing corrections. Each was checked against the vendor's
   published price and the live pricing API, and its fixture now holds the
   vendor's number:
@@ -164,10 +96,99 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     Windows image size when unset), across the full P/E/S tier ladder and
     ZRS. `azurerm_managed_disk`, which was always priced as E10, uses the
     same ladder.
+
+### Fixed: regional pricing
+
+- AWS usagetypes that carry no prefix in us-east-1 (`Aurora:ServerlessV2Usage`,
+  `LoadBalancerUsage`) are localized too: other regions prefix them
+  (`EU-Aurora:ServerlessV2Usage`). ALB, ElastiCache, DocumentDB, Aurora
+  Serverless v2, Glacier, EBS snapshots and others now price in their own
+  region instead of falling back to us-east-1; across all AWS fixtures in
+  eu-west-1 and sa-east-1, fallback lines went from 35 to 7 with no change
+  in us-east-1. If the prefixed form misses, the original query is tried
+  in the resource's own region before falling back.
+- Azure resources are priced in their own `location`. Azure has no
+  provider-level region, and the resource's `location` was never read, so
+  every Azure resource was priced in eastus, from a directory and from a
+  plan JSON alike. A Standard_D4s_v5 VM in westeurope showed $140.16/mo
+  instead of $167.90. GCP resources are likewise priced in their own
+  `region`, or the region of their `zone` (europe-west4-b → europe-west4),
+  and AWS resources honour a per-resource `region` (AWS provider v6).
+- A resource with no region of its own, and no `--region` for its
+  provider, is priced in that provider's reference region (us-east-1,
+  eastus, us-central1). The single default (us-east-1 unless set) used to
+  be sent to Azure and GCP lookups too, which matched nothing and fell
+  back with a caveat naming an AWS region.
+- AWS resources priced by usagetype now use the region's own rate. The
+  catalog writes usagetypes for us-east-1 (`USE1-AmazonEKS-Hours`), so
+  every other region missed and was quoted at the us-east-1 rate, marked
+  `region_fallback`. The lookup now tries the region's prefix first
+  (`EU-` in eu-west-1, `SAE1-` in sa-east-1, taken from the pricing data)
+  and falls back as before only when that misses. Across the 31 affected
+  resource kinds, fallback lines in eu-west-1, ap-southeast-1 and
+  sa-east-1 dropped from 117 to 13, and regional prices changed where
+  AWS's do: MSK in sa-east-1 is $733.65/mo against $459.90 in us-east-1.
+
+### Fixed: Terraform / OpenTofu evaluation
+
+- A single `.tf.json` or `.tofu.json` file passed as `--path` is parsed as
+  configuration; it was sent to the plan-JSON parser and priced nothing.
+- Module `count` and `for_each` are honoured. A module with
+  `count = 0` was still priced and a `for_each` over three items was
+  priced once. Each instance is now parsed with `count.index` /
+  `each.key` / `each.value` in scope and addressed `module.web[0].…` /
+  `module.web["a"].…`; every instance counts against the parse limits.
+- `dynamic` blocks are expanded (iterator, `content`, nested
+  dynamic blocks) into the same shape as the equivalent literal blocks.
+  They used to surface as an attribute named `dynamic`, so volumes and
+  the like declared through them were not priced.
+- Override files (`override.tf`, `*_override.tf`, and their
+  `.tofu` and JSON forms) are merged into the blocks they override with
+  Terraform's rules, instead of pricing the overridden resource twice.
+- `.tf.json` and `.tofu.json` files in a directory are read. They were
+  ignored entirely. Constructs that can't be represented are skipped
+  with a warning naming the file and key.
+- Common data sources have placeholders, so the
+  one-NAT-gateway-per-AZ pattern (`count =
+  length(data.aws_availability_zones.available.names)`) no longer drops
+  the resource: `aws_availability_zones` (three zones in the provider's
+  region), `aws_region`, `aws_caller_identity`, `aws_partition`,
+  `google_client_config`, `google_compute_zones`, `google_project`,
+  `azurerm_client_config` and `azurerm_subscription`. A resource whose
+  count or for_each depends on a placeholder is logged as a warning
+  naming the value assumed; an attribute computed from one stays
+  unresolved (`unresolved_attribute` where the price reads it).
+- A reference to another resource's attribute in the same
+  module (`instance_type = aws_instance.base.instance_type`) resolves
+  when that attribute is a literal.
 - Attribute inheritance follows a parent referenced through an
   expression the parser cannot evaluate (`cluster_identifier =
   aws_rds_cluster.main.id`) when exactly one candidate parent exists, so
   Aurora's `storage_type` now reaches its instances in that common form.
+
+### Fixed: configuration, CloudFormation and the GitHub Action
+
+- `budget`, `budget_delta` and `usage_path` in `.c3x.toml` now take
+  effect. They were documented, but only the `--budget`,
+  `--budget-delta` and `--usage` flags were read. An explicit
+  `--budget 0` switches a configured gate off. A relative `usage_path`
+  is taken relative to the `.c3x.toml` that sets it. The usage file now
+  applies to `diff`, `comment`, `top` and `policy` too, so the two sides
+  of a delta are priced with the same usage as the baseline.
+- CloudFormation's `AWS::Region` pseudo parameter now follows `--region`
+  (or `region` in config); it was always `us-east-1`. Pricing already
+  used the configured region; values built from `AWS::Region`, such as
+  `!Sub "${AWS::Region}a"`, did not.
+- The GitHub Action's base-branch baseline passes `--budget 0`, so a base
+  branch already over a configured budget still produces a baseline.
+- `budget-delta` in the GitHub Action was silently skipped when `path`
+  was a plan JSON. The plan is generated in CI, so the base branch has
+  no copy to estimate, and the gate only ran with a base-branch
+  baseline. `c3x diff` now accepts a plan JSON without `--baseline`,
+  using the plan's prior state (all of the plan's cost counts as the
+  increase when nothing existed before), and the Action falls back to
+  that. When no baseline can be computed at all, the Action now warns
+  instead of skipping the gate silently.
 
 ### Removed
 
