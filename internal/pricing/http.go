@@ -103,7 +103,11 @@ func (s *HTTPSource) setRequestHeaders(req *http.Request) {
 // paid rate). Zeros are skipped, falling back to zero only if every
 // price is zero.
 func (s *HTTPSource) Lookup(ctx context.Context, q Query) (decimal.Decimal, string, error) {
-	rate, src, err := s.lookupOnce(ctx, q)
+	lq := q
+	if localized, ok := localizeAWSUsagetype(q); ok {
+		lq = localized
+	}
+	rate, src, err := s.lookupOnce(ctx, lq)
 	if err != nil || !rate.IsZero() {
 		return rate, src, err
 	}
@@ -117,6 +121,8 @@ func (s *HTTPSource) Lookup(ctx context.Context, q Query) (decimal.Decimal, stri
 	// for most services, while $0 is infinitely wrong.
 	if ref := referenceRegion(q.Provider); ref != "" && q.Region != ref &&
 		q.Region != "" && q.Region != "global" {
+		// The original query: its filters are written for the reference
+		// region, not the usagetype localized above.
 		fq := q
 		fq.Region = ref
 		frate, fsrc, ferr := s.lookupOnce(ctx, fq)
