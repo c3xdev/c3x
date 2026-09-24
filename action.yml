@@ -216,16 +216,23 @@ runs:
         fi
 
     - name: Budget delta gate
-      if: inputs.install-only != 'true' && inputs.budget-delta != '0' && steps.baseline.outputs.baseline != ''
+      if: inputs.install-only != 'true' && inputs.budget-delta != '0' && github.event_name == 'pull_request'
       shell: bash
       env:
         IN_PATH: ${{ inputs.path }}
         BASELINE: ${{ steps.baseline.outputs.baseline }}
-        IN_STRICT: ${{ inputs.strict }}
         IN_BUDGET_DELTA: ${{ inputs.budget-delta }}
       run: |
         set -euo pipefail
-        c3x diff --path "$IN_PATH" --baseline "$BASELINE" --budget-delta "$IN_BUDGET_DELTA"
+        if [ -n "$BASELINE" ]; then
+          c3x diff --path "$IN_PATH" --baseline "$BASELINE" --budget-delta "$IN_BUDGET_DELTA"
+        elif [ -f "$IN_PATH" ] && [ "${IN_PATH##*.}" = "json" ]; then
+          # A plan JSON is generated in CI, so the base branch has no copy
+          # to estimate; the plan's own prior state is the baseline.
+          c3x diff --path "$IN_PATH" --budget-delta "$IN_BUDGET_DELTA"
+        else
+          echo "::warning::budget-delta was not enforced: no base-branch estimate could be computed"
+        fi
 
     - name: PR comment
       if: inputs.install-only != 'true' && inputs.comment == 'true' && github.event_name == 'pull_request'
