@@ -14,6 +14,9 @@ func parserOptions(resolved config.Resolved, varFiles []string, vars map[string]
 	return parser.Options{
 		VarFiles: varFiles,
 		Vars:     vars,
+		// CloudFormation resolves AWS::Region from this; without it the
+		// pseudo parameter was us-east-1 whatever --region said.
+		Region: resolved.Region,
 		// Remote modules are not fetched when pricing is offline or in
 		// untrusted-input mode (no_remote_modules). The pricing chain honours
 		// resolved.Offline independently.

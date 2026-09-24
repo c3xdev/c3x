@@ -15,6 +15,10 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   is taken relative to the `.c3x.toml` that sets it. The usage file now
   applies to `diff`, `comment`, `top` and `policy` too, so the two sides
   of a delta are priced with the same usage as the baseline.
+- CloudFormation's `AWS::Region` pseudo parameter now follows `--region`
+  (or `region` in config); it was always `us-east-1`. Pricing already
+  used the configured region; values built from `AWS::Region`, such as
+  `!Sub "${AWS::Region}a"`, did not.
 - The GitHub Action's base-branch baseline passes `--budget 0`, so a base
   branch already over a configured budget still produces a baseline.
 
