@@ -5,20 +5,53 @@ provider     = "azure"
 # Compute (node pools) bills against azurerm_linux_virtual_machine through
 # the underlying VMSS. Only the AKS uptime SLA fee is billed here.
 
+# Control-plane fee by sku_tier (per cluster-hour, flat across regions):
+#   Free     no charge
+#   Standard "Standard Uptime SLA" meter, $0.10/hr
+#   Premium  "Standard Long Term Support" meter, $0.60/hr (Premium tier is
+#            the tier that includes Long Term Support)
+# These used to share one mapping filtered only on skuName = "Standard",
+# which matches both meters, so the max-non-zero picker returned the
+# $0.60 LTS rate for Standard clusters.
+#
+# region = "global" is deliberate: the pricing API does not carry the
+# Uptime SLA meter under most regional codes (Azure marks it non-primary
+# there), but the rate is $0.10 in every region Azure publishes it for,
+# and matching across regions returns that single rate.
+
 [mappings.uptime_sla]
 service        = "Azure Kubernetes Service"
 product_family = "Compute"
+region         = "global"
 attribute_filters = [
-  { key = "skuName", const = "Standard" },
+  { key = "productName", const = "Azure Kubernetes Service" },
+  { key = "meterName",   const = "Standard Uptime SLA" },
+]
+
+[mappings.premium_lts]
+service        = "Azure Kubernetes Service"
+product_family = "Compute"
+region         = "global"
+attribute_filters = [
+  { key = "productName", const = "Azure Kubernetes Service" },
+  { key = "meterName",   const = "Standard Long Term Support" },
 ]
 
 [[dimensions]]
 id       = "uptime_sla"
-label    = "Cluster uptime SLA"
+label    = "Cluster management (Standard tier)"
 unit     = "hours"
 when     = 'default(sku_tier, "Free") == "Standard"'
 quantity = "monthly_hours()"
 rate     = 'price("uptime_sla")'
+
+[[dimensions]]
+id       = "premium_tier"
+label    = "Cluster management (Premium tier, Long Term Support)"
+unit     = "hours"
+when     = 'default(sku_tier, "Free") == "Premium"'
+quantity = "monthly_hours()"
+rate     = 'price("premium_lts")'
 
 [mappings.node_compute]
 service        = "Virtual Machines"
@@ -37,7 +70,10 @@ quantity = "default(default_node_pool_node_count, 1) * monthly_hours()"
 rate     = 'price("node_compute")'
 
 [fixture]
+# Standard tier: $0.10 per cluster-hour x 730 = $73.00
+# (https://azure.microsoft.com/en-us/pricing/details/kubernetes-service/,
+# meter "Standard Uptime SLA" in the Azure Retail Prices API).
 attributes = { sku_tier = "Standard" }
-expected_monthly_cost = 438
+expected_monthly_cost = 73.0
 tolerance = 0.05
 

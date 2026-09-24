@@ -82,6 +82,53 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - HCL parser: a reference to another resource's attribute in the same
   module (`instance_type = aws_instance.base.instance_type`) resolves
   when that attribute is a literal.
+- Catalog pricing corrections. Each was checked against the vendor's
+  published price and the live pricing API, and its fixture now holds the
+  vendor's number:
+  - `aws_msk_cluster` priced every cluster as kafka.m5.large and its
+    broker storage at $0. It now prices `broker_node_group_info`
+    `instance_type` and the per-broker EBS volume: 3 x kafka.m5.4xlarge
+    with 1,000 GB each goes from $459.90 to $3,979.20/mo.
+  - `azurerm_mssql_database` keyed on a `vcores` attribute the resource
+    does not have, so every database was 2-vCore General Purpose. It now
+    parses `sku_name` (GP/BC/HS, hardware family, vCores; serverless
+    `GP_S_`/`HS_S_`; DTU `Basic`, `S*`, `P*`) and adds the SQL license
+    unless `license_type = "BasePrice"`: `BC_Gen5_8` goes from $225.92 to
+    $3,975.90/mo.
+  - `azurerm_kubernetes_cluster` priced the Standard tier at the
+    Premium/LTS rate ($0.60/hr, $438/mo); Standard is $0.10/hr ($73/mo).
+    The Premium tier, previously unpriced, is now $438/mo.
+  - `aws_rds_cluster_instance` with `instance_class = "db.serverless"`
+    (Aurora Serverless v2) was $0. It now prices ACU-hours at the
+    cluster's `serverlessv2_scaling_configuration.min_capacity` (0.5 ACU
+    if not visible), or `monthly_acu_hours` from a usage file.
+  - Cosmos DB throughput was never priced: the databases and containers
+    that carry it were listed as free. `azurerm_cosmosdb_sql_database`,
+    `_sql_container`, `_mongo_database`, `_mongo_collection`,
+    `_cassandra_keyspace`, `_cassandra_table`, `_gremlin_database`,
+    `_gremlin_graph` and `azurerm_cosmosdb_table` now price `throughput`
+    and `autoscale_settings.max_throughput` (at max unless usage is given)
+    per account region, at the multi-region-write rate when the account
+    has it. `azurerm_cosmosdb_account` prices serverless request units and
+    per-region storage from usage, and always reports its usage lines.
+  - `google_cloud_run_v2_service` was skipped unless usage was supplied.
+    It now always reports its vCPU, memory and request lines and prices
+    minimum instances from `template.scaling.min_instance_count` and the
+    container's `resources.limits`.
+  - `azurerm_storage_account` priced every account as Hot LRS. It now
+    follows `account_replication_type` (LRS, ZRS, GRS, RAGRS, GZRS,
+    RAGZRS), `access_tier`, `account_tier = "Premium"` and
+    `is_hns_enabled`: 100 GB Hot GRS goes from $2.10 to $4.58/mo.
+  - `azurerm_linux_virtual_machine` / `azurerm_windows_virtual_machine`
+    OS disks were only priced when `os_disk.disk_size_gb` was set. They are
+    now priced by `storage_account_type` and size (30 GiB Linux / 127 GiB
+    Windows image size when unset), across the full P/E/S tier ladder and
+    ZRS. `azurerm_managed_disk`, which was always priced as E10, uses the
+    same ladder.
+- Attribute inheritance follows a parent referenced through an
+  expression the parser cannot evaluate (`cluster_identifier =
+  aws_rds_cluster.main.id`) when exactly one candidate parent exists, so
+  Aurora's `storage_type` now reaches its instances in that common form.
 
 ### Removed
 

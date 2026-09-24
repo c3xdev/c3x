@@ -10,17 +10,17 @@ go run ./cmd/gen_catalog_doc > docs/catalog.md   # regenerate the per-kind matri
 
 ## Current state
 
-Verified against `pricing.c3x.dev` on 2026-09-23:
+Verified against `pricing.c3x.dev` on 2026-09-24:
 
 | Result | Kinds |
 |---|---:|
-| **LIVE** (priced from the upstream API, tracks vendor price changes) | 152 |
-| **STATIC** (priced from an inline rate, does not track upstream changes) | 111 |
-| **FREE** (not charged at the resource level) | 1,077 |
+| **LIVE** (priced from the upstream API, tracks vendor price changes) | 162 |
+| **STATIC** (priced from an inline rate, does not track upstream changes) | 110 |
+| **FREE** (not charged at the resource level) | 1,068 |
 | **ZERO / DRIFT / NOFIX / STALE / ERRORED** | 0 |
 | **Total** | **1,340** |
 
-So 263 kinds carry a price and the remaining 1,077 are legitimately free.
+So 272 kinds carry a price and the remaining 1,068 are legitimately free.
 
 The per-kind matrix is generated at [`docs/catalog.md`](docs/catalog.md);
 it is the list, and this page is only the summary. Counts are deliberately
@@ -30,7 +30,7 @@ drifted apart from each other and from reality.
 
 ### Two classifications, counted differently
 
-`docs/catalog.md` reports **176 LIVE / 87 STATIC** for the same 1,340
+`docs/catalog.md` reports **186 LIVE / 86 STATIC** for the same 1,340
 kinds. That is not a contradiction, the two tools measure different
 things:
 
@@ -108,6 +108,12 @@ matches span a suspicious price range.
   which sits on the cluster while the hours are billed on the instance.
   The parser copies those across before pricing
   (`internal/parser/inherit.go`), which keeps the catalog on plain
-  attribute reads that every released client understands.
+  attribute reads that every released client understands. The rules
+  cover Aurora (`storage_type` and `serverlessv2_scaling_configuration`
+  onto `aws_rds_cluster_instance`) and Cosmos DB (`geo_location` and the
+  multi-region-write flag onto the throughput-bearing databases and
+  containers, joined on `account_name` = the account's `name`). A join
+  written as a reference the parser cannot evaluate links to the parent
+  only when exactly one candidate exists.
 - **Three-layer cache.** Memo (in-process), then SQLite (7-day TTL),
   then HTTP. Most runs against a populated cache finish in under 50ms.

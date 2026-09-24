@@ -92,3 +92,18 @@ func TestProviderIsValidOnEveryDefinition(t *testing.T) {
 		}
 	}
 }
+
+// A literal zero rate marks a line billed elsewhere (a container sharing
+// its database's throughput, a database in an elastic pool). It is not an
+// inline price that can go stale, so it must not make a kind STATIC.
+func TestZeroRateIsNotStatic(t *testing.T) {
+	reg, err := catalog.Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	for _, k := range []string{"azurerm_cosmosdb_sql_container", "azurerm_mssql_database"} {
+		if reg.HasStaticRate(k) {
+			t.Errorf("%s is classified STATIC; its only literal rate is 0", k)
+		}
+	}
+}

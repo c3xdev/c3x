@@ -2,28 +2,62 @@ kind         = "azurerm_storage_account"
 display_name = "Azure Storage Account"
 provider     = "azure"
 
-# Specific filter: Hot LRS blob storage. Production usage may use other
-# tiers (Cool, Cold, Archive, ZRS/GRS replication) — covered by alternate
-# mappings below. We pick Hot+LRS as the default since it's the most
-# common; configure tier via c3x-usage.yml to switch.
+# Blob data storage, per GB-month (monthly_storage_gb from a usage file).
+# The meter is "<access tier> <redundancy> Data Stored", driven by:
+#
+#   access_tier               Hot (default), Cool, Cold
+#   account_replication_type  LRS (default), ZRS, GRS, RAGRS, GZRS, RAGZRS
+#                             (Azure writes the last three RA-GRS, GZRS, RA-GZRS)
+#   account_tier = "Premium"  Premium block blob (LRS or ZRS), no access tier
+#   is_hns_enabled = true     Data Lake Storage Gen2 (hierarchical namespace)
+#
+# Flat namespace (the default) is priced from the "Blob Storage" product
+# for LRS, GRS and RA-GRS and from "General Block Blob v2" for ZRS, GZRS and
+# RA-GZRS. Azure publishes identical per-GB rates under both products for
+# the redundancies they share, but the pricing API only carries LRS, GRS
+# and RA-GRS under "Blob Storage" (Azure flags them non-primary under
+# "General Block Blob v2"), and only carries the zone-redundant ones under
+# "General Block Blob v2". The first 50 TB tier's rate is used.
+#
+# Not modelled: operations, data retrieval and egress, Azure Files (so a
+# FileStorage account is reported as unpriced rather than given blob
+# rates), and the legacy general-purpose v1 account kind ("Storage"),
+# which bills different rates.
 
-[mappings.blob_hot]
+[mappings.blob]
 service        = "Storage"
 product_family = "Storage"
 attribute_filters = [
-  { key = "meterName",   const = "Hot LRS Data Stored" },
-  { key = "productName", const = "General Block Blob v2 Hierarchical Namespace" },
+  { key = "productName", expr = '''
+      let r = upper(default(account_replication_type, "LRS"));
+      default(account_tier, "Standard") == "Premium" ? "Premium Block Blob" :
+      default(is_hns_enabled, false) == true         ? "General Block Blob v2 Hierarchical Namespace" :
+      r in ["LRS", "GRS", "RAGRS", "RA-GRS"]         ? "Blob Storage" :
+                                                       "General Block Blob v2"
+  ''' },
+  { key = "meterName", expr = '''
+      let r = upper(default(account_replication_type, "LRS"));
+      let red =
+        r == "RAGRS"  ? "RA-GRS" :
+        r == "RAGZRS" ? "RA-GZRS" : r;
+      default(account_tier, "Standard") == "Premium" ?
+        "Premium " + red + " Data Stored" :
+        default(access_tier, "Hot") + " " + red + " Data Stored"
+  ''' },
 ]
 
 [[dimensions]]
 id       = "blob_storage"
-label    = "Blob storage (Hot LRS)"
+label    = "Blob storage"
 unit     = "GB-month"
+when     = 'default(account_kind, "StorageV2") != "FileStorage"'
 quantity = "default(monthly_storage_gb, 0)"
-rate     = 'price("blob_hot")'
+rate     = 'price("blob")'
 
 [fixture]
-attributes = { monthly_storage_gb = 100 }
-expected_monthly_cost = 2.1
+# Hot GRS, 100 GB, East US: $0.0458/GB-month (first 50 TB)
+# (https://azure.microsoft.com/en-us/pricing/details/storage/blobs/,
+# meter "Hot GRS Data Stored" in the Azure Retail Prices API) = $4.58.
+attributes = { account_replication_type = "GRS", monthly_storage_gb = 100 }
+expected_monthly_cost = 4.58
 tolerance = 0.05
-

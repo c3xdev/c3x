@@ -197,11 +197,27 @@ func (r *Registry) HasStaticRate(kind string) bool {
 		return false
 	}
 	for _, dim := range def.Dimensions {
-		if isNumericLiteral(dim.Rate) {
+		// A literal zero is not a price: it marks a line that is billed
+		// elsewhere (throughput shared with a parent database, a database
+		// inside an elastic pool) and has no rate that could go stale.
+		if isNumericLiteral(dim.Rate) && !isZeroLiteral(dim.Rate) {
 			return true
 		}
 	}
 	return false
+}
+
+// isZeroLiteral reports whether a numeric literal rate is zero ("0",
+// "0.0", " 0 ").
+func isZeroLiteral(expr string) bool {
+	for _, c := range expr {
+		switch c {
+		case '0', '.', '+', '-', ' ', '\t':
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 // isNumericLiteral reports whether `expr` is a bare numeric literal

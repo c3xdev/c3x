@@ -43,17 +43,75 @@ attribute_filters = [
   ''' },
 ]
 
+# Aurora Serverless v2 (instance_class = "db.serverless") bills ACU-hours,
+# not instance-hours: capacity floats between the cluster's
+# serverlessv2_scaling_configuration min_capacity and max_capacity. That
+# block is declared on the parent aws_rds_cluster and copied onto the
+# instance by the parser (internal/parser/inherit.go), which is why it can
+# be read here as serverlessv2_scaling_configuration_min_capacity.
+#
+# Assumption: with no usage, the instance is priced at min_capacity for the
+# whole month (0.5 ACU when the scaling block is not visible), which is the
+# floor for an instance that stays online. Set monthly_acu_hours in a usage
+# file for a real figure.
+#
+# Aurora I/O-Optimized has its own ACU product carrying the same `storage`
+# attribute as the instance SKUs, so it is matched region-independently.
+# The Aurora Standard ACU product carries no `storage` attribute at all, so
+# the only thing that tells it apart from I/O-Optimized is usagetype, which
+# has a region prefix outside us-east-1 (EU-Aurora:ServerlessV2Usage).
+# The mapping pins the us-east-1 form; in other regions the lookup falls
+# back to the us-east-1 rate and the line says so.
+[mappings.serverless_v2_standard]
+service        = "AmazonRDS"
+product_family = "ServerlessV2"
+attribute_filters = [
+  { key = "databaseEngine", expr = '''
+      pick(default(engine, "aurora-postgresql") == "aurora-mysql", "Aurora MySQL",
+      "Aurora PostgreSQL")
+  ''' },
+  { key = "usagetype", const = "Aurora:ServerlessV2Usage" },
+]
+
+[mappings.serverless_v2_io_optimized]
+service        = "AmazonRDS"
+product_family = "ServerlessV2"
+attribute_filters = [
+  { key = "databaseEngine", expr = '''
+      pick(default(engine, "aurora-postgresql") == "aurora-mysql", "Aurora MySQL",
+      "Aurora PostgreSQL")
+  ''' },
+  { key = "storage", const = "Aurora IO Optimization Mode" },
+]
+
 [[dimensions]]
 id       = "instance_hours"
 label    = "Aurora instance"
 unit     = "hours"
+when     = 'default(instance_class, "db.r6g.large") != "db.serverless"'
 quantity = "monthly_hours()"
 rate     = 'price("instance")'
 
+[[dimensions]]
+id       = "serverless_v2_acu"
+label    = "Aurora Serverless v2 capacity (at min ACU unless usage is given)"
+unit     = "ACU-hours"
+when     = 'default(instance_class, "") == "db.serverless"'
+quantity = '''
+  default(monthly_acu_hours,
+    default(serverlessv2_scaling_configuration_min_capacity, 0.5) * monthly_hours())
+'''
+rate     = '''
+  default(storage_type, "") == "aurora-iopt1" ?
+    price("serverless_v2_io_optimized") : price("serverless_v2_standard")
+'''
+
 [fixture]
-# Aurora Standard: $0.26/hr x 730. The old expectation of 246.74 was the
-# I/O-Optimized rate ($0.338/hr), which is what the ambiguous filter had
-# been returning for every cluster.
-attributes = { engine = "aurora-postgresql", instance_class = "db.r6g.large" }
-expected_monthly_cost = 189.80
+# Aurora Serverless v2, Aurora Standard, min 2 ACU, us-east-1:
+# 2 x 730 x $0.12/ACU-hour = $175.20 (https://aws.amazon.com/rds/aurora/pricing/).
+# The provisioned path (db.r6g.large Aurora Standard, $0.26/hr) and the
+# Standard / I/O-Optimized split are pinned offline by
+# TestAuroraInstancePricesByStorageType in internal/calculator.
+attributes = { engine = "aurora-postgresql", instance_class = "db.serverless", serverlessv2_scaling_configuration_min_capacity = 2 }
+expected_monthly_cost = 175.20
 tolerance = 0.05
