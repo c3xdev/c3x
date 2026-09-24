@@ -13,10 +13,11 @@ import (
 // MaxModuleDepth expand 4^10 times. Real configurations sit orders of
 // magnitude below every limit.
 const (
-	maxInstancesPerResource = 10_000
-	maxResourcesPerParse    = 200_000
-	maxModuleCallsPerParse  = 5_000
-	maxParseDuration        = 2 * time.Minute
+	maxInstancesPerResource  = 10_000
+	maxResourcesPerParse     = 200_000
+	maxModuleCallsPerParse   = 5_000
+	maxDynamicBlocksPerParse = 200_000
+	maxParseDuration         = 2 * time.Minute
 )
 
 // errParseLimit is wrapped by every limit error, so callers can tell a
@@ -28,6 +29,7 @@ var errParseLimit = errors.New("configuration exceeds c3x's parse limits")
 type parseBudget struct {
 	resources   int
 	moduleCalls int
+	blocks      int
 	deadline    time.Time
 }
 
@@ -51,13 +53,33 @@ func (b *parseBudget) instances(address string, n int) error {
 	return b.clock()
 }
 
-func (b *parseBudget) moduleCall(name string) error {
+// moduleCall counts n instances of one module call (count / for_each
+// expand a module block into several). Every instance is a full parse of
+// the module, so each one counts.
+func (b *parseBudget) moduleCall(name string, n int) error {
 	if b == nil {
 		return nil
 	}
-	b.moduleCalls++
+	b.moduleCalls += n
 	if b.moduleCalls > maxModuleCallsPerParse {
 		return fmt.Errorf("%w: more than %d module expansions (at module %q)", errParseLimit, maxModuleCallsPerParse, name)
+	}
+	return b.clock()
+}
+
+// dynamicBlocks checks one dynamic block's for_each size before its
+// blocks are expanded. Dynamic blocks nest, and each expansion repeats
+// for every instance of the resource, so the total is bounded too.
+func (b *parseBudget) dynamicBlocks(address string, n int) error {
+	if b == nil {
+		return nil
+	}
+	if n > maxInstancesPerResource {
+		return fmt.Errorf("%w: dynamic block %s expands to %d blocks (limit %d)", errParseLimit, address, n, maxInstancesPerResource)
+	}
+	b.blocks += n
+	if b.blocks > maxDynamicBlocksPerParse {
+		return fmt.Errorf("%w: more than %d dynamic blocks", errParseLimit, maxDynamicBlocksPerParse)
 	}
 	return b.clock()
 }

@@ -64,6 +64,7 @@ func collectProviderRegions(
 			// for_each element, each with its own region.
 			if fe := block.Body.Attributes["for_each"]; fe != nil {
 				val, diags := fe.Expr.Value(buildEvalContext(asObject(vars), asObject(locals), data, nil))
+				val, _ = stripPlaceholders(val)
 				if diags.HasErrors() {
 					logger.Debug("provider for_each evaluation failed",
 						"provider", key, "file", src.Path, "diags", formatDiags(diags))
@@ -134,6 +135,7 @@ func (pr providerRegions) fromReference(expr hclsyntax.Expression, ctx *hcl.Eval
 			return "", false
 		}
 		v, diags := e.Key.Value(ctx)
+		v, _ = stripPlaceholders(v)
 		if diags.HasErrors() || v.IsNull() || !v.IsKnown() || v.Type() != cty.String {
 			return "", false
 		}
@@ -227,6 +229,7 @@ func evalString(attr *hclsyntax.Attribute, vars, locals map[string]cty.Value, da
 		return "", false
 	}
 	v, diags := attr.Expr.Value(buildEvalContext(asObject(vars), asObject(locals), data, extras))
+	v, _ = stripPlaceholders(v)
 	if diags.HasErrors() || v.IsNull() || !v.IsKnown() || v.Type() != cty.String {
 		return "", false
 	}

@@ -185,6 +185,9 @@ assumptions in it. JSON output carries `caveat_count` and per-line
 c3x reads OpenTofu projects directly. `.tofu` files are loaded alongside
 `.tf`, and a `main.tofu` replaces the `main.tf` of the same name, as
 OpenTofu does, so a codebase that ships both is not counted twice.
+JSON-syntax files (`.tf.json`, `.tofu.json`) and override files
+(`override.tf`, `*_override.tf`, and their `.tofu` and JSON forms) are
+read too, with override files merged into the blocks they override.
 Provider `for_each` is supported: each instance of a resource is priced
 in the region of the provider instance it uses. Plan JSON from
 `tofu show -json` works the same as Terraform's.
