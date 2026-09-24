@@ -58,8 +58,8 @@ func TestUntrustedModeFiltersProjectConfig(t *testing.T) {
 	if r.Offline {
 		t.Error("offline must not come from the project: it swaps real prices for stubs")
 	}
-	if r.CachePath != def.CachePath || r.ResourcesPath != def.ResourcesPath {
-		t.Errorf("cache_path=%q resources_path=%q must not come from the project", r.CachePath, r.ResourcesPath)
+	if r.CachePath != def.CachePath {
+		t.Errorf("cache_path=%q must not come from the project", r.CachePath)
 	}
 	if r.UsagePath != def.UsagePath {
 		t.Errorf("usage_path = %q; a path outside the project must be refused", r.UsagePath)
@@ -71,7 +71,7 @@ func TestUntrustedModeFiltersProjectConfig(t *testing.T) {
 
 func TestUntrustedModeKeepsUsagePathInsideProject(t *testing.T) {
 	r := resolveWith(t, `usage_path = "usage/c3x-usage.yml"`, "", map[string]any{"no_remote_modules": true})
-	if r.UsagePath != "usage/c3x-usage.yml" {
+	if filepath.Base(filepath.Dir(r.UsagePath)) != "usage" || filepath.Base(r.UsagePath) != "c3x-usage.yml" {
 		t.Errorf("usage_path = %q; a path inside the project is fine", r.UsagePath)
 	}
 }

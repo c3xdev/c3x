@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/c3xdev/c3x/internal/calculator"
@@ -77,6 +78,9 @@ monthly spend by more than the configured amount fail the job.`,
 			if pricingToken != "" {
 				flags["pricing.token"] = pricingToken
 			}
+			if cmd.Flags().Changed("budget-delta") {
+				flags["budget_delta"] = budgetDelta
+			}
 			resolved, err := config.Resolve(projectDir, flags)
 			if err != nil {
 				return fmt.Errorf("resolving config: %w", err)
@@ -103,7 +107,7 @@ monthly spend by more than the configured amount fail the job.`,
 			}
 			_, _ = cmd.OutOrStdout().Write([]byte(out))
 
-			if err := enforceBudgetDelta(cmd, diff, budgetDelta); err != nil {
+			if err := enforceBudgetDelta(cmd, diff, resolved.BudgetDelta); err != nil {
 				return err
 			}
 			return enforceStrict(cmd, diff.Caveats, strict)
@@ -195,6 +199,9 @@ func computeCurrent(
 	if err != nil {
 		return domain.Estimate{}, fmt.Errorf("parsing %s: %w", rawPath, err)
 	}
+	if err := applyUsage(os.Stderr, parsed, resolved.UsagePath); err != nil {
+		return domain.Estimate{}, err
+	}
 	engine, closeFn, err := buildPricingEngine(ctx, resolved)
 	if err != nil {
 		return domain.Estimate{}, err
@@ -233,6 +240,15 @@ func computePlanAware(
 	before, hasBaseline, err := parser.PlanBaseline(rawPath, opts)
 	if err != nil {
 		return domain.Estimate{}, nil, fmt.Errorf("parsing plan baseline %s: %w", rawPath, err)
+	}
+	// Both sides get the same usage, so it cancels out of the delta.
+	if err := applyUsage(os.Stderr, after, resolved.UsagePath); err != nil {
+		return domain.Estimate{}, nil, err
+	}
+	if hasBaseline {
+		if err := applyUsage(io.Discard, before, resolved.UsagePath); err != nil {
+			return domain.Estimate{}, nil, err
+		}
 	}
 	engine, closeFn, err := buildPricingEngine(ctx, resolved)
 	if err != nil {

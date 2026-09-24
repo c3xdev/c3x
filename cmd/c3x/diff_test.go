@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -133,5 +134,32 @@ func TestBudgetGatePassesUnderLimit(t *testing.T) {
 	cmd.SetArgs([]string{"estimate", "--path", dir, "--inline-demo", "--budget", "1000"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("expected pass under budget, got %v", err)
+	}
+}
+
+// budget in .c3x.toml gates the run with no flag, and an explicit
+// --budget 0 switches that gate off.
+func TestBudgetGateFromProjectConfig(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "main.tf"), []byte(`# placeholder`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".c3x.toml"), []byte("budget = 10.0\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	run := func(extra ...string) error {
+		cmd := newRootCmd()
+		out := &bytes.Buffer{}
+		cmd.SetOut(out)
+		cmd.SetErr(out)
+		cmd.SetArgs(append([]string{"estimate", "--path", dir, "--inline-demo"}, extra...))
+		return cmd.Execute()
+	}
+	if err := run(); !errors.Is(err, errBudgetExceeded) {
+		t.Fatalf("budget from .c3x.toml: err = %v, want errBudgetExceeded", err)
+	}
+	if err := run("--budget", "0"); err != nil {
+		t.Fatalf("--budget 0 should disable the project's gate, got %v", err)
 	}
 }

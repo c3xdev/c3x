@@ -92,15 +92,16 @@ func (s *HTTPSource) setRequestHeaders(req *http.Request) {
 }
 
 // Lookup implements [Source]. It builds a GraphQL document from the
-// Query, POSTs it to the endpoint, and returns the first non-zero
-// USD price from the first matching product. A zero return with nil
-// error means the query matched no priced products — legitimate for
-// always-free resources (ACM public certificates, ALB target groups).
+// Query, POSTs it to the endpoint, and returns the largest non-zero
+// USD price among the matches (see pickNonZeroPrice for why the
+// largest). A zero return with nil error means the query matched no
+// priced products — legitimate for always-free resources (ACM public
+// certificates, ALB target groups).
 //
 // Tiered prices: the upstream may return several prices for one
 // product (e.g. SNS HTTP deliveries quote $0 free-tier first, then the
-// paid rate). We skip zeros and prefer the first non-zero entry,
-// falling back to zero only if every price is zero.
+// paid rate). Zeros are skipped, falling back to zero only if every
+// price is zero.
 func (s *HTTPSource) Lookup(ctx context.Context, q Query) (decimal.Decimal, string, error) {
 	rate, src, err := s.lookupOnce(ctx, q)
 	if err != nil || !rate.IsZero() {

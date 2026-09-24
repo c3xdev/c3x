@@ -73,6 +73,9 @@ non-prod, GCP pd-standard → pd-balanced.`,
 			if pricingToken != "" {
 				flags["pricing.token"] = pricingToken
 			}
+			if usagePath != "" {
+				flags["usage_path"] = usagePath
+			}
 			resolved, err := config.Resolve(projectDir, flags)
 			if err != nil {
 				return fmt.Errorf("resolving config: %w", err)
@@ -86,7 +89,7 @@ non-prod, GCP pd-standard → pd-balanced.`,
 			if err != nil {
 				return fmt.Errorf("parsing %s: %w", path, err)
 			}
-			if err := applyUsageAndWhatIf(cmd, parsed, usagePath, whatIfs); err != nil {
+			if err := applyUsageAndWhatIf(cmd, parsed, resolved.UsagePath, whatIfs); err != nil {
 				return err
 			}
 

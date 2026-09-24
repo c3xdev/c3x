@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -104,6 +105,14 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 			if currency != "" {
 				flags["currency"] = currency
 			}
+			// Changed, not non-zero: an explicit --budget 0 must be able to
+			// switch off a budget set in .c3x.toml.
+			if cmd.Flags().Changed("budget") {
+				flags["budget"] = budget
+			}
+			if usagePath != "" {
+				flags["usage_path"] = usagePath
+			}
 
 			resolved, err := config.Resolve(projectDir, flags)
 			if err != nil {
@@ -111,11 +120,11 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 			}
 
 			if inlineDemo {
-				return runInlineDemo(cmd, resolved, budget)
+				return runInlineDemo(cmd, resolved, resolved.Budget)
 			}
 
 			_ = projectDir // resolved.* already carries the project config
-			return runEstimate(cmd, path, resolved, varFiles, vars, usagePath, whatIfs, saveBaseline, budget, showSkipped, showDelta, strict)
+			return runEstimate(cmd, path, resolved, varFiles, vars, resolved.UsagePath, whatIfs, saveBaseline, resolved.Budget, showSkipped, showDelta, strict)
 		},
 	}
 
@@ -143,14 +152,14 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 		"bearer token for a self-hosted pricing API (default: $C3X_PRICING_TOKEN)")
 
 	cmd.Flags().StringVar(&usagePath, "usage", "",
-		"path to a c3x-usage.yml file with runtime usage quantities (monthly_requests, monthly_storage_gb, etc.)")
+		"path to a c3x-usage.yml file with runtime usage quantities (monthly_requests, monthly_storage_gb, etc.; also usage_path in .c3x.toml)")
 	cmd.Flags().StringArrayVar(&whatIfs, "what-if", nil,
 		"override an attribute: `kind.name.attr=value` (repeatable; bool/int/float/string coercion)")
 	cmd.Flags().StringVar(&saveBaseline, "save-baseline", "",
 		"after the estimate, write the JSON representation to this path for use as a `c3x diff` baseline")
 	cmd.Flags().BoolVar(&strict, "strict", false, strictHelp)
 	cmd.Flags().Float64Var(&budget, "budget", 0,
-		"fail with exit code 1 when the project total exceeds this monthly budget (0 disables the gate)")
+		"fail with exit code 1 when the project total exceeds this monthly budget (0 disables the gate; also budget in .c3x.toml)")
 	cmd.Flags().StringVar(&currency, "currency", "",
 		"display currency (USD, EUR, GBP, JPY, CAD, AUD, …); USD-priced rates are converted via Frankfurter")
 	cmd.Flags().BoolVar(&showSkipped, "show-skipped", false,
@@ -320,16 +329,8 @@ var errBudgetExceeded = fmt.Errorf("budget exceeded")
 // (runtime quantities), then --what-if overrides (CLI wins).
 // Unmatched entries in either log a warning to stderr.
 func applyUsageAndWhatIf(cmd *cobra.Command, resources []domain.Resource, usagePath string, whatIfs []string) error {
-	if usagePath != "" {
-		f, err := usage.Load(usagePath)
-		if err != nil {
-			return fmt.Errorf("--usage: %w", err)
-		}
-		if unmatched := usage.Apply(resources, f); len(unmatched) > 0 {
-			fmt.Fprintf(cmd.ErrOrStderr(),
-				"c3x: warning: %d usage entries did not match any resource (%v)\n",
-				len(unmatched), unmatched)
-		}
+	if err := applyUsage(cmd.ErrOrStderr(), resources, usagePath); err != nil {
+		return err
 	}
 	if len(whatIfs) > 0 {
 		ovs, err := whatif.Parse(whatIfs)
@@ -343,6 +344,26 @@ func applyUsageAndWhatIf(cmd *cobra.Command, resources []domain.Resource, usageP
 					o.Kind, o.Name, o.Attr)
 			}
 		}
+	}
+	return nil
+}
+
+// applyUsage loads the usage file at usagePath, if any, onto resources.
+// Every command that prices resources applies it, so the two sides of a
+// diff or PR comment are computed with the same usage as the estimate
+// that produced the baseline.
+func applyUsage(stderr io.Writer, resources []domain.Resource, usagePath string) error {
+	if usagePath == "" {
+		return nil
+	}
+	f, err := usage.Load(usagePath)
+	if err != nil {
+		return fmt.Errorf("usage file: %w", err)
+	}
+	if unmatched := usage.Apply(resources, f); len(unmatched) > 0 {
+		fmt.Fprintf(stderr,
+			"c3x: warning: %d usage entries did not match any resource (%v)\n",
+			len(unmatched), unmatched)
 	}
 	return nil
 }

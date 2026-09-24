@@ -23,3 +23,9 @@ func TestParserOptionsEnforceUntrustedMode(t *testing.T) {
 		t.Errorf("trusted opt-in: got Offline=%v AllowFileFunctions=%v", trusted.Offline, trusted.AllowFileFunctions)
 	}
 }
+
+func TestParserOptionsCarryRegion(t *testing.T) {
+	if got := parserOptions(config.Resolved{Region: "eu-west-1"}, nil, nil).Region; got != "eu-west-1" {
+		t.Errorf("Region = %q, want eu-west-1: CloudFormation's AWS::Region comes from here", got)
+	}
+}
