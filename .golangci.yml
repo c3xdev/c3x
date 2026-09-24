@@ -88,6 +88,14 @@ linters:
       disabled-checks:
         - hugeParam
         - unnamedResult
+      settings:
+        rangeValCopy:
+          # domain.LineItem is a value type, copied by design in the
+          # renderers' loops. Carrying its caveats took it to 136 bytes,
+          # over the default 128; copying that per line item costs
+          # nothing measurable, while index-form loops everywhere would
+          # only obscure them.
+          sizeThreshold: 256
       enabled-tags:
         - diagnostic
         - performance

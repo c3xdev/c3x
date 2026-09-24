@@ -88,6 +88,12 @@ inputs:
   currency:
     description: Display currency (USD, EUR, GBP, ...).
     default: ""
+  strict:
+    description: >-
+      Fail when any part of the estimate rests on an assumption (a price
+      from another region, usage not provided, an attribute that could not
+      be evaluated). The comment is still posted, with the caveats listed.
+    default: "false"
   untrusted:
     description: >-
       Treat the input as untrusted (--no-remote-modules): no remote module
@@ -156,9 +162,22 @@ runs:
         IN_FORMAT: ${{ inputs.format }}
         IN_BUDGET: ${{ inputs.budget }}
         IN_CURRENCY: ${{ inputs.currency }}
+        IN_STRICT: ${{ inputs.strict }}
+        IN_COMMENT: ${{ inputs.comment }}
+        EVENT_NAME: ${{ github.event_name }}
       run: |
         set -euo pipefail
         ARGS=(estimate --path "$IN_PATH" --format "$IN_FORMAT")
+        # When a PR comment will be posted, --strict is applied by the
+        # comment step instead, after posting, so reviewers see the caveats
+        # before the job fails.
+        WILL_COMMENT=false
+        if [ "$IN_COMMENT" = "true" ] && [ "$EVENT_NAME" = "pull_request" ]; then
+          WILL_COMMENT=true
+        fi
+        if [ "$IN_STRICT" = "true" ] && [ "$WILL_COMMENT" = "false" ]; then
+          ARGS+=(--strict)
+        fi
         if [ "$IN_BUDGET" != "0" ]; then
           ARGS+=(--budget "$IN_BUDGET")
         fi
@@ -200,6 +219,7 @@ runs:
       env:
         IN_PATH: ${{ inputs.path }}
         BASELINE: ${{ steps.baseline.outputs.baseline }}
+        IN_STRICT: ${{ inputs.strict }}
         IN_BUDGET_DELTA: ${{ inputs.budget-delta }}
       run: |
         set -euo pipefail
@@ -215,6 +235,7 @@ runs:
         OIDC_AUDIENCE: c3x-cloud
         IN_PATH: ${{ inputs.path }}
         BASELINE: ${{ steps.baseline.outputs.baseline }}
+        IN_STRICT: ${{ inputs.strict }}
       run: |
         set -euo pipefail
         TOKEN="$GH_DEFAULT_TOKEN"
@@ -247,6 +268,9 @@ runs:
           fi
         fi
         ARGS=(comment github --path "$IN_PATH")
+        if [ "$IN_STRICT" = "true" ]; then
+          ARGS+=(--strict)
+        fi
         if [ -n "$BASELINE" ]; then
           # A baseline was computed from the base branch — post the delta.
           ARGS+=(--baseline "$BASELINE")

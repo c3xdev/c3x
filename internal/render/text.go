@@ -78,6 +78,9 @@ func renderTextEstimate(est domain.Estimate, deltaOnly bool) string {
 		} else {
 			fmt.Fprintf(&b, "  %s%s\n", label, annot)
 		}
+		for _, cv := range c.ResourceCaveats {
+			fmt.Fprintf(&b, "    ⚠ %s\n", cv.Detail)
+		}
 
 		// Track delta cost: deletions subtract, creates/updates add.
 		if deltaOnly {
@@ -99,6 +102,9 @@ func renderTextEstimate(est domain.Estimate, deltaOnly bool) string {
 				cur.Symbol(), li.UnitRate,
 				cur.Symbol(), li.MonthlyCost,
 				src)
+			for _, cv := range li.Caveats {
+				fmt.Fprintf(&b, "        ⚠ %s\n", cv.Detail)
+			}
 		}
 		fmt.Fprintf(&b, "    %s subtotal: %s%s/mo\n\n", label, cur.Symbol(), c.MonthlySubtotal)
 	}
@@ -129,7 +135,23 @@ func renderTextEstimate(est domain.Estimate, deltaOnly bool) string {
 	} else {
 		fmt.Fprintf(&b, "  PROJECT TOTAL: %s%s/mo\n", cur.Symbol(), est.ProjectTotal)
 	}
+	b.WriteString(caveatSummary(est))
 	return b.String()
+}
+
+// caveatSummary is the footer that says how far to trust the total. It is
+// empty when every line is a matched price for the resource as configured.
+func caveatSummary(est domain.Estimate) string {
+	n := est.CaveatCount()
+	if n == 0 {
+		return ""
+	}
+	noun := "caveats"
+	if n == 1 {
+		noun = "caveat"
+	}
+	return fmt.Sprintf("\n  ⚠ %d %s (marked above): parts of this total rest on assumptions,\n"+
+		"    so it may misstate the real cost. --strict fails the run when this happens.\n", n, noun)
 }
 
 // actionMarker returns a visual prefix for plan actions.

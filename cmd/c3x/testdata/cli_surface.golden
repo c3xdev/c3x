@@ -1,13 +1,13 @@
 c3x: --verbose
 c3x comment: 
-c3x comment azuredevops: --base-url --baseline --comment-tag --expand --offline --org --path --pr --project --recreate --repo --token --var --var-file
-c3x comment bitbucket: --base-url --baseline --comment-tag --expand --offline --path --pr --recreate --repo --token --user --var --var-file --workspace
-c3x comment github: --baseline --comment-tag --expand --offline --owner --path --pr --recreate --repo --token --var --var-file
-c3x comment gitlab: --base-url --baseline --comment-tag --expand --mr --offline --path --project --recreate --token --var --var-file
+c3x comment azuredevops: --base-url --baseline --comment-tag --expand --offline --org --path --pr --project --recreate --repo --strict --token --var --var-file
+c3x comment bitbucket: --base-url --baseline --comment-tag --expand --offline --path --pr --recreate --repo --strict --token --user --var --var-file --workspace
+c3x comment github: --baseline --comment-tag --expand --offline --owner --path --pr --recreate --repo --strict --token --var --var-file
+c3x comment gitlab: --base-url --baseline --comment-tag --expand --mr --offline --path --project --recreate --strict --token --var --var-file
 c3x configure: --non-interactive
-c3x diff: --baseline --budget-delta --cache-path --format --no-cache --offline --path --pricing-endpoint --pricing-token --region --var --var-file
+c3x diff: --baseline --budget-delta --cache-path --format --no-cache --offline --path --pricing-endpoint --pricing-token --region --strict --var --var-file
 c3x doctor: --quiet
-c3x estimate: --allow-file-functions --budget --cache-path --currency --format --inline-demo --no-cache --no-remote-modules --offline --path --pricing-endpoint --pricing-token --region --save-baseline --show-delta --show-skipped --usage --var --var-file --what-if
+c3x estimate: --allow-file-functions --budget --cache-path --currency --format --inline-demo --no-cache --no-remote-modules --offline --path --pricing-endpoint --pricing-token --region --save-baseline --show-delta --show-skipped --strict --usage --var --var-file --what-if
 c3x policy: 
 c3x policy eval: --baseline --estimate --offline --path --policy --var --var-file
 c3x pricing: 

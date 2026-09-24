@@ -37,6 +37,10 @@ type LineItem struct {
 	// renderer flag static-rate items so users know they won't track
 	// upstream price changes.
 	PriceSource string
+
+	// Caveats explain anything about this line that makes it less than
+	// a matched price: a region fallback, no match, missing usage.
+	Caveats []Caveat
 }
 
 // PriceSourceLive identifies a line item priced via the upstream API.
@@ -63,6 +67,9 @@ type Cost struct {
 	// estimates. Renderers use this to annotate resources with their
 	// change type without requiring a separate baseline.
 	Action PlanAction
+	// ResourceCaveats apply to the resource as a whole, such as an
+	// attribute its price depends on that could not be evaluated.
+	ResourceCaveats []Caveat
 }
 
 // HasStaticRate reports whether any LineItem in this Cost relies on an

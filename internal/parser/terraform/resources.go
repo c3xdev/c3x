@@ -83,11 +83,11 @@ func emitOne(
 				}),
 			}
 			ctx := scope.evalContext(asObject(vars), asObject(locals), data, extras)
-			attrs, err := extractAttributes(body, ctx, logger, kind+"."+name)
+			attrs, unresolved, err := extractAttributes(body, ctx, logger, kind+"."+name)
 			if err != nil {
 				return fmt.Errorf("%s.%s[%d]: %w", kind, name, i, err)
 			}
-			*out = append(*out, makeResource(kind, fmt.Sprintf("%s%s[%d]", namePrefix, name, i), attrs, regions.forResource(kind, body, ctx)))
+			*out = append(*out, makeResource(kind, fmt.Sprintf("%s%s[%d]", namePrefix, name, i), attrs, regions.forResource(kind, body, ctx), unresolved))
 		}
 		return nil
 
@@ -112,14 +112,14 @@ func emitOne(
 				}),
 			}
 			ctx := scope.evalContext(asObject(vars), asObject(locals), data, extras)
-			attrs, err := extractAttributes(body, ctx, logger, kind+"."+name)
+			attrs, unresolved, err := extractAttributes(body, ctx, logger, kind+"."+name)
 			if err != nil {
 				return fmt.Errorf("%s.%s[%q]: %w", kind, name, p.Key, err)
 			}
 			*out = append(*out, makeResource(
 				kind,
 				fmt.Sprintf("%s%s[%q]", namePrefix, name, p.Key),
-				attrs, regions.forResource(kind, body, ctx),
+				attrs, regions.forResource(kind, body, ctx), unresolved,
 			))
 		}
 		return nil
@@ -129,11 +129,11 @@ func emitOne(
 		return err
 	}
 	ctx := scope.evalContext(asObject(vars), asObject(locals), data, nil)
-	attrs, err := extractAttributes(body, ctx, logger, kind+"."+name)
+	attrs, unresolved, err := extractAttributes(body, ctx, logger, kind+"."+name)
 	if err != nil {
 		return fmt.Errorf("%s.%s: %w", kind, name, err)
 	}
-	*out = append(*out, makeResource(kind, namePrefix+name, attrs, regions.forResource(kind, body, ctx)))
+	*out = append(*out, makeResource(kind, namePrefix+name, attrs, regions.forResource(kind, body, ctx), unresolved))
 	return nil
 }
 
@@ -203,11 +203,13 @@ func foreachPairs(v cty.Value) []foreachPair {
 // nested blocks (like `root_block_device { volume_size = 50 }` on
 // aws_instance) become nested map[string]any entries so catalog
 // expressions can reach them via `root_block_device.volume_size`.
-func extractAttributes(body *hclsyntax.Body, ctx *hcl.EvalContext, logger *slog.Logger, where string) (map[string]any, error) {
-	return extractAttributesLevel(body, ctx, true, logger, where)
+func extractAttributes(body *hclsyntax.Body, ctx *hcl.EvalContext, logger *slog.Logger, where string) (map[string]any, []string, error) {
+	var unresolved []string
+	attrs, err := extractAttributesLevel(body, ctx, true, logger, where, "", &unresolved)
+	return attrs, unresolved, err
 }
 
-func extractAttributesLevel(body *hclsyntax.Body, ctx *hcl.EvalContext, topLevel bool, logger *slog.Logger, where string) (map[string]any, error) {
+func extractAttributesLevel(body *hclsyntax.Body, ctx *hcl.EvalContext, topLevel bool, logger *slog.Logger, where, path string, unresolved *[]string) (map[string]any, error) {
 	out := map[string]any{}
 	for _, attr := range body.Attributes {
 		// Meta-arguments are Terraform syntax, not resource data —
@@ -223,6 +225,7 @@ func extractAttributesLevel(body *hclsyntax.Body, ctx *hcl.EvalContext, topLevel
 		val, diags := attr.Expr.Value(ctx)
 		if diags.HasErrors() {
 			warnUnknownFunctions(diags, logger, where+"."+attr.Name)
+			*unresolved = append(*unresolved, path+attr.Name)
 			// Attribute couldn't be resolved (e.g. optional() defaults
 			// in module variables that aren't supplied by the caller).
 			// Store nil so catalog expressions' `default(x, fallback)`
@@ -239,7 +242,7 @@ func extractAttributesLevel(body *hclsyntax.Body, ctx *hcl.EvalContext, topLevel
 		if block.Type == "locals" {
 			continue
 		}
-		nested, err := extractAttributesLevel(block.Body, ctx, false, logger, where+"."+block.Type)
+		nested, err := extractAttributesLevel(block.Body, ctx, false, logger, where+"."+block.Type, path+block.Type+".", unresolved)
 		if err != nil {
 			return nil, err
 		}
@@ -256,10 +259,11 @@ func extractAttributesLevel(body *hclsyntax.Body, ctx *hcl.EvalContext, topLevel
 	return out, nil
 }
 
-func makeResource(kind, name string, attrs map[string]any, region string) domain.Resource {
+func makeResource(kind, name string, attrs map[string]any, region string, unresolved []string) domain.Resource {
 	r := domain.Resource{
 		Ref:        domain.Reference{Kind: kind, Name: name},
 		Attributes: attrs,
+		Unresolved: unresolved,
 	}
 	if region != "" {
 		r.Region = &region

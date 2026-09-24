@@ -39,6 +39,8 @@ type Engine struct {
 	// kind. Each catalog file's expressions are compiled exactly once
 	// per Engine lifetime.
 	programs *programCache
+	// reads caches which attributes each kind's expressions depend on.
+	reads kindReads
 }
 
 // Options configures a new Engine. All fields are optional; sensible
@@ -145,12 +147,14 @@ func (e *Engine) costFor(ctx context.Context, r domain.Resource) (domain.Cost, s
 	}
 
 	lookup := e.priceLookupFor(ctx, r, def)
+	region := r.ResolveRegion(e.defaultRegion)
 
 	var items []domain.LineItem
 	subtotal := decimal.Zero
 
 	for _, dim := range def.Dimensions {
-		env := expr.EnvFor(r, lookup, dim.Constants)
+		rec := &lineRecorder{}
+		env := expr.EnvFor(r, rec.wrap(lookup), dim.Constants)
 
 		// `when` predicate (optional).
 		if dim.When != "" {
@@ -196,7 +200,8 @@ func (e *Engine) costFor(ctx context.Context, r domain.Resource) (domain.Cost, s
 			Quantity:    quantity,
 			UnitRate:    rate,
 			MonthlyCost: monthly,
-			PriceSource: priceSourceFor(dim, lookup),
+			PriceSource: rec.priceSource(dim),
+			Caveats:     rec.caveats(dim, r, region, quantity, rate),
 		})
 	}
 
@@ -214,6 +219,7 @@ func (e *Engine) costFor(ctx context.Context, r domain.Resource) (domain.Cost, s
 		MonthlySubtotal: subtotal.Round(2),
 		Currency:        e.currency,
 		Action:          r.Action,
+		ResourceCaveats: unresolvedCaveats(r, e.reads.of(def)),
 	}, skipReason, nil
 }
 
@@ -241,7 +247,9 @@ func (e *Engine) priceLookupFor(
 			return decimal.Zero, domain.PriceSourceLive,
 				fmt.Errorf("looking up %s: %w", mappingName, err)
 		}
-		return rate, mapPriceSource(src), nil
+		// The raw source keeps the pricing layer's markers (region
+		// fallback, no match, stale) for the line's caveats.
+		return rate, src, nil
 	}
 }
 
@@ -306,17 +314,6 @@ func resolveFilter(
 	return expr.RunString(prog, env)
 }
 
-// priceSourceFor decides what label to attach to a LineItem so the
-// renderer/verifier can tell static-rate items apart. The lookup closure
-// reports back via mapPriceSource; for dimensions whose Rate doesn't
-// invoke price() at all (inline literals) we mark static.
-func priceSourceFor(dim catalog.DimensionSpec, _ expr.PriceLookup) string {
-	if !invokesPrice(dim.Rate) {
-		return domain.PriceSourceStatic
-	}
-	return domain.PriceSourceLive
-}
-
 func invokesPrice(rate string) bool {
 	for i := 0; i+6 <= len(rate); i++ {
 		if rate[i:i+6] == "price(" {
@@ -324,15 +321,4 @@ func invokesPrice(rate string) bool {
 		}
 	}
 	return false
-}
-
-// mapPriceSource normalises labels coming back from different Source
-// implementations into the domain.PriceSource* constants.
-func mapPriceSource(s string) string {
-	switch s {
-	case domain.PriceSourceLive, domain.PriceSourceStatic, domain.PriceSourceStub:
-		return s
-	default:
-		return domain.PriceSourceLive
-	}
 }

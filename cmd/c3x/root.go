@@ -73,6 +73,9 @@ func main() {
 	if errors.Is(err, errBudgetExceeded) || errors.Is(err, errBudgetDeltaExceeded) {
 		os.Exit(1)
 	}
+	if errors.Is(err, errStrictCaveats) {
+		os.Exit(3)
+	}
 	// Cobra has SilenceErrors=true so we print the chain ourselves.
 	fmt.Fprintf(os.Stderr, "c3x: %v\n", err)
 	os.Exit(1)
