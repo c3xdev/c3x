@@ -96,7 +96,7 @@ or --path <terraform> to compute a fresh estimate first.`,
 	cmd.Flags().StringVar(&baselinePath, "baseline", "",
 		"path to a baseline estimate JSON; policy input includes input.diff")
 	cmd.Flags().StringVar(&path, "path", "",
-		"Terraform input — compute a fresh estimate from this path")
+		"Terraform or OpenTofu input — compute a fresh estimate from this path")
 	cmd.Flags().StringArrayVar(&varFiles, "var-file", nil, "tfvars file (repeatable)")
 	cmd.Flags().StringArrayVar(&vars, "var", nil, "variable override name=value (repeatable)")
 	cmd.Flags().BoolVar(&offline, "offline", false, "use the offline pricing stub when computing a fresh estimate")

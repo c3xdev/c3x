@@ -1,4 +1,4 @@
-// Package terraform parses Terraform .tf / .hcl configurations into
+// Package terraform parses Terraform and OpenTofu .tf / .tofu / .hcl configurations into
 // domain.Resources. The pipeline is deliberately staged so each phase's
 // inputs are explicit:
 //
@@ -18,7 +18,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"sort"
 
 	"github.com/c3xdev/c3x/internal/domain"
 	"github.com/hashicorp/hcl/v2"
@@ -40,17 +39,17 @@ type Options struct {
 	Offline bool
 }
 
-// ParseDirectory loads every `*.tf` file in `dir` and runs the full
-// parse pipeline against the combined config.
+// ParseDirectory loads every `*.tf` and OpenTofu `*.tofu` file in `dir`
+// (see configFiles) and runs the full parse pipeline against the combined
+// config.
 func ParseDirectory(dir string, opts Options) ([]domain.Resource, error) {
-	matches, err := filepath.Glob(filepath.Join(dir, "*.tf"))
+	matches, err := configFiles(dir)
 	if err != nil {
-		return nil, fmt.Errorf("glob %s: %w", dir, err)
+		return nil, err
 	}
 	if len(matches) == 0 {
-		return nil, fmt.Errorf("no .tf files found in %s", dir)
+		return nil, fmt.Errorf("no .tf or .tofu files found in %s", dir)
 	}
-	sort.Strings(matches)
 	sources, err := loadFiles(matches)
 	if err != nil {
 		return nil, err
@@ -58,7 +57,7 @@ func ParseDirectory(dir string, opts Options) ([]domain.Resource, error) {
 	return parseSources(sources, dir, opts)
 }
 
-// ParseFile parses a single `.tf` or `.hcl` file. Convenience for tests
+// ParseFile parses a single `.tf`, `.tofu` or `.hcl` file. Convenience for tests
 // and single-file invocations.
 func ParseFile(path string, opts Options) ([]domain.Resource, error) {
 	sources, err := loadFiles([]string{path})
@@ -137,15 +136,18 @@ func parseSources(sources []sourceFile, baseDir string, opts Options) ([]domain.
 	data := collectDataBlocks(sources)
 
 	// Stage 4: locals — fixed-point against (var, data).
-	locals := resolveLocals(sources, variables, data)
+	locals := resolveLocals(sources, variables, data, logger)
 
-	// Stage 5: default region (after vars/locals/data are populated so
-	// `provider "aws" { region = var.region }` resolves).
-	region := findDefaultRegion(sources, variables, locals, data, logger)
+	// Stage 5: provider regions (after vars/locals/data are populated so
+	// `provider "aws" { region = var.region }` resolves). Each resource is
+	// priced in its own provider's region; findDefaultRegion is the
+	// fallback for resources whose provider can't be resolved.
+	regions := collectProviderRegions(sources, variables, locals, data,
+		findDefaultRegion(sources, variables, locals, data, logger), logger)
 
 	// Stage 6: walk resource blocks; each contributes one or more
 	// domain.Resource entries depending on count / for_each.
-	resources, err := emitResources(sources, variables, locals, data, region, logger)
+	resources, err := emitResources(sources, variables, locals, data, regions, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +155,7 @@ func parseSources(sources []sourceFile, baseDir string, opts Options) ([]domain.
 	// Stage 7: recursively expand modules.
 	if err := expandModules(
 		baseDir, sources,
-		variables, locals, data, region,
+		variables, locals, data, regions,
 		"", "", initModules, 0,
 		opts.Offline, logger, &resources,
 	); err != nil {

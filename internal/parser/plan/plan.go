@@ -63,10 +63,7 @@ func ParseBytes(raw []byte, logger *slog.Logger) ([]domain.Resource, error) {
 				Attributes: attrs,
 				Action:     domain.PlanActionDelete,
 			}
-			if region != "" {
-				rgn := region
-				r.Region = &rgn
-			}
+			r.Region = resourceRegion(attrs, region)
 			out = append(out, r)
 		}
 	}
@@ -138,10 +135,7 @@ func collectPostApply(raw []byte, logger *slog.Logger) ([]domain.Resource, planF
 				Attributes: attrs,
 				Action:     classifyActions(rc.Change.Actions),
 			}
-			if region != "" {
-				rgn := region
-				r.Region = &rgn
-			}
+			r.Region = resourceRegion(attrs, region)
 			out = append(out, r)
 		}
 	}
@@ -193,10 +187,7 @@ func ParseBaselineBytes(raw []byte, logger *slog.Logger) ([]domain.Resource, boo
 			Ref:        domain.Reference{Kind: rc.Type, Name: nameFromAddress(rc.Address, rc.Name)},
 			Attributes: attrs,
 		}
-		if region != "" {
-			rgn := region
-			r.Region = &rgn
-		}
+		r.Region = resourceRegion(attrs, region)
 		out = append(out, r)
 	}
 
@@ -222,10 +213,7 @@ func collectPlanned(mod *plannedModule, region string, actions map[string]domain
 			Attributes: attrs,
 			Action:     actions[pr.Address],
 		}
-		if region != "" {
-			rgn := region
-			r.Region = &rgn
-		}
+		r.Region = resourceRegion(attrs, region)
 		*out = append(*out, r)
 	}
 	for _, child := range mod.ChildModules {
@@ -273,23 +261,36 @@ func classifyActions(actions []string) domain.PlanAction {
 	return domain.PlanActionNoOp
 }
 
-// nameFromAddress reconstructs the resource name preserving any
-// `module.X.module.Y.` prefix. Terraform addresses look like
-// `module.outer.module.inner.aws_instance.web` — we strip the trailing
-// `<kind>.<name>` segments and keep everything before so the .tf path
-// and the plan-JSON path produce identical references downstream.
+// nameFromAddress returns the resource name as c3x reports it: the module
+// path, the name, and the instance key, e.g. `module.vpc.nat["a"]` for
+// address `module.vpc.aws_nat_gateway.nat["a"]`, dropping only the
+// resource type.
+//
+// The instance key used to be dropped too, so every count / for_each
+// instance of a resource got the same name. Diffs pair baseline and
+// current resources by name, so each instance matched the first
+// baseline instance: a resize of web["b"] was compared against web["a"]
+// and could be reported as unchanged, vanishing from a PR comment's
+// per-resource breakdown while the total still moved.
 func nameFromAddress(address, fallback string) string {
 	suffix := "." + fallback
-	if idx := strings.LastIndex(address, suffix); idx >= 0 {
-		head := address[:idx]
-		if dot := strings.LastIndex(head, "."); dot >= 0 {
-			prefix := head[:dot]
-			if prefix == "" {
-				return fallback
-			}
-			return prefix + "." + fallback
+	for end := len(address); end > 0; {
+		idx := strings.LastIndex(address[:end], suffix)
+		if idx < 0 {
+			break
 		}
-		return fallback
+		after := idx + len(suffix)
+		// The name must end the address or be followed by an instance key;
+		// otherwise this occurrence sits inside a longer name or a key.
+		if after == len(address) || address[after] == '[' {
+			name := address[idx+1:] // name plus any instance key
+			head := address[:idx]   // [module path.]type
+			if dot := strings.LastIndex(head, "."); dot > 0 {
+				return head[:dot] + "." + name
+			}
+			return name
+		}
+		end = idx
 	}
 	// Defensive fallback: keep the last segment.
 	parts := strings.Split(address, ".")
@@ -413,4 +414,21 @@ func parseExpression(raw json.RawMessage) (expression, bool) {
 		return expression{}, false
 	}
 	return expr, true
+}
+
+// resourceRegion is the region a plan resource is billed in. A plan
+// states each resource's resolved region when the provider exposes it
+// (the AWS provider has put `region` on every resource since v6, and
+// Google resources carry one too), which is exact even for aliased and
+// OpenTofu for_each providers that the configuration section cannot
+// resolve statically. Older providers omit it, and the configuration's
+// default applies as before.
+func resourceRegion(attrs map[string]any, fallback string) *string {
+	if r, ok := attrs["region"].(string); ok && r != "" {
+		return &r
+	}
+	if fallback == "" {
+		return nil
+	}
+	return &fallback
 }

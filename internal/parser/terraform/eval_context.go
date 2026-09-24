@@ -42,7 +42,7 @@ func buildEvalContext(
 // real-world configs don't hit "unknown function" surprises. Functions
 // we deliberately don't support are documented inline.
 func terraformFunctions() map[string]function.Function {
-	return map[string]function.Function{
+	fns := map[string]function.Function{
 		// Collection helpers.
 		"length":          stdlib.LengthFunc,
 		"concat":          stdlib.ConcatFunc,
@@ -122,4 +122,9 @@ func terraformFunctions() map[string]function.Function {
 		// Catalogs may not depend on these; resources that do will
 		// degrade gracefully via expr-lang's AllowUndefinedVariables.
 	}
+	for name, fn := range extraFunctions() {
+		fns[name] = fn
+	}
+	fns["chunklist"] = stdlib.ChunklistFunc
+	return fns
 }

@@ -1,6 +1,8 @@
 package terraform
 
 import (
+	"log/slog"
+
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -14,7 +16,7 @@ import (
 // longest local→local reference chain. In practice that's < 5 and the
 // per-attribute work is cheap, so we don't bother with a smarter
 // dependency-graph topological sort.
-func resolveLocals(sources []sourceFile, vars map[string]cty.Value, data cty.Value) map[string]cty.Value {
+func resolveLocals(sources []sourceFile, vars map[string]cty.Value, data cty.Value, logger *slog.Logger) map[string]cty.Value {
 	pending := collectLocalAttributes(sources)
 	resolved := map[string]cty.Value{}
 	for {
@@ -34,6 +36,12 @@ func resolveLocals(sources []sourceFile, vars map[string]cty.Value, data cty.Val
 		if !progressed || len(pending) == 0 {
 			break
 		}
+	}
+	// Whatever never resolved: report it if the cause is a function we
+	// don't implement, since every resource reading that local is affected.
+	for _, la := range pending {
+		_, diags := la.Expr.Value(buildEvalContext(asObject(vars), asObject(resolved), data, nil))
+		warnUnknownFunctions(diags, logger, "local."+la.Name)
 	}
 	return resolved
 }

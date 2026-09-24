@@ -14,15 +14,15 @@ import (
 // produces one or more domain.Resource entries depending on the block's
 // `count` / `for_each` meta-arguments.
 //
-// Region defaulting: each emitted Resource carries the
-// provider-detected region. The calculator falls back to its own
+// Region: each emitted Resource carries the region of the provider that
+// manages it (see providerRegions). The calculator falls back to its own
 // configured default when the Resource has none, so we don't pad here.
 func emitResources(
 	sources []sourceFile,
 	vars map[string]cty.Value,
 	locals map[string]cty.Value,
 	data cty.Value,
-	region string,
+	regions providerRegions,
 	logger *slog.Logger,
 ) ([]domain.Resource, error) {
 	var out []domain.Resource
@@ -33,7 +33,7 @@ func emitResources(
 			}
 			kind := block.Labels[0]
 			name := block.Labels[1]
-			if err := emitOne(src.Path, kind, name, block.Body, vars, locals, data, region, "", logger, &out); err != nil {
+			if err := emitOne(src.Path, kind, name, block.Body, vars, locals, data, regions, "", logger, &out); err != nil {
 				return nil, err
 			}
 		}
@@ -49,7 +49,7 @@ func emitOne(
 	body *hclsyntax.Body,
 	vars, locals map[string]cty.Value,
 	data cty.Value,
-	region string,
+	regions providerRegions,
 	namePrefix string,
 	logger *slog.Logger,
 	out *[]domain.Resource,
@@ -78,11 +78,11 @@ func emitOne(
 				}),
 			}
 			ctx := buildEvalContext(asObject(vars), asObject(locals), data, extras)
-			attrs, err := extractAttributes(body, ctx)
+			attrs, err := extractAttributes(body, ctx, logger, kind+"."+name)
 			if err != nil {
 				return fmt.Errorf("%s.%s[%d]: %w", kind, name, i, err)
 			}
-			*out = append(*out, makeResource(kind, fmt.Sprintf("%s%s[%d]", namePrefix, name, i), attrs, region))
+			*out = append(*out, makeResource(kind, fmt.Sprintf("%s%s[%d]", namePrefix, name, i), attrs, regions.forResource(kind, body, ctx)))
 		}
 		return nil
 
@@ -104,25 +104,25 @@ func emitOne(
 				}),
 			}
 			ctx := buildEvalContext(asObject(vars), asObject(locals), data, extras)
-			attrs, err := extractAttributes(body, ctx)
+			attrs, err := extractAttributes(body, ctx, logger, kind+"."+name)
 			if err != nil {
 				return fmt.Errorf("%s.%s[%q]: %w", kind, name, p.Key, err)
 			}
 			*out = append(*out, makeResource(
 				kind,
 				fmt.Sprintf("%s%s[%q]", namePrefix, name, p.Key),
-				attrs, region,
+				attrs, regions.forResource(kind, body, ctx),
 			))
 		}
 		return nil
 	}
 
 	ctx := buildEvalContext(asObject(vars), asObject(locals), data, nil)
-	attrs, err := extractAttributes(body, ctx)
+	attrs, err := extractAttributes(body, ctx, logger, kind+"."+name)
 	if err != nil {
 		return fmt.Errorf("%s.%s: %w", kind, name, err)
 	}
-	*out = append(*out, makeResource(kind, namePrefix+name, attrs, region))
+	*out = append(*out, makeResource(kind, namePrefix+name, attrs, regions.forResource(kind, body, ctx)))
 	return nil
 }
 
@@ -192,11 +192,11 @@ func foreachPairs(v cty.Value) []foreachPair {
 // nested blocks (like `root_block_device { volume_size = 50 }` on
 // aws_instance) become nested map[string]any entries so catalog
 // expressions can reach them via `root_block_device.volume_size`.
-func extractAttributes(body *hclsyntax.Body, ctx *hcl.EvalContext) (map[string]any, error) {
-	return extractAttributesLevel(body, ctx, true)
+func extractAttributes(body *hclsyntax.Body, ctx *hcl.EvalContext, logger *slog.Logger, where string) (map[string]any, error) {
+	return extractAttributesLevel(body, ctx, true, logger, where)
 }
 
-func extractAttributesLevel(body *hclsyntax.Body, ctx *hcl.EvalContext, topLevel bool) (map[string]any, error) {
+func extractAttributesLevel(body *hclsyntax.Body, ctx *hcl.EvalContext, topLevel bool, logger *slog.Logger, where string) (map[string]any, error) {
 	out := map[string]any{}
 	for _, attr := range body.Attributes {
 		// Meta-arguments are Terraform syntax, not resource data —
@@ -211,6 +211,7 @@ func extractAttributesLevel(body *hclsyntax.Body, ctx *hcl.EvalContext, topLevel
 		}
 		val, diags := attr.Expr.Value(ctx)
 		if diags.HasErrors() {
+			warnUnknownFunctions(diags, logger, where+"."+attr.Name)
 			// Attribute couldn't be resolved (e.g. optional() defaults
 			// in module variables that aren't supplied by the caller).
 			// Store nil so catalog expressions' `default(x, fallback)`
@@ -227,7 +228,7 @@ func extractAttributesLevel(body *hclsyntax.Body, ctx *hcl.EvalContext, topLevel
 		if block.Type == "locals" {
 			continue
 		}
-		nested, err := extractAttributesLevel(block.Body, ctx, false)
+		nested, err := extractAttributesLevel(block.Body, ctx, false, logger, where+"."+block.Type)
 		if err != nil {
 			return nil, err
 		}
