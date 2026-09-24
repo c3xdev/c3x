@@ -8,6 +8,8 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- A single `.tf.json` or `.tofu.json` file passed as `--path` is parsed as
+  configuration; it was sent to the plan-JSON parser and priced nothing.
 - Azure resources are priced in their own `location`. Azure has no
   provider-level region, and the resource's `location` was never read, so
   every Azure resource was priced in eastus, from a directory and from a

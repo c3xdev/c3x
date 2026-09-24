@@ -176,3 +176,23 @@ func writeFile(t *testing.T, path, content string) {
 		t.Fatalf("write %s: %v", path, err)
 	}
 }
+
+// A .tf.json path is configuration, not a plan: it goes to the HCL
+// parser, and IsPlanFile says no.
+func TestParseTFJSONFileIsConfiguration(t *testing.T) {
+	dir := t.TempDir()
+	p := filepath.Join(dir, "main.tf.json")
+	if err := os.WriteFile(p, []byte(`{"resource":{"aws_instance":{"web":{"instance_type":"m5.large"}}}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if parser.IsPlanFile(p) {
+		t.Error("a .tf.json file must not be treated as a plan")
+	}
+	got, err := parser.Parse(p, parser.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].Ref.Kind != "aws_instance" || got[0].Attributes["instance_type"] != "m5.large" {
+		t.Fatalf("got %+v, want one aws_instance with instance_type m5.large", got)
+	}
+}

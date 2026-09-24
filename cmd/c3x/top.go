@@ -112,7 +112,7 @@ environment.`,
 		},
 	}
 
-	cmd.Flags().StringVar(&path, "path", ".", "Terraform or OpenTofu input (directory, .tf, .tofu, .hcl, or plan JSON)")
+	cmd.Flags().StringVar(&path, "path", ".", "Terraform or OpenTofu input (directory, .tf, .tofu, .tf.json, .hcl, or plan JSON)")
 	cmd.Flags().StringVar(&format, "format", "text", "output format: text, targets, json")
 	cmd.Flags().IntVar(&limit, "limit", 10, "how many resources to list (0 lists every priced resource)")
 	cmd.Flags().StringVar(&region, "region", "", "default region when the IaC source doesn't declare one")

@@ -111,7 +111,8 @@ func parseRaw(path string, opts Options) ([]domain.Resource, error) {
 	}
 	lower := strings.ToLower(path)
 	switch {
-	case strings.HasSuffix(lower, ".tf"), strings.HasSuffix(lower, ".tofu"), strings.HasSuffix(lower, ".hcl"):
+	case strings.HasSuffix(lower, ".tf"), strings.HasSuffix(lower, ".tofu"), strings.HasSuffix(lower, ".hcl"),
+		isConfigJSON(lower):
 		return terraform.ParseFile(path, toTerraformOptions(opts))
 	case strings.HasSuffix(lower, ".cfn"),
 		strings.HasSuffix(lower, ".cfn.yaml"),
@@ -129,25 +130,31 @@ func parseRaw(path string, opts Options) ([]domain.Resource, error) {
 		}
 		return plan.ParseFile(path, opts.Logger)
 	default:
-		return nil, fmt.Errorf("unsupported input %q (want a directory, .tf, .tofu, .hcl, .yaml, .yml, .json)",
+		return nil, fmt.Errorf("unsupported input %q (want a directory, .tf, .tofu, .tf.json, .hcl, .yaml, .yml, .json)",
 			filepath.Base(path))
 	}
 }
 
-// isPlanFile reports whether path is a Terraform plan JSON (a .json file
-// that isn't a CloudFormation template). Shared by [PlanBaseline] and
-// [ParsePostApply] so plan detection stays in one place.
+// isConfigJSON reports whether a lower-cased path is Terraform or OpenTofu
+// configuration in JSON syntax, which is configuration, not a plan.
+func isConfigJSON(lower string) bool {
+	return strings.HasSuffix(lower, ".tf.json") || strings.HasSuffix(lower, ".tofu.json")
+}
+
 // IsPlanFile reports whether path is a Terraform or OpenTofu plan JSON
-// (a .json file that is not a CloudFormation template).
+// (a .json file that is neither configuration nor a CloudFormation
+// template).
 func IsPlanFile(path string) bool { return isPlanFile(path) }
 
+// isPlanFile is shared by [PlanBaseline] and [ParsePostApply] so plan
+// detection stays in one place.
 func isPlanFile(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil || info.IsDir() {
 		return false
 	}
 	lower := strings.ToLower(path)
-	return strings.HasSuffix(lower, ".json") && !isCFNJSON(path)
+	return strings.HasSuffix(lower, ".json") && !isConfigJSON(lower) && !isCFNJSON(path)
 }
 
 // PlanBaseline returns the pre-apply ("before") resource set when path is
