@@ -79,3 +79,16 @@ jobs:
           cosign sign --yes "ghcr.io/c3xdev/c3x:latest"
           cosign sign --yes "docker.io/${DOCKER_ORG}/${DOCKER_REPOSITORY}:${ver}"
           cosign sign --yes "docker.io/${DOCKER_ORG}/${DOCKER_REPOSITORY}:latest"
+
+      # Workflows pin the Action as c3xdev/c3x@v0, so the major tag has to
+      # follow each stable release or they keep running an old action.yml
+      # (it sat on a July commit for months). Pre-releases leave it alone.
+      - name: Move the major tag
+        if: ${{ !contains(github.ref_name, '-') }}
+        run: |
+          major="${GITHUB_REF_NAME%%.*}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -fa "$major" -m "$major -> $GITHUB_REF_NAME" "${GITHUB_REF_NAME}^{commit}"
+          git push -f origin "refs/tags/$major"
+          echo "moved $major to $GITHUB_REF_NAME ($(git rev-parse --short "${GITHUB_REF_NAME}^{commit}"))"

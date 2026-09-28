@@ -19,6 +19,10 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     the comment shows everything as added;
   - a plan JSON, which has no base-branch copy, is no longer reported as
     a failure: the delta comes from the plan's own prior state.
+- The Action's `v0` tag now follows each stable release. It had stayed
+  on a July commit, so `c3xdev/c3x@v0` ran an old `action.yml` without
+  binary checksum verification, the `strict` and `untrusted` inputs, or
+  the fixes above. The c3x binary it installs was already the latest.
 
 ## [0.3.10] - 2026-09-24
 
