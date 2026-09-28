@@ -6,6 +6,20 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- GitHub Action: when the base-branch estimate fails, the job now shows
+  why. It prints a warning with c3x's error and the full output in a
+  collapsed group; before, the output was discarded and only "base-branch
+  estimate failed" was printed (#93). Three cases that used to "fail" now
+  work:
+  - an absolute `path` (`${{ github.workspace }}/infra`) is resolved
+    against the base-branch checkout;
+  - a directory that is new in the pull request gets a $0 baseline, so
+    the comment shows everything as added;
+  - a plan JSON, which has no base-branch copy, is no longer reported as
+    a failure: the delta comes from the plan's own prior state.
+
 ## [0.3.10] - 2026-09-24
 
 This release is about the accuracy of the numbers. Estimates for any

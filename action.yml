@@ -193,26 +193,61 @@ runs:
       env:
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
         IN_PATH: ${{ inputs.path }}
+        IN_CURRENCY: ${{ inputs.currency }}
       run: |
         # Estimate the PR's BASE branch so the comment / gate can report
         # the delta this PR introduces ("+$144 vs main") rather than the
-        # absolute total. Best-effort: any failure leaves the baseline
-        # output empty and the comment falls back to the absolute estimate.
+        # absolute total. Best-effort: when no baseline can be computed the
+        # comment falls back to the absolute estimate, and the reason is
+        # printed here.
         set -uo pipefail
         out=/tmp/c3x-base.json
-        if git fetch --no-tags --depth=1 origin "$BASE_SHA" >/dev/null 2>&1 \
-           && git worktree add --detach /tmp/c3x-base "$BASE_SHA" >/dev/null 2>&1; then
-          # --budget 0: a base branch already over a budget set in its
-          # .c3x.toml must still produce a baseline.
-          if c3x estimate --path "/tmp/c3x-base/$IN_PATH" --budget 0 --save-baseline "$out" >/dev/null 2>&1; then
-            echo "baseline=$out" >> "$GITHUB_OUTPUT"
-            echo "Computed cost baseline from base $BASE_SHA"
-          else
-            echo "::notice::base-branch estimate failed; comment will show the absolute total"
+        log=/tmp/c3x-base.log
+
+        # An absolute path (e.g. ${{ github.workspace }}/infra) must be made
+        # relative to the checkout to find the same path on the base branch.
+        rel="$IN_PATH"
+        case "$rel" in
+          "$GITHUB_WORKSPACE"/*) rel="${rel#"$GITHUB_WORKSPACE"/}" ;;
+          "$GITHUB_WORKSPACE") rel="." ;;
+          /*) echo "::notice::path '$IN_PATH' is outside the workspace, so there is no base-branch copy to estimate; the comment shows the absolute total"
+              exit 0 ;;
+        esac
+
+        if ! git fetch --no-tags --depth=1 origin "$BASE_SHA" >"$log" 2>&1 \
+           || ! git worktree add --detach /tmp/c3x-base "$BASE_SHA" >>"$log" 2>&1; then
+          echo "::warning::could not check out the base branch ($BASE_SHA); the comment shows the absolute total. git said: $(tail -n 1 "$log")"
+          exit 0
+        fi
+        trap 'git worktree remove --force /tmp/c3x-base >/dev/null 2>&1 || true' EXIT
+
+        base_path="/tmp/c3x-base/$rel"
+        if [ ! -e "$base_path" ]; then
+          if [ -f "$rel" ] && [ "${rel##*.}" = "json" ]; then
+            # A plan generated in CI has no base-branch copy. That is fine:
+            # the plan carries its own prior state, and the comment and the
+            # budget-delta gate diff against it.
+            echo "Plan JSON input: the delta comes from the plan's own prior state"
+            exit 0
           fi
-          git worktree remove --force /tmp/c3x-base >/dev/null 2>&1 || true
+          # New in this PR: nothing existed before, so everything is added.
+          printf '{"costs":[],"project_total":"0","currency":"%s"}\n' "${IN_CURRENCY:-USD}" > "$out"
+          echo "baseline=$out" >> "$GITHUB_OUTPUT"
+          echo "'$rel' does not exist on the base branch; baseline is \$0"
+          exit 0
+        fi
+
+        # --budget 0: a base branch already over a budget set in its
+        # .c3x.toml must still produce a baseline.
+        if c3x estimate --path "$base_path" --budget 0 --save-baseline "$out" >"$log" 2>&1; then
+          echo "baseline=$out" >> "$GITHUB_OUTPUT"
+          echo "Computed cost baseline from base $BASE_SHA"
         else
-          echo "::notice::could not check out base branch; comment will show the absolute total"
+          reason=$(grep -m1 -E '^(c3x: |Error: )' "$log" || tail -n 1 "$log")
+          echo "::warning::base-branch estimate failed, so the comment shows the absolute total: ${reason}"
+          echo "::group::c3x output for the base branch ($BASE_SHA)"
+          cat "$log"
+          echo "::endgroup::"
         fi
 
     - name: Budget delta gate
