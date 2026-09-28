@@ -2,34 +2,50 @@ kind         = "azurerm_api_management"
 display_name = "Azure API Management"
 provider     = "azure"
 
-# API Management bills per-instance-unit-hour by tier (Developer,
-# Basic, Standard, Premium). Consumption tier is free-tier +
-# per-call charges (not modelled here).
+# API Management bills per unit-hour by tier. azurerm's sku_name is
+# "<Tier>_<units>": Developer_1, Basic_2, Standard_3, Premium_4, and the
+# v2 tiers BasicV2_1, StandardV2_1, PremiumV2_1. The tier picks the meter
+# ("<skuName> Unit"; each skuName also has cheaper Workspace Pack and
+# Calls meters, so the meter is pinned), and the units multiply it.
+#
+# Not modelled: Consumption (per-call only, no unit charge, so it has no
+# line here), Premium's additional_location units, and v2 overage calls.
 
-[mappings.tier]
+[mappings.unit]
 service        = "API Management"
 product_family = "Developer Tools"
 attribute_filters = [
-  # Strip the Terraform `_<units>` suffix (e.g. "Standard_2" → "Standard").
-  { key = "skuName", expr = '''
-      default(sku_name, "Developer_1") == "Developer_1" ? "Developer" :
-      default(sku_name, "Developer_1") == "Basic_1"     ? "Basic v2" :
-      default(sku_name, "Developer_1") == "Standard_1"  ? "Standard" :
-      default(sku_name, "Developer_1") == "Premium_1"   ? "Premium" :
-                                                          "Standard"
-  ''' },
   { key = "productName", const = "API Management" },
+  { key = "skuName", expr = '''
+      let t = split(default(sku_name, "Developer_1"), "_")[0];
+      t == "BasicV2"    ? "Basic v2" :
+      t == "StandardV2" ? "Standard v2" :
+      t == "PremiumV2"  ? "Premium v2" :
+      t
+  ''' },
+  { key = "meterName", expr = '''
+      let t = split(default(sku_name, "Developer_1"), "_")[0];
+      (t == "BasicV2"    ? "Basic v2" :
+       t == "StandardV2" ? "Standard v2" :
+       t == "PremiumV2"  ? "Premium v2" :
+       t) + " Unit"
+  ''' },
 ]
 
 [[dimensions]]
-id       = "instance_hours"
-label    = "APIM instance"
-unit     = "hours"
-quantity = "monthly_hours()"
-rate     = 'price("tier")'
+id       = "units"
+label    = "APIM units"
+unit     = "unit-hours"
+when     = 'split(default(sku_name, "Developer_1"), "_")[0] != "Consumption"'
+quantity = '''
+  let p = split(default(sku_name, "Developer_1"), "_");
+  monthly_hours() * (len(p) > 1 ? float(p[1]) : 1)
+'''
+rate     = 'price("unit")'
 
 [fixture]
+# Standard, 1 unit, eastus: $0.9407/h x 730 h (Azure Retail Prices API,
+# meter "Standard Unit"; https://azure.microsoft.com/en-us/pricing/details/api-management/).
 attributes = { sku_name = "Standard_1" }
-expected_monthly_cost = 100
+expected_monthly_cost = 686.71
 tolerance = 0.05
-

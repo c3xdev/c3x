@@ -1,0 +1,61 @@
+kind         = "google_cloud_run_v2_job"
+display_name = "GCP Cloud Run Job"
+provider     = "gcp"
+
+# Jobs bill instance-based, not request-based like
+# google_cloud_run_v2_service: CPU and memory are charged for the
+# whole time a task runs (no idle/active split, no free tier
+# deduction), and the upstream catalog only exposes per-region SKUs
+# ("Jobs CPU in <region>" / "Jobs Memory in <region>") — there is no
+# Tier 1 "global" aggregate to fall back on the way the Service
+# mapping does.
+#
+# PriceMapping.Region only accepts a static string, so the region
+# can't be read off the resource's `location` attribute that way.
+# Instead these mappings set region = "global" (skips the region
+# filter entirely) and fold `location` into the `description` filter
+# via `expr`, which does support resource attributes.
+#
+# Usage (monthly_vcpu_seconds / monthly_memory_gib_seconds) is not
+# derived from the job's task_count/timeout here — it's execution-time
+# based and needs a usage source. Supply it via a usage file to see a
+# non-zero estimate; without one the dimensions default to 0.
+
+[mappings.cpu]
+service        = "Cloud Run"
+product_family = "ApplicationServices"
+region         = "global"
+attribute_filters = [
+  { key = "description", expr = '"Jobs CPU in " + default(location, "us-central1")' },
+]
+
+[mappings.memory]
+service        = "Cloud Run"
+product_family = "ApplicationServices"
+region         = "global"
+attribute_filters = [
+  { key = "description", expr = '"Jobs Memory in " + default(location, "us-central1")' },
+]
+
+[[dimensions]]
+id       = "cpu"
+label    = "vCPU execution time"
+unit     = "vCPU-seconds"
+quantity = "default(monthly_vcpu_seconds, 0)"
+rate     = 'price("cpu")'
+
+[[dimensions]]
+id       = "memory"
+label    = "Memory execution time"
+unit     = "GiB-seconds"
+quantity = "default(monthly_memory_gib_seconds, 0)"
+rate     = 'price("memory")'
+
+[fixture]
+# https://cloud.google.com/run/pricing (Jobs, us-central1, instance-based billing):
+#   1,000,000 vCPU-s x $0.000018 = 18.00
+#   2,000,000 GiB-s  x $0.000002 =  4.00
+#   total                          22.00
+attributes = { location = "us-central1", monthly_vcpu_seconds = 1000000, monthly_memory_gib_seconds = 2000000 }
+expected_monthly_cost = 22.00
+tolerance = 0.05

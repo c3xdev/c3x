@@ -6,6 +6,16 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `google_cloud_run_v2_job` is priced (vCPU- and GiB-seconds per region,
+  from usage) instead of being listed as free. Contributed by @asakaxgit
+  in c3x-pricing-api#67.
+- `azurerm_api_management` prices the tier and unit count in `sku_name`
+  and pins the unit meter: `Standard_1` is $686.71/mo (was $100),
+  `Premium_3` no longer prices as one Standard unit, `Basic_1` is no
+  longer priced as Basic v2, and the v2 tiers are recognised.
+
 ## [0.3.11] - 2026-09-28
 
 ### Fixed

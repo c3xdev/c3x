@@ -14,13 +14,13 @@ Verified against `pricing.c3x.dev` on 2026-09-24:
 
 | Result | Kinds |
 |---|---:|
-| **LIVE** (priced from the upstream API, tracks vendor price changes) | 163 |
+| **LIVE** (priced from the upstream API, tracks vendor price changes) | 164 |
 | **STATIC** (priced from an inline rate, does not track upstream changes) | 109 |
-| **FREE** (not charged at the resource level) | 1,068 |
+| **FREE** (not charged at the resource level) | 1,067 |
 | **ZERO / DRIFT / NOFIX / STALE / ERRORED** | 0 |
 | **Total** | **1,340** |
 
-So 272 kinds carry a price and the remaining 1,068 are legitimately free.
+So 273 kinds carry a price and the remaining 1,067 are legitimately free.
 
 The per-kind matrix is generated at [`docs/catalog.md`](docs/catalog.md);
 it is the list, and this page is only the summary. Counts are deliberately

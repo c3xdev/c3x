@@ -1110,7 +1110,7 @@ Status meaning:
 | `google_cloud_run_service_iam_binding` | FREE | google_cloud_run_service_iam_binding |
 | `google_cloud_run_service_iam_member` | FREE | GCP Cloud Run Service Iam Member |
 | `google_cloud_run_service_iam_policy` | FREE | google_cloud_run_service_iam_policy |
-| `google_cloud_run_v2_job` | FREE | google_cloud_run_v2_job |
+| `google_cloud_run_v2_job` | LIVE | GCP Cloud Run Job |
 | `google_cloud_run_v2_job_iam_binding` | FREE | google_cloud_run_v2_job_iam_binding |
 | `google_cloud_run_v2_job_iam_member` | FREE | google_cloud_run_v2_job_iam_member |
 | `google_cloud_run_v2_job_iam_policy` | FREE | google_cloud_run_v2_job_iam_policy |
@@ -1369,8 +1369,8 @@ Status meaning:
 | `google_workbench_instance` | LIVE | GCP Vertex AI Workbench Instance (v2) |
 | `google_workflows_workflow` | STATIC | GCP Workflows Workflow |
 
-**GCP totals:** 29 LIVE · 21 STATIC · 256 FREE
+**GCP totals:** 30 LIVE · 21 STATIC · 255 FREE
 
 ---
 
-**Grand total: 1340 resources.** 187 LIVE · 85 STATIC · 1068 FREE.
+**Grand total: 1340 resources.** 188 LIVE · 85 STATIC · 1067 FREE.

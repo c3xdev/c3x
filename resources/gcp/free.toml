@@ -127,7 +127,6 @@ provider = "gcp"
 # --- GKE / serverless wiring ------------------------------------------------------------
 "google_container_registry" = "GCR bucket wiring - storage bills via the bucket"
 "google_cloud_run_domain_mapping" = "domain mappings are free"
-"google_cloud_run_v2_job" = "jobs bill per execution via Cloud Run dimensions"
 "google_cloudfunctions_function_invoker" = "IAM wiring - no charge"
 "google_app_engine_application" = "the app shell is free - instances bill"
 "google_app_engine_domain_mapping" = "domain mappings are free"
