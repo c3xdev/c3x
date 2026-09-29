@@ -8,6 +8,18 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- GitHub Action: installing c3x no longer fails with HTTP 403 (#96).
+  `version: latest` was resolved with an anonymous GitHub API call,
+  limited to 60 an hour per IP and shared by every job on a runner. It
+  now uses the job's token through `gh` (or `curl` with the token), and
+  falls back to github.com's `/releases/latest` redirect, which is not
+  rate limited. Downloads use `gh release download` or retrying `curl`.
+  The verified binary is kept in the runner's tool cache, so self-hosted
+  runners download each version once, and it is put on `PATH` for the
+  rest of the job instead of `sudo install`, so runners without sudo work.
+
+### Fixed
+
 - `google_cloud_run_v2_job` is priced (vCPU- and GiB-seconds per region,
   from usage) instead of being listed as free. Contributed by @asakaxgit
   in c3x-pricing-api#67.

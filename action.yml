@@ -109,36 +109,80 @@ runs:
       shell: bash
       env:
         VERSION: ${{ inputs.version }}
+        # The job's own token: authenticated API calls get the per-repo
+        # limit instead of the anonymous 60 an hour shared by every job on
+        # the runner's IP, which is what returned 403 (#96).
+        GH_TOKEN: ${{ github.token }}
       run: |
         set -euo pipefail
+        REPO=c3xdev/c3x
+
         if [ "$VERSION" = "latest" ]; then
-          VERSION=$(curl -fsSL https://api.github.com/repos/c3xdev/c3x/releases/latest | grep -o '"tag_name": *"[^"]*"' | cut -d'"' -f4)
+          VERSION=""
+          if command -v gh >/dev/null 2>&1; then
+            VERSION=$(gh release view --repo "$REPO" --json tagName --jq .tagName 2>/dev/null || true)
+          fi
+          if [ -z "$VERSION" ]; then
+            VERSION=$(curl -fsSL --retry 3 -H "Authorization: Bearer ${GH_TOKEN}" \
+              "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null \
+              | grep -o '"tag_name": *"[^"]*"' | cut -d'"' -f4 || true)
+          fi
+          if [ -z "$VERSION" ]; then
+            # No API at all: github.com redirects /releases/latest to the
+            # tag's page, which is not subject to API rate limits.
+            VERSION=$(curl -fsSL --retry 3 -o /dev/null -w '%{url_effective}' \
+              "https://github.com/$REPO/releases/latest" | sed -n 's#.*/tag/##p')
+          fi
+          if [ -z "$VERSION" ]; then
+            echo "::error::could not resolve the latest c3x release; set the version input (e.g. version: v0.3.12) to skip the lookup"
+            exit 1
+          fi
         fi
+
         OS=$(uname -s | tr '[:upper:]' '[:lower:]')
         ARCH=$(uname -m); case "$ARCH" in x86_64) ARCH=amd64;; aarch64|arm64) ARCH=arm64;; esac
-        ASSET="c3x_${VERSION#v}_${OS}_${ARCH}.tar.gz"
-        BASE="https://github.com/c3xdev/c3x/releases/download/${VERSION}"
-        echo "Installing c3x ${VERSION} (${OS}/${ARCH})"
-        WORK=$(mktemp -d)
-        curl -fsSL -o "$WORK/$ASSET" "$BASE/$ASSET"
-        curl -fsSL -o "$WORK/checksums.txt" "$BASE/checksums.txt"
-        # Verify before anything runs. A missing entry is a failure, not a
-        # skip: installing an unverified binary is what this step prevents.
-        EXPECTED=$(awk -v f="$ASSET" '$2 == f { print $1 }' "$WORK/checksums.txt")
-        if [ -z "$EXPECTED" ]; then
-          echo "::error::no checksum for $ASSET in checksums.txt"; exit 1
-        fi
-        if command -v sha256sum >/dev/null 2>&1; then
-          ACTUAL=$(sha256sum "$WORK/$ASSET" | awk '{print $1}')
+
+        # Tool cache: persists across jobs on self-hosted runners, so a
+        # verified binary is downloaded once per version.
+        CACHE_ROOT="${RUNNER_TOOL_CACHE:-${RUNNER_TEMP:-/tmp}}"
+        DEST="$CACHE_ROOT/c3x/${VERSION#v}/$ARCH"
+        if [ -x "$DEST/c3x" ] && [ -f "$DEST.complete" ]; then
+          echo "Using cached c3x ${VERSION} (${OS}/${ARCH})"
         else
-          ACTUAL=$(shasum -a 256 "$WORK/$ASSET" | awk '{print $1}')
+          ASSET="c3x_${VERSION#v}_${OS}_${ARCH}.tar.gz"
+          echo "Installing c3x ${VERSION} (${OS}/${ARCH})"
+          WORK=$(mktemp -d)
+          if command -v gh >/dev/null 2>&1 \
+             && gh release download "$VERSION" --repo "$REPO" --dir "$WORK" \
+                  --pattern "$ASSET" --pattern checksums.txt >/dev/null 2>&1; then
+            :
+          else
+            BASE="https://github.com/$REPO/releases/download/${VERSION}"
+            curl -fsSL --retry 3 -o "$WORK/$ASSET" "$BASE/$ASSET"
+            curl -fsSL --retry 3 -o "$WORK/checksums.txt" "$BASE/checksums.txt"
+          fi
+          # Verify before anything runs. A missing entry is a failure, not a
+          # skip: installing an unverified binary is what this step prevents.
+          EXPECTED=$(awk -v f="$ASSET" '$2 == f { print $1 }' "$WORK/checksums.txt")
+          if [ -z "$EXPECTED" ]; then
+            echo "::error::no checksum for $ASSET in checksums.txt"; exit 1
+          fi
+          if command -v sha256sum >/dev/null 2>&1; then
+            ACTUAL=$(sha256sum "$WORK/$ASSET" | awk '{print $1}')
+          else
+            ACTUAL=$(shasum -a 256 "$WORK/$ASSET" | awk '{print $1}')
+          fi
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::checksum mismatch for $ASSET (expected $EXPECTED, got $ACTUAL)"; exit 1
+          fi
+          mkdir -p "$DEST"
+          tar -xzf "$WORK/$ASSET" -C "$DEST" c3x
+          touch "$DEST.complete"
+          rm -rf "$WORK"
         fi
-        if [ "$ACTUAL" != "$EXPECTED" ]; then
-          echo "::error::checksum mismatch for $ASSET (expected $EXPECTED, got $ACTUAL)"; exit 1
-        fi
-        tar -xzf "$WORK/$ASSET" -C "$WORK" c3x
-        sudo install "$WORK/c3x" /usr/local/bin/c3x
-        c3x --version
+        # On PATH for the rest of the job, including the user's own steps.
+        echo "$DEST" >> "$GITHUB_PATH"
+        "$DEST/c3x" --version
 
     - name: Untrusted-input mode
       if: inputs.install-only != 'true'
