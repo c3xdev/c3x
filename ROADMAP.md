@@ -159,6 +159,21 @@ The `comment.Poster` interface is the seam.
 
 ---
 
+## K. Usage sync 🅻
+
+Fill `c3x-usage.yml` from cloud metrics so usage-driven lines are not $0.
+Design: [`docs/design/usage-sync.md`](docs/design/usage-sync.md), issue #97.
+
+- [ ] **K.1** [**M**] Skeleton + S3 storage (CloudWatch), address mapping
+  from Terraform state, synced + hand-written files with precedence.
+- [ ] **K.2** [**M**] S3 requests (request metrics where enabled, else
+  Cost Explorer).
+- [ ] **K.3** [**S**] Lambda and NAT gateway (CloudWatch).
+- [ ] **K.4** [**M**] CloudFront transfer by region group (Cost Explorer).
+- [ ] **K.5** [**L**] GCP: Cloud Run v2 and GCS.
+
+---
+
 ## J. Stretch (post-parity)
 
 - [ ] **J.1** [**XL**] Bicep / ARM parser.
