@@ -271,10 +271,18 @@ func (p *GitHubPoster) findExisting(ctx context.Context) (*github.IssueComment, 
 // box-drawing characters that render as garbage on GitHub.
 func FormatComment(est domain.Estimate, expand bool) (string, error) {
 	if expand {
-		return render.RenderMarkdown(est), nil
+		return render.RenderMarkdown(est) + Footer, nil
 	}
-	return render.RenderMarkdownComment(est), nil
+	return render.RenderMarkdownComment(est) + Footer, nil
 }
+
+// Footer closes every PR comment: what produced the numbers, what they
+// are, and a link for reviewers who haven't met c3x. Plain Markdown, for
+// every forge. The link is tagged so c3x.dev can tell visits that come
+// from pull request comments.
+const Footer = "\n_Cost estimate by [c3x](https://c3x.dev/?utm_source=pr_comment&utm_medium=referral), " +
+	"free and open source. Public list prices before discounts; " +
+	"[how to read it](https://github.com/c3xdev/c3x#how-much-to-trust-a-number)._\n"
 
 // FormatCommentDiff renders a Diff as the body c3x will post when a
 // baseline is supplied — a per-PR cost delta ("Total: $894/mo →
@@ -283,9 +291,9 @@ func FormatComment(est domain.Estimate, expand bool) (string, error) {
 // the flat layout. Markdown is hard-pinned as in [FormatComment].
 func FormatCommentDiff(d domain.Diff, expand bool) (string, error) {
 	if expand {
-		return render.RenderMarkdownDiff(d), nil
+		return render.RenderMarkdownDiff(d) + Footer, nil
 	}
-	return render.RenderMarkdownDiffComment(d), nil
+	return render.RenderMarkdownDiffComment(d) + Footer, nil
 }
 
 // SetClientBaseURL redirects a poster's GitHub client to the given

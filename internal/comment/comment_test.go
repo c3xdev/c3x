@@ -244,7 +244,7 @@ func TestFormatCommentDiffRendersDelta(t *testing.T) {
 	// (and percent) approvers act on, a Baseline/New/Change table shows
 	// all three numbers, and the per-resource tables sit inside <details>.
 	for _, want := range []string{
-		"C3X report",
+		"C3X cost estimate",
 		"increased by $144.00", // headline delta in dollars
 		"16.1%",                // percent of baseline (144.00 / 894.32)
 		"| Baseline | New | Change |",
@@ -284,7 +284,7 @@ func TestFormatCommentCollapsesDetails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FormatComment: %v", err)
 	}
-	for _, want := range []string{"C3X report", "143.81", "<details>", "<summary>", "</details>", "aws_instance.web"} {
+	for _, want := range []string{"C3X cost estimate", "143.81", "<details>", "<summary>", "</details>", "aws_instance.web"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("comment body missing %q\n---\n%s", want, body)
 		}

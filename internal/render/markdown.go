@@ -72,6 +72,12 @@ func markdownCostTables(est domain.Estimate) (string, int) {
 	return b.String(), priced
 }
 
+// commentHeading opens every PR comment. The mark is a plain Markdown
+// image (not HTML) so it renders on GitHub, GitLab, Bitbucket and Azure
+// DevOps alike; c3x.dev serves it at a path that must stay stable,
+// because posted comments keep pointing at it.
+const commentHeading = "#### ![c3x](https://c3x.dev/brand/c3x-mark.svg) C3X cost estimate\n\n"
+
 // RenderMarkdownComment is the layout `c3x comment <forge>` posts to a
 // PR/MR: a one-line cost summary with the per-resource breakdown tucked
 // into a collapsible <details> block. On a busy MR with many resources
@@ -83,7 +89,7 @@ func markdownCostTables(est domain.Estimate) (string, int) {
 func RenderMarkdownComment(est domain.Estimate) string {
 	cur := est.Currency
 	var b strings.Builder
-	b.WriteString("#### 💰 C3X report\n\n")
+	b.WriteString(commentHeading)
 
 	if len(est.Costs) == 0 {
 		b.WriteString("_No resources to estimate._\n")
@@ -169,7 +175,7 @@ func markdownDiffGroups(d domain.Diff) string {
 func RenderMarkdownDiffComment(d domain.Diff) string {
 	sym := d.Currency.Symbol()
 	var b strings.Builder
-	b.WriteString("#### 💰 C3X report\n\n")
+	b.WriteString(commentHeading)
 
 	// Lead with the change in dollars (and percent) — the number
 	// approvers care about most, mirroring the pre-rewrite CLI.

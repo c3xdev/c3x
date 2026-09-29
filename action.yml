@@ -67,11 +67,12 @@ inputs:
     default: "true"
   branded-comments:
     description: >-
-      Post the PR comment as the c3x-cloud[bot] instead of github-actions.
-      Requires the c3x-cloud GitHub App installed on the repo and
-      'permissions: id-token: write' in the workflow. Falls back to the
-      default github-actions identity if either is missing.
-    default: "false"
+      Post the PR comment as c3x-cloud[bot] instead of github-actions.
+      "auto" does so when the C3X Cloud GitHub App is installed on the repo
+      and the workflow grants 'permissions: id-token: write', and otherwise
+      posts as github-actions without a warning. "true" warns when it can't;
+      "false" never tries (no request to token.c3x.dev).
+    default: "auto"
   token-service:
     description: C3X Cloud token service URL (advanced; default token.c3x.dev).
     default: "https://token.c3x.dev"
@@ -328,21 +329,32 @@ runs:
       run: |
         set -euo pipefail
         TOKEN="$GH_DEFAULT_TOKEN"
-        if [ "$BRANDED" = "true" ]; then
+        # Branded comments ask token.c3x.dev for a short-lived token of the
+        # C3X Cloud app, scoped to this one repository. The request carries
+        # a GitHub OIDC token whose audience is c3x-cloud, so it cannot be
+        # used anywhere else; the service verifies it and stores nothing.
+        # "auto" only asks when the workflow already grants id-token: write,
+        # and falls back quietly: most repos don't have the app installed.
+        APP_URL="https://github.com/apps/c3x-cloud"
+        HAS_OIDC=false
+        if [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] && [ -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
+          HAS_OIDC=true
+        fi
+        if [ "$BRANDED" = "true" ] || { [ "$BRANDED" = "auto" ] && [ "$HAS_OIDC" = "true" ]; }; then
           # Any failure here is non-fatal: fall back to the default
           # github-actions identity rather than dropping the comment.
           branded=""
           err=""
-          if [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] && [ -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
+          if [ "$HAS_OIDC" = "true" ]; then
             oidc=$(curl -fsSL -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
               "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${OIDC_AUDIENCE}" 2>/dev/null | jq -r '.value // empty' || true)
             if [ -n "$oidc" ]; then
-              resp=$(curl -fsS -X POST "$TOKEN_SERVICE" \
+              resp=$(curl -sS --max-time 15 -X POST "$TOKEN_SERVICE" \
                 -H "Authorization: Bearer ${oidc}" \
                 -H 'Content-Type: application/json' \
                 -d "{\"repo\":\"${GITHUB_REPOSITORY}\"}" 2>/dev/null || true)
-              branded=$(printf '%s' "$resp" | jq -r '.token // empty')
-              err=$(printf '%s' "$resp" | jq -r '.error // empty')
+              branded=$(printf '%s' "$resp" | jq -r '.token // empty' 2>/dev/null || true)
+              err=$(printf '%s' "$resp" | jq -r '.error // empty' 2>/dev/null || true)
             else
               err="could not obtain OIDC token"
             fi
@@ -350,11 +362,16 @@ runs:
             err="workflow is missing 'permissions: id-token: write'"
           fi
           if [ -n "$branded" ]; then
+            echo "::add-mask::$branded"
             TOKEN="$branded"
             echo "Posting comment as c3x-cloud[bot]"
-          else
+          elif [ "$BRANDED" = "true" ]; then
             echo "::warning::branded comment unavailable (${err:-unknown}); posting as github-actions instead"
+          else
+            echo "Posting as github-actions. To post as c3x-cloud[bot], install the C3X Cloud app: $APP_URL"
           fi
+        elif [ "$BRANDED" = "auto" ]; then
+          echo "Posting as github-actions. To post as c3x-cloud[bot], install the C3X Cloud app ($APP_URL) and grant 'permissions: id-token: write'."
         fi
         ARGS=(comment github --path "$IN_PATH")
         if [ "$IN_STRICT" = "true" ]; then

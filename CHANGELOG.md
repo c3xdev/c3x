@@ -6,6 +6,20 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Pull request comments carry the c3x mark in their heading ("C3X cost
+  estimate") and a one-line footer saying what produced the numbers and
+  linking to how to read them. Both are plain Markdown, so they render on
+  GitHub, GitLab, Bitbucket and Azure DevOps.
+- GitHub Action: `branded-comments` defaults to `auto`. Comments are
+  posted as `c3x-cloud[bot]` when the C3X Cloud app is installed on the
+  repository and the workflow grants `permissions: id-token: write`, and
+  as `github-actions` otherwise, with a one-line hint instead of a
+  warning. Without `id-token: write` no request is made to
+  `token.c3x.dev`; `false` never makes one. `true` keeps warning when it
+  cannot brand.
+
 ## [0.3.13] - 2026-09-29
 
 ### Changed
