@@ -17,18 +17,27 @@ type Reference struct {
 }
 
 // Label renders the reference for display: "kind.name".
-func (r Reference) Label() string { return r.Kind + "." + r.Name }
+// Label is how a resource is shown and referred to everywhere: its
+// Terraform address (module.web.aws_instance.this[0]); see
+// [Reference.TerraformAddress]. Resources outside a module read the same
+// in every form (aws_instance.web).
+func (r Reference) Label() string { return r.TerraformAddress() }
+
+// LegacyLabel is the form Label had before 0.3.19, which put the kind in
+// front of the module path (aws_instance.module.web.this[0]). Usage files
+// and --what-if still accept it so existing keys keep matching.
+func (r Reference) LegacyLabel() string { return r.Kind + "." + r.Name }
 
 func (r Reference) String() string { return r.Label() }
 
 // TerraformAddress renders the reference as a canonical Terraform
 // resource address, the form `-target` expects.
 //
-// This is NOT Label(). The parsers store the module path inside Name with
-// the kind stripped out (Kind="aws_instance", Name="module.frontend.web"
-// for `module.frontend.aws_instance.web`), so the kind has to be spliced
-// back in ahead of the final segment rather than prepended to the whole
-// string: Label() would yield `aws_instance.module.frontend.web`, which
+// The parsers store the module path inside Name with the kind stripped
+// out (Kind="aws_instance", Name="module.frontend.web" for
+// `module.frontend.aws_instance.web`), so the kind has to be spliced back
+// in ahead of the final segment rather than prepended to the whole
+// string, which would yield `aws_instance.module.frontend.web`, a form
 // Terraform does not accept.
 //
 // The final segment is located by scanning for the last '.' outside any

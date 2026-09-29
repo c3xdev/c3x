@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/c3xdev/c3x/internal/calculator"
@@ -154,7 +155,7 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 	cmd.Flags().StringVar(&usagePath, "usage", "",
 		"path to a c3x-usage.yml file with runtime usage quantities (monthly_requests, monthly_storage_gb, etc.; also usage_path in .c3x.toml)")
 	cmd.Flags().StringArrayVar(&whatIfs, "what-if", nil,
-		"override an attribute: `kind.name.attr=value` (repeatable; bool/int/float/string coercion)")
+		"override an attribute: `<resource address>.<attr>=value`, e.g. `module.web.aws_instance.this[0].instance_type=m7i.large` (repeatable; bool/int/float/string coercion)")
 	cmd.Flags().StringVar(&saveBaseline, "save-baseline", "",
 		"after the estimate, write the JSON representation to this path for use as a `c3x diff` baseline")
 	cmd.Flags().BoolVar(&strict, "strict", false, strictHelp)
@@ -337,11 +338,18 @@ func applyUsageAndWhatIf(cmd *cobra.Command, resources []domain.Resource, usageP
 		if err != nil {
 			return fmt.Errorf("--what-if: %w", err)
 		}
+		for _, o := range ovs {
+			if o.Legacy {
+				fmt.Fprintf(cmd.ErrOrStderr(),
+					"c3x: warning: --what-if %s.%s.%s uses the old address form; write %s.%s\n",
+					o.Kind, o.Name, o.Attr, o.Address(), o.Attr)
+			}
+		}
 		if unmatched := whatif.Apply(resources, ovs); len(unmatched) > 0 {
 			for _, o := range unmatched {
 				fmt.Fprintf(cmd.ErrOrStderr(),
-					"c3x: warning: --what-if %s.%s.%s=... did not match any resource\n",
-					o.Kind, o.Name, o.Attr)
+					"c3x: warning: --what-if %s.%s=... did not match any resource\n",
+					o.Address(), o.Attr)
 			}
 		}
 	}
@@ -360,12 +368,27 @@ func applyUsage(stderr io.Writer, resources []domain.Resource, usagePath string)
 	if err != nil {
 		return fmt.Errorf("usage file: %w", err)
 	}
-	if unmatched := usage.Apply(resources, f); len(unmatched) > 0 {
+	rep := usage.ApplyWithReport(resources, f)
+	if len(rep.Unmatched) > 0 {
 		fmt.Fprintf(stderr,
 			"c3x: warning: %d usage entries did not match any resource (%v)\n",
-			len(unmatched), unmatched)
+			len(rep.Unmatched), rep.Unmatched)
+	}
+	for _, old := range sortedKeys(rep.Legacy) {
+		fmt.Fprintf(stderr,
+			"c3x: warning: usage key %q uses the old address form; rename it to %q\n",
+			old, rep.Legacy[old])
 	}
 	return nil
+}
+
+func sortedKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 // writeRendered routes the estimate through the appropriate renderer

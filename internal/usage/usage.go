@@ -20,13 +20,16 @@
 //	    standard_storage_gb: 500
 //	    monthly_tier_1_requests: 1000
 //
-// Resource keys are `kind.name`; nested-module addresses use the same
-// dot notation the parser emits (`module.frontend.aws_instance.web`).
+// Resource keys are Terraform addresses: `aws_instance.web`,
+// `aws_instance.web[0]`, `module.frontend.aws_instance.web`. The form
+// c3x printed before 0.3.19, with the kind in front of the module path
+// (`aws_instance.module.frontend.web`), is still accepted.
 package usage
 
 import (
 	"fmt"
 	"os"
+	"sort"
 
 	"github.com/c3xdev/c3x/internal/domain"
 	"gopkg.in/yaml.v3"
@@ -80,8 +83,26 @@ func Load(path string) (File, error) {
 // runtime, which is more authoritative than the static default in
 // the Terraform source.
 func Apply(resources []domain.Resource, f File) (unmatched []string) {
+	return ApplyWithReport(resources, f).Unmatched
+}
+
+// Report is what [ApplyWithReport] found beyond applying the file.
+type Report struct {
+	// Unmatched lists keys that matched no resource.
+	Unmatched []string
+	// Legacy maps each key written in the pre-0.3.19 form
+	// (aws_instance.module.x.web) to its Terraform address
+	// (module.x.aws_instance.web), so the caller can suggest the rename.
+	Legacy map[string]string
+}
+
+// ApplyWithReport is [Apply] that also reports keys written in the
+// legacy form. A key in the Terraform-address form wins when a file has
+// both for the same resource.
+func ApplyWithReport(resources []domain.Resource, f File) Report {
+	var rep Report
 	if len(f.ResourceUsage) == 0 && len(f.Defaults) == 0 {
-		return nil
+		return rep
 	}
 	matched := make(map[string]struct{}, len(f.ResourceUsage))
 
@@ -90,20 +111,28 @@ func Apply(resources []domain.Resource, f File) (unmatched []string) {
 		if d, ok := f.Defaults[r.Ref.Kind]; ok {
 			applyAttrs(&resources[i], d)
 		}
-		// Match by label (kind.name). The exact address the parser
-		// emits — including module prefixes and count/for_each keys —
-		// is what users put in the YAML.
-		if u, ok := f.ResourceUsage[r.Ref.Label()]; ok {
+		// Match by the resource's Terraform address, including module
+		// prefixes and count/for_each keys, then by the legacy form.
+		addr, legacy := r.Ref.Label(), r.Ref.LegacyLabel()
+		if u, ok := f.ResourceUsage[addr]; ok {
 			applyAttrs(&resources[i], u)
-			matched[r.Ref.Label()] = struct{}{}
+			matched[addr] = struct{}{}
+		} else if u, ok := f.ResourceUsage[legacy]; ok && legacy != addr {
+			applyAttrs(&resources[i], u)
+			matched[legacy] = struct{}{}
+			if rep.Legacy == nil {
+				rep.Legacy = map[string]string{}
+			}
+			rep.Legacy[legacy] = addr
 		}
 	}
 	for key := range f.ResourceUsage {
 		if _, ok := matched[key]; !ok {
-			unmatched = append(unmatched, key)
+			rep.Unmatched = append(rep.Unmatched, key)
 		}
 	}
-	return unmatched
+	sort.Strings(rep.Unmatched)
+	return rep
 }
 
 // applyAttrs writes each key/value into the resource's Attributes map.

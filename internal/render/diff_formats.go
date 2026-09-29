@@ -76,7 +76,7 @@ func RenderCSVDiff(d domain.Diff) (string, error) {
 	currency := d.Currency.String()
 	for _, r := range d.Resources {
 		_ = w.Write([]string{
-			r.Resource.Kind + "." + r.Resource.Name,
+			r.Resource.Label(),
 			r.Resource.Kind,
 			deltaKindLabel(r.Kind),
 			r.Baseline.Round(2).String(),
@@ -180,7 +180,7 @@ func RenderHTMLDiff(d domain.Diff) (string, error) {
 	}
 	for _, r := range d.Resources {
 		data.Rows = append(data.Rows, htmlDiffRow{
-			Label:    r.Resource.Kind + "." + r.Resource.Name,
+			Label:    r.Resource.Label(),
 			Change:   deltaKindLabel(r.Kind),
 			Baseline: r.Baseline.Round(2).String(),
 			Current:  r.Current.Round(2).String(),

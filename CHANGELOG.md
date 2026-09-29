@@ -6,6 +6,30 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Resources inside modules are shown by their Terraform address,
+  `module.tier["web"].aws_instance.this[0]`, in every output format and
+  PR comment. They read `aws_instance.module.tier["web"].this[0]`, a form
+  Terraform does not accept. Resources outside modules look the same as
+  before. In `--format json`, the `resource` field changes accordingly;
+  `kind` and `name` do not.
+
+### Fixed
+
+- Usage-file keys written as Terraform addresses
+  (`module.frontend.aws_instance.web`), as the usage docs describe, now
+  match; they were reported as unmatched and their usage ignored. Keys in
+  the old form still match, with a warning suggesting the new key; if a
+  file has both, the Terraform address wins.
+- `--what-if` accepts Terraform addresses
+  (`module.web.aws_instance.this[0].instance_type=m7i.large`), including
+  for_each keys that contain dots. The old form still works, with a
+  warning.
+
+Saved baselines are unaffected: diffs match resources on kind and name,
+so a baseline written by an earlier version still diffs cleanly.
+
 ## [0.3.18] - 2026-09-29
 
 ### Fixed

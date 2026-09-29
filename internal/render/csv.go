@@ -31,7 +31,7 @@ func RenderCSV(est domain.Estimate) (string, error) {
 	}
 	currency := est.Currency.String()
 	for _, c := range est.Costs {
-		ref := c.Resource.Kind + "." + c.Resource.Name
+		ref := c.Resource.Label()
 		if len(c.LineItems) == 0 {
 			// Resource with no line items — emit one row so it isn't
 			// invisible in the spreadsheet. Useful for FREE kinds.

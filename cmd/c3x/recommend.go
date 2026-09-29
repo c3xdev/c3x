@@ -153,7 +153,7 @@ non-prod, GCP pd-standard → pd-balanced.`,
 	cmd.Flags().StringArrayVar(&varFiles, "var-file", nil, "tfvars files (repeatable)")
 	cmd.Flags().StringArrayVar(&vars, "var", nil, "variable override name=value (repeatable)")
 	cmd.Flags().StringVar(&usagePath, "usage", "", "path to a c3x-usage.yml file")
-	cmd.Flags().StringArrayVar(&whatIfs, "what-if", nil, "attribute override kind.name.attr=value (repeatable)")
+	cmd.Flags().StringArrayVar(&whatIfs, "what-if", nil, "attribute override <resource address>.<attr>=value (repeatable)")
 	cmd.Flags().BoolVar(&offline, "offline", false, "use the offline pricing stub")
 	cmd.Flags().BoolVar(&noCache, "no-cache", false, "bypass the on-disk price cache")
 	cmd.Flags().StringVar(&cachePath, "cache-path", "", "override the cache file path")

@@ -227,13 +227,21 @@ func TestTerraformAddress(t *testing.T) {
 
 // TestTerraformAddressDiffersFromLabelForModules pins the distinction so
 // nobody "simplifies" TerraformAddress back into Label.
-func TestTerraformAddressDiffersFromLabelForModules(t *testing.T) {
+func TestLabelIsTheTerraformAddress(t *testing.T) {
 	t.Parallel()
 	ref := domain.Reference{Kind: "aws_instance", Name: "module.frontend.web"}
-	if ref.Label() == ref.TerraformAddress() {
-		t.Fatal("module Label() must not equal TerraformAddress()")
+	if got := ref.Label(); got != "module.frontend.aws_instance.web" {
+		t.Errorf("Label() = %q, want the Terraform address", got)
 	}
-	if ref.Label() != "aws_instance.module.frontend.web" {
-		t.Errorf("Label() changed unexpectedly: %q", ref.Label())
+	if ref.Label() != ref.TerraformAddress() {
+		t.Error("Label() must equal TerraformAddress()")
+	}
+	// The pre-0.3.19 form is still available for matching old keys.
+	if got := ref.LegacyLabel(); got != "aws_instance.module.frontend.web" {
+		t.Errorf("LegacyLabel() = %q", got)
+	}
+	plain := domain.Reference{Kind: "aws_instance", Name: "web[0]"}
+	if plain.Label() != plain.LegacyLabel() {
+		t.Error("outside a module both forms must be identical")
 	}
 }

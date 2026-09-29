@@ -1,4 +1,4 @@
-// Package whatif applies `kind.name.attr=value` CLI overrides to
+// Package whatif applies `<resource address>.<attr>=value` CLI overrides to
 // parsed resources. The overrides land between parser and calculator
 // — after the IaC source is resolved into [domain.Resource]s but
 // before the calculator evaluates dimensions — so users can ask
@@ -18,15 +18,25 @@ import (
 )
 
 // Override is one parsed override directive. It binds an attribute on
-// a specific resource (`Kind.Name.Attr`) to a typed value.
+// a specific resource to a typed value. The resource is written as its
+// Terraform address (`module.web.aws_instance.this[0].instance_type`).
 type Override struct {
 	Kind  string
 	Name  string
 	Attr  string
 	Value any
+	// Legacy is set when the address used the pre-0.3.19 form, with the
+	// kind in front of the module path (aws_instance.module.web.this).
+	// It still matches; the caller can suggest the new form.
+	Legacy bool
 }
 
-// Parse turns a slice of `--what-if kind.name.attr=value` strings
+// Address is the override's resource in Terraform address form.
+func (o Override) Address() string {
+	return domain.Reference{Kind: o.Kind, Name: o.Name}.TerraformAddress()
+}
+
+// Parse turns a slice of `--what-if <address>.<attr>=value` strings
 // into [Override]s. Values are type-coerced: bool first, then int,
 // then float, then string. The strict type-precedence order keeps
 // `true` from accidentally becoming the string "true".
@@ -45,30 +55,62 @@ func Parse(raws []string) ([]Override, error) {
 func parseOne(raw string) (Override, error) {
 	eq := strings.Index(raw, "=")
 	if eq < 0 {
-		return Override{}, fmt.Errorf("--what-if expects kind.name.attr=value, got %q", raw)
+		return Override{}, fmt.Errorf("--what-if expects <resource address>.<attr>=value, got %q", raw)
 	}
 	lhs, rhs := raw[:eq], raw[eq+1:]
-	// Split lhs on the LAST dot so attr never accidentally consumes
-	// dots that belong to `module.X.module.Y.kind.name`. Walk right to
-	// left and require at least three segments: kind, name, attr.
-	parts := strings.Split(lhs, ".")
+	parts := splitAddress(lhs)
 	if len(parts) < 3 {
-		return Override{}, fmt.Errorf("--what-if lhs %q: need kind.name.attr (>=3 segments)", lhs)
+		return Override{}, fmt.Errorf("--what-if %q: need <resource address>.<attr>, e.g. aws_instance.web.instance_type", lhs)
 	}
 	attr := parts[len(parts)-1]
-	// Name is everything between the kind prefix and the trailing attr;
-	// when there's no module prefix this is just the resource name.
-	// We treat the first segment as kind even for module-prefixed
-	// addresses — the calculator never sees the module portion on
-	// the kind side of Resource.Ref.
-	kind := parts[0]
-	name := strings.Join(parts[1:len(parts)-1], ".")
+	addr := parts[:len(parts)-1]
+
+	// Terraform address: module.<name>[.module.<name>...].<kind>.<name>
+	if addr[0] == "module" {
+		i := 0
+		var modules []string
+		for i+1 < len(addr) && addr[i] == "module" {
+			modules = append(modules, addr[i], addr[i+1])
+			i += 2
+		}
+		if len(addr)-i != 2 {
+			return Override{}, fmt.Errorf("--what-if %q: expected module.<name>...<kind>.<name>.<attr>", lhs)
+		}
+		name := strings.Join(append(modules, addr[i+1]), ".")
+		return Override{Kind: addr[i], Name: name, Attr: attr, Value: coerce(rhs)}, nil
+	}
+
+	// <kind>.<name>, or the pre-0.3.19 <kind>.module.<name>...<name>.
 	return Override{
-		Kind:  kind,
-		Name:  name,
-		Attr:  attr,
-		Value: coerce(rhs),
+		Kind:   addr[0],
+		Name:   strings.Join(addr[1:], "."),
+		Attr:   attr,
+		Value:  coerce(rhs),
+		Legacy: len(addr) > 2 && addr[1] == "module",
 	}, nil
+}
+
+// splitAddress splits on dots outside [...], so an index or for_each key
+// that contains a dot (web["a.b"]) stays one segment.
+func splitAddress(s string) []string {
+	var parts []string
+	depth, start := 0, 0
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '[':
+			depth++
+		case ']':
+			if depth > 0 {
+				depth--
+			}
+		case '.':
+			if depth == 0 {
+				parts = append(parts, s[start:i])
+				start = i + 1
+			}
+		}
+	}
+	return append(parts, s[start:])
 }
 
 // coerce narrows a raw value string into the strongest Go type that

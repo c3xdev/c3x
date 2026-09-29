@@ -1,13 +1,13 @@
 ## c3x estimate
 
-### 📦 `aws_db_instance.module.database.primary`  —  $0/mo
+### 📦 `module.database.aws_db_instance.primary`  —  $0/mo
 
 | Dimension | Quantity | Unit rate | Monthly | Source |
 |---|---:|---:|---:|---|
 | Database instance | 730 hours | $0 | $0 | stub |
 | Storage | 200 GB-month | $0 | $0 | stub |
 
-### 📦 `aws_elasticache_cluster.module.cache.main`  —  $0/mo
+### 📦 `module.cache.aws_elasticache_cluster.main`  —  $0/mo
 
 | Dimension | Quantity | Unit rate | Monthly | Source |
 |---|---:|---:|---:|---|
@@ -21,8 +21,8 @@
 
 | Resource | Line | Caveat |
 |---|---|---|
-| `aws_db_instance.module.database.primary` | Database instance | offline stub price, not a real rate |
-| `aws_db_instance.module.database.primary` | Storage | offline stub price, not a real rate |
-| `aws_elasticache_cluster.module.cache.main` | Cache nodes | offline stub price, not a real rate |
+| `module.database.aws_db_instance.primary` | Database instance | offline stub price, not a real rate |
+| `module.database.aws_db_instance.primary` | Storage | offline stub price, not a real rate |
+| `module.cache.aws_elasticache_cluster.main` | Cache nodes | offline stub price, not a real rate |
 
 </details>
