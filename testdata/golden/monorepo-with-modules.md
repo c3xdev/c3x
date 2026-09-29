@@ -15,7 +15,7 @@
 
 **Project total: $0/mo**
 
-> ⚠️ **3 caveats:** parts of this estimate rest on assumptions (a price from another region, usage not provided, an attribute that could not be evaluated), so it may misstate the real cost.
+> ⚠️ **3 caveats:** parts of this estimate rest on assumptions (an offline placeholder price), so it may misstate the real cost.
 
 <details><summary>Caveats</summary>
 

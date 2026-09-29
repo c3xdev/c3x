@@ -238,6 +238,37 @@ func escapeMD(s string) string {
 // layout, PR comments included: one visible line saying the total rests
 // on assumptions, and the list behind a <details> so a long one doesn't
 // flood the thread. Empty when there is nothing to qualify.
+// caveatPhrases names each caveat code in plain words for the summary line.
+var caveatPhrases = map[string]string{
+	domain.CaveatRegionFallback: "a price from another region",
+	domain.CaveatNoPrice:        "a price that could not be found",
+	domain.CaveatUsageMissing:   "usage not provided",
+	domain.CaveatUnresolved:     "an attribute that could not be evaluated",
+	domain.CaveatAssumedCount:   "an assumed instance count",
+	domain.CaveatStub:           "an offline placeholder price",
+	domain.CaveatStalePrice:     "a cached price past its freshness window",
+}
+
+// caveatKinds lists the kinds of caveat present, in order of first
+// appearance, so the summary names what this estimate actually assumed
+// rather than a fixed set of examples.
+func caveatKinds(cs []domain.LabeledCaveat) string {
+	seen := map[string]bool{}
+	var kinds []string
+	for _, c := range cs {
+		if seen[c.Code] {
+			continue
+		}
+		seen[c.Code] = true
+		if p, ok := caveatPhrases[c.Code]; ok {
+			kinds = append(kinds, p)
+		} else {
+			kinds = append(kinds, c.Code)
+		}
+	}
+	return strings.Join(kinds, ", ")
+}
+
 func caveatsMarkdown(cs []domain.LabeledCaveat) string {
 	if len(cs) == 0 {
 		return ""
@@ -247,7 +278,7 @@ func caveatsMarkdown(cs []domain.LabeledCaveat) string {
 	if len(cs) == 1 {
 		noun = "caveat"
 	}
-	fmt.Fprintf(&b, "\n> ⚠️ **%d %s:** parts of this estimate rest on assumptions (a price from another region, usage not provided, an attribute that could not be evaluated), so it may misstate the real cost.\n\n", len(cs), noun)
+	fmt.Fprintf(&b, "\n> ⚠️ **%d %s:** parts of this estimate rest on assumptions (%s), so it may misstate the real cost.\n\n", len(cs), noun, caveatKinds(cs))
 	b.WriteString("<details><summary>Caveats</summary>\n\n| Resource | Line | Caveat |\n|---|---|---|\n")
 	for _, c := range cs {
 		line := c.Line

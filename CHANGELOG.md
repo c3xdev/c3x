@@ -6,6 +6,13 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- The caveat summary in markdown output and PR comments names the kinds
+  of assumption the estimate actually has ("an assumed instance count",
+  "a price from another region", …). It always listed the same three
+  examples, even when none of them applied.
+
 ## [0.3.17] - 2026-09-29
 
 ### Added
