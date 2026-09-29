@@ -10,9 +10,11 @@ import (
 	"strings"
 )
 
-// enumPageSize is the per-request product window. It matches the
-// server's product cap so each page is one round-trip, and — crucially
-// — every request stays bounded. The v1 failure mode (one ~8 GB
+// enumPageSize is the per-request product window the enumerator asks
+// for. A server may cap it lower (pricing.c3x.dev's cap is
+// MAX_PRODUCTS_PER_REQUEST), so [productEnumerator.each] advances by the
+// rows actually returned and stops only on an empty page. Every request
+// stays bounded. The v1 failure mode (one ~8 GB
 // streamed JSON that truncated into "unexpected end of JSON input")
 // cannot recur here: a stalled or partial page fails that page only
 // and retries cheaply.
@@ -60,7 +62,12 @@ func (e *productEnumerator) each(
 	provider, service, region string,
 	fn func(enumProduct) error,
 ) error {
-	for offset := 0; ; offset += enumPageSize {
+	// Advance by what came back and stop on an empty page: a server
+	// that caps the page below enumPageSize returns short pages that are
+	// not the last one. Treating a short page as the end, and stepping by
+	// the requested size, truncated every sync to the first page once the
+	// API capped requests at 1,000 products.
+	for offset := 0; ; {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
@@ -68,14 +75,15 @@ func (e *productEnumerator) each(
 		if err != nil {
 			return err
 		}
+		if len(page) == 0 {
+			return nil
+		}
 		for _, p := range page {
 			if err := fn(p); err != nil {
 				return err
 			}
 		}
-		if len(page) < enumPageSize {
-			return nil
-		}
+		offset += len(page)
 	}
 }
 

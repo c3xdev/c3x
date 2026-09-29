@@ -40,6 +40,15 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   region-fallback caveat. Catalog expressions can now read the region a
   resource is priced in as `region` when the resource does not set that
   attribute itself.
+- `c3x pricing sync` fetched only the first 1,000 products of each
+  service and region, so `c3x estimate --offline` priced most resources
+  from the stub ($0 for an m5.xlarge). The enumerator treated a page
+  shorter than it asked for as the last page and stepped the offset by
+  the requested size; since the pricing API began capping requests at
+  1,000 products, every page came back short. It now advances by the rows
+  returned and stops only on an empty page. A synced us-east-1 AWS cache
+  went from 4,455 to 22,364 prices, and offline estimates match live
+  ones.
 
 ## [0.3.15] - 2026-09-29
 
