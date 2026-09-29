@@ -14,14 +14,13 @@ Verified against `pricing.c3x.dev` on 2026-09-24:
 
 | Result | Kinds |
 |---|---:|
-| **LIVE** (priced from the upstream API, tracks vendor price changes) | 168 |
+| **LIVE** (priced from the upstream API, tracks vendor price changes) | 169 |
 | **STATIC** (priced from an inline rate, does not track upstream changes) | 109 |
 | **FREE** (not charged at the resource level) | 1,083 |
-| **ZERO** (`aws_keyspaces_table`: its AmazonMCS prices arrive with the next pricing-API scrape) | 1 |
-| **DRIFT / NOFIX / STALE / ERRORED** | 0 |
+| **ZERO / DRIFT / NOFIX / STALE / ERRORED** | 0 |
 | **Total** | **1,361** |
 
-So 278 kinds carry a price (one waiting for its first scrape) and the remaining 1,083 are legitimately free.
+So 278 kinds carry a price and the remaining 1,083 are legitimately free.
 
 The per-kind matrix is generated at [`docs/catalog.md`](docs/catalog.md);
 it is the list, and this page is only the summary. Counts are deliberately
