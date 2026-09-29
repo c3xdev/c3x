@@ -42,11 +42,12 @@
 #       with:
 #         path: .
 #         branded-comments: true
-name: c3x
+# Display name on the GitHub Marketplace; "c3x" alone is taken by a
+# GitHub account. Workflows reference the action as c3xdev/c3x@v0.
+name: C3X Cost Estimation
 description: >-
-  Cloud cost estimation for Terraform & CloudFormation. Installs the
-  c3x CLI, posts the per-PR cost delta as a comment, and enforces
-  budget / budget-delta gates. No API key required.
+  Cloud cost estimates for Terraform, OpenTofu and CloudFormation, posted on
+  every pull request. No API key.
 branding:
   icon: dollar-sign
   color: blue

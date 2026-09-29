@@ -6,6 +6,13 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- The GitHub Action's display name is now "C3X Cost Estimation" and its
+  description fits the Marketplace's 125-character limit, so it can be
+  listed on the GitHub Marketplace from this repository. Workflows still
+  use `c3xdev/c3x@v0`; nothing changes for them.
+
 ## [0.3.12] - 2026-09-29
 
 ### Fixed
