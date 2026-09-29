@@ -13,6 +13,7 @@ No API key, no SaaS account, no telemetry.
 [![CI](https://img.shields.io/github/actions/workflow/status/c3xdev/c3x/ci.yml?branch=main&label=ci)](https://github.com/c3xdev/c3x/actions)
 [![Go](https://img.shields.io/badge/go-1.25%2B-00ADD8.svg)](go.mod)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![GitHub Marketplace](https://img.shields.io/badge/marketplace-C3X%20Cost%20Estimation-00ADD8?logo=github)](https://github.com/marketplace/actions/c3x-cost-estimation)
 
 [Documentation](https://c3x.dev/docs) · [Quickstart](https://c3x.dev/docs/quickstart) ·
 [CI/CD](https://c3x.dev/docs/ci-cd) · [Resource catalog](https://c3x.dev/resources) ·
@@ -111,12 +112,33 @@ DevOps**, and auto-detects the repository and PR number in CI.
 
 ## In CI
 
+The GitHub Action is on the Marketplace as
+[C3X Cost Estimation](https://github.com/marketplace/actions/c3x-cost-estimation):
+
 ```yaml
-- uses: c3xdev/c3x@v0
-  with:
-    path: .
-    budget-delta: "50"   # fail the check if this PR adds more than $50/mo
+name: Cost estimate
+on: [pull_request]
+permissions:
+  contents: read
+  pull-requests: write   # post the comment
+  id-token: write        # optional: comment as c3x-cloud[bot]
+jobs:
+  c3x:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: c3xdev/c3x@v0
+        with:
+          path: .
+          budget-delta: "50"   # fail the check if this PR adds more than $50/mo
 ```
+
+`@v0` follows every release. To have comments posted as **c3x-cloud[bot]**
+instead of `github-actions`, install the
+[C3X Cloud app](https://github.com/apps/c3x-cloud) on the repository and
+keep `id-token: write`. The Action then fetches a short-lived token scoped
+to that one repository; without the app or the permission it posts as
+`github-actions`. Set `branded-comments: false` to never request one.
 
 The same gates work from the CLI: `--budget` caps the absolute monthly cost
 and `--budget-delta` caps the increase a single change may introduce. Both
