@@ -6,6 +6,20 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- GitHub Action: a pull request that breaks a budget gate now still gets
+  its cost comment. The `budget` and `budget-delta` gates, including a
+  `budget` or `budget_delta` set in the repository's `.c3x.toml`, ran
+  before the comment step and failed the job first, so the comment was
+  skipped on exactly the pull requests that needed it. When a comment is
+  posted, every gate now runs after it; `strict` already did.
+- GitHub Action: the `currency` input now applies to the PR comment and
+  the base-branch baseline, not only to the log output. Comments were
+  always in USD.
+- The budget-delta message puts the sign before the currency symbol:
+  `+$2781.48/mo`, not `$+2781.48/mo`.
+
 ## [0.3.14] - 2026-09-29
 
 ### Changed

@@ -299,7 +299,7 @@ func enforceBudgetDelta(cmd *cobra.Command, d domain.Diff, limit float64) error 
 		return nil
 	}
 	fmt.Fprintf(cmd.ErrOrStderr(),
-		"c3x: delta exceeds gate — %s%+.2f/mo > %s%+.2f/mo\n",
+		"c3x: delta exceeds gate — +%s%.2f/mo > +%s%.2f/mo\n",
 		d.Currency.Symbol(), delta, d.Currency.Symbol(), limit)
 	return errBudgetDeltaExceeded
 }

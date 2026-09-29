@@ -214,18 +214,24 @@ runs:
       run: |
         set -euo pipefail
         ARGS=(estimate --path "$IN_PATH" --format "$IN_FORMAT")
-        # When a PR comment will be posted, --strict is applied by the
-        # comment step instead, after posting, so reviewers see the caveats
-        # before the job fails.
+        # When a PR comment will be posted, every gate (strict, budget,
+        # budget-delta) is enforced after posting, so the pull request that
+        # breaks a gate still gets the comment explaining why. --budget 0
+        # also switches off a budget set in the repo's .c3x.toml here; the
+        # Budget gate step applies it after the comment.
         WILL_COMMENT=false
         if [ "$IN_COMMENT" = "true" ] && [ "$EVENT_NAME" = "pull_request" ]; then
           WILL_COMMENT=true
         fi
-        if [ "$IN_STRICT" = "true" ] && [ "$WILL_COMMENT" = "false" ]; then
-          ARGS+=(--strict)
-        fi
-        if [ "$IN_BUDGET" != "0" ]; then
-          ARGS+=(--budget "$IN_BUDGET")
+        if [ "$WILL_COMMENT" = "true" ]; then
+          ARGS+=(--budget 0)
+        else
+          if [ "$IN_STRICT" = "true" ]; then
+            ARGS+=(--strict)
+          fi
+          if [ "$IN_BUDGET" != "0" ]; then
+            ARGS+=(--budget "$IN_BUDGET")
+          fi
         fi
         if [ -n "$IN_CURRENCY" ]; then
           ARGS+=(--currency "$IN_CURRENCY")
@@ -285,7 +291,8 @@ runs:
 
         # --budget 0: a base branch already over a budget set in its
         # .c3x.toml must still produce a baseline.
-        if c3x estimate --path "$base_path" --budget 0 --save-baseline "$out" >"$log" 2>&1; then
+        if c3x estimate --path "$base_path" --budget 0 ${IN_CURRENCY:+--currency "$IN_CURRENCY"} \
+             --save-baseline "$out" >"$log" 2>&1; then
           echo "baseline=$out" >> "$GITHUB_OUTPUT"
           echo "Computed cost baseline from base $BASE_SHA"
         else
@@ -294,25 +301,6 @@ runs:
           echo "::group::c3x output for the base branch ($BASE_SHA)"
           cat "$log"
           echo "::endgroup::"
-        fi
-
-    - name: Budget delta gate
-      if: inputs.install-only != 'true' && inputs.budget-delta != '0' && github.event_name == 'pull_request'
-      shell: bash
-      env:
-        IN_PATH: ${{ inputs.path }}
-        BASELINE: ${{ steps.baseline.outputs.baseline }}
-        IN_BUDGET_DELTA: ${{ inputs.budget-delta }}
-      run: |
-        set -euo pipefail
-        if [ -n "$BASELINE" ]; then
-          c3x diff --path "$IN_PATH" --baseline "$BASELINE" --budget-delta "$IN_BUDGET_DELTA"
-        elif [ -f "$IN_PATH" ] && [ "${IN_PATH##*.}" = "json" ]; then
-          # A plan JSON is generated in CI, so the base branch has no copy
-          # to estimate; the plan's own prior state is the baseline.
-          c3x diff --path "$IN_PATH" --budget-delta "$IN_BUDGET_DELTA"
-        else
-          echo "::warning::budget-delta was not enforced: no base-branch estimate could be computed"
         fi
 
     - name: PR comment
@@ -326,8 +314,13 @@ runs:
         IN_PATH: ${{ inputs.path }}
         BASELINE: ${{ steps.baseline.outputs.baseline }}
         IN_STRICT: ${{ inputs.strict }}
+        IN_CURRENCY: ${{ inputs.currency }}
       run: |
         set -euo pipefail
+        # c3x comment has no --currency flag; the config layer reads it
+        # from C3X_CURRENCY. Exported only when set, so the repo's
+        # .c3x.toml currency still applies otherwise.
+        if [ -n "$IN_CURRENCY" ]; then export C3X_CURRENCY="$IN_CURRENCY"; fi
         TOKEN="$GH_DEFAULT_TOKEN"
         # Branded comments ask token.c3x.dev for a short-lived token of the
         # C3X Cloud app, scoped to this one repository. The request carries
@@ -382,3 +375,47 @@ runs:
           ARGS+=(--baseline "$BASELINE")
         fi
         GITHUB_TOKEN="$TOKEN" c3x "${ARGS[@]}"
+
+    # Gates run after the comment, so a pull request that breaks one still
+    # gets the comment that explains why. (strict is applied by the comment
+    # step itself, after posting.)
+    - name: Budget delta gate
+      if: inputs.install-only != 'true' && github.event_name == 'pull_request'
+      shell: bash
+      env:
+        IN_PATH: ${{ inputs.path }}
+        BASELINE: ${{ steps.baseline.outputs.baseline }}
+        IN_BUDGET_DELTA: ${{ inputs.budget-delta }}
+        IN_CURRENCY: ${{ inputs.currency }}
+      run: |
+        set -euo pipefail
+        if [ -n "$IN_CURRENCY" ]; then export C3X_CURRENCY="$IN_CURRENCY"; fi
+        # Without the input, c3x diff still applies budget_delta from the
+        # repo's .c3x.toml, if any; passing 0 would switch that off.
+        GATE=()
+        if [ "$IN_BUDGET_DELTA" != "0" ]; then GATE=(--budget-delta "$IN_BUDGET_DELTA"); fi
+        if [ -n "$BASELINE" ]; then
+          c3x diff --path "$IN_PATH" --baseline "$BASELINE" ${GATE[@]+"${GATE[@]}"} >/dev/null
+        elif [ -f "$IN_PATH" ] && [ "${IN_PATH##*.}" = "json" ]; then
+          # A plan JSON is generated in CI, so the base branch has no copy
+          # to estimate; the plan's own prior state is the baseline.
+          c3x diff --path "$IN_PATH" ${GATE[@]+"${GATE[@]}"} >/dev/null
+        elif [ "$IN_BUDGET_DELTA" != "0" ]; then
+          echo "::warning::budget-delta was not enforced: no base-branch estimate could be computed"
+        fi
+
+    - name: Budget gate
+      # Only when the Estimate step skipped it to let the comment through.
+      if: inputs.install-only != 'true' && inputs.comment == 'true' && github.event_name == 'pull_request'
+      shell: bash
+      env:
+        IN_PATH: ${{ inputs.path }}
+        IN_BUDGET: ${{ inputs.budget }}
+        IN_CURRENCY: ${{ inputs.currency }}
+      run: |
+        set -euo pipefail
+        ARGS=(estimate --path "$IN_PATH" --format json)
+        if [ "$IN_BUDGET" != "0" ]; then ARGS+=(--budget "$IN_BUDGET"); fi
+        if [ -n "$IN_CURRENCY" ]; then ARGS+=(--currency "$IN_CURRENCY"); fi
+        # Without the input, a budget in the repo's .c3x.toml applies.
+        c3x "${ARGS[@]}" >/dev/null
