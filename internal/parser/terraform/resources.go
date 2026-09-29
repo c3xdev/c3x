@@ -23,6 +23,11 @@ type moduleEnv struct {
 	resources map[string]cty.Value
 	regions   providerRegions
 	logger    *slog.Logger
+	// assumedCount is set when this module instance exists because of a
+	// module-level count / for_each computed from a data source
+	// placeholder; every resource under it inherits it (see
+	// domain.Resource.AssumedCount).
+	assumedCount string
 }
 
 // evalContext builds the context for one expression. extras are the
@@ -84,7 +89,9 @@ func emitOne(
 		if err != nil {
 			return fmt.Errorf("%s.%s%s: %w", kind, name, inst.suffix, err)
 		}
-		*out = append(*out, makeResource(kind, namePrefix+name+inst.suffix, attrs, env.regions.forResource(kind, body, ctx), unresolved))
+		r := makeResource(kind, namePrefix+name+inst.suffix, attrs, env.regions.forResource(kind, body, ctx), unresolved)
+		r.AssumedCount = joinAssumed(env.assumedCount, inst.assumed)
+		*out = append(*out, r)
 	}
 	return nil
 }
@@ -94,12 +101,16 @@ func emitOne(
 type instance struct {
 	suffix string
 	extras map[string]cty.Value
+	// assumed describes the data source placeholders the count /
+	// for_each was computed from; empty when it rests on none.
+	assumed string
 }
 
 // expandInstances evaluates a resource or module block's count /
 // for_each. ok is false when the meta-argument can't be evaluated, in
 // which case the block is omitted (with a warning). A count or for_each
-// computed from a data source placeholder is expanded, and warned about.
+// computed from a data source placeholder is expanded and recorded on
+// every instance (instance.assumed).
 func expandInstances(env moduleEnv, body *hclsyntax.Body, srcPath, address string) ([]instance, bool) {
 	countAttr := body.Attributes["count"]
 	foreachAttr := body.Attributes["for_each"]
@@ -119,8 +130,9 @@ func expandInstances(env moduleEnv, body *hclsyntax.Body, srcPath, address strin
 		if !ok {
 			return nil, false
 		}
-		if len(deps) > 0 {
-			warnPlaceholders(logger, "count", address, deps)
+		assumed := describePlaceholders(deps)
+		if assumed != "" {
+			logPlaceholders(logger, slog.LevelDebug, "count", address, assumed)
 		}
 		// Bounded before allocating: count = 1e9 must not build a slice.
 		if count > maxInstancesPerResource {
@@ -129,7 +141,8 @@ func expandInstances(env moduleEnv, body *hclsyntax.Body, srcPath, address strin
 		out := make([]instance, count)
 		for i := range out {
 			out[i] = instance{
-				suffix: fmt.Sprintf("[%d]", i),
+				suffix:  fmt.Sprintf("[%d]", i),
+				assumed: assumed,
 				extras: map[string]cty.Value{
 					"count": cty.ObjectVal(map[string]cty.Value{"index": cty.NumberIntVal(int64(i))}),
 				},
@@ -146,8 +159,9 @@ func expandInstances(env moduleEnv, body *hclsyntax.Body, srcPath, address strin
 			return nil, false
 		}
 		val, deps := stripPlaceholders(val)
-		if len(deps) > 0 {
-			warnPlaceholders(logger, "for_each", address, deps)
+		assumed := describePlaceholders(deps)
+		if assumed != "" {
+			logPlaceholders(logger, slog.LevelDebug, "for_each", address, assumed)
 		}
 		pairs := foreachPairs(val)
 		out := make([]instance, len(pairs))
@@ -156,7 +170,8 @@ func expandInstances(env moduleEnv, body *hclsyntax.Body, srcPath, address strin
 			// itself a guess: carry the marks so attributes computed
 			// from each.key / each.value are reported unresolved.
 			out[i] = instance{
-				suffix: fmt.Sprintf("[%q]", p.Key),
+				suffix:  fmt.Sprintf("[%q]", p.Key),
+				assumed: assumed,
 				extras: map[string]cty.Value{
 					"each": cty.ObjectVal(map[string]cty.Value{
 						"key":   withPlaceholders(cty.StringVal(p.Key), deps),
@@ -369,7 +384,7 @@ func (x *attrExtractor) dynamic(block *hclsyntax.Block, ctx *hcl.EvalContext, wh
 	}
 	coll, deps := stripPlaceholders(coll)
 	if len(deps) > 0 {
-		warnPlaceholders(x.logger, "dynamic block for_each", where+"."+label, deps)
+		logPlaceholders(x.logger, slog.LevelWarn, "dynamic block for_each", where+"."+label, describePlaceholders(deps))
 	}
 	if coll.IsNull() || !coll.IsKnown() || !coll.CanIterateElements() {
 		return nil

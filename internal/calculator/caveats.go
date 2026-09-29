@@ -154,6 +154,19 @@ func unresolvedCaveats(r domain.Resource, reads map[string]bool) []domain.Caveat
 	return out
 }
 
+// assumedCountCaveat reports that the resource's instance count rests on
+// a data source placeholder. Only a resource that costs something gets
+// it: a free resource's count cannot move the total.
+func assumedCountCaveat(r domain.Resource, subtotal decimal.Decimal) []domain.Caveat {
+	if r.AssumedCount == "" || subtotal.IsZero() {
+		return nil
+	}
+	return []domain.Caveat{{
+		Code:   domain.CaveatAssumedCount,
+		Detail: fmt.Sprintf("instance count assumes %s; price a plan JSON for exact counts", r.AssumedCount),
+	}}
+}
+
 func orDefault(s, fallback string) string {
 	if s == "" {
 		return fallback

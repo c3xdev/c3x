@@ -56,12 +56,14 @@ func TestNATGatewayPerAvailabilityZone(t *testing.T) {
 	if slices.Contains(nat.Unresolved, "connectivity_type") {
 		t.Errorf("unresolved %v; connectivity_type doesn't depend on a placeholder", nat.Unresolved)
 	}
-	// The count assumption is a warning naming the resource, the data
-	// source and the value assumed.
-	for _, want := range []string{"aws_nat_gateway.nat", "data.aws_availability_zones.available.names", "eu-west-1a"} {
-		if !strings.Contains(logs, want) {
-			t.Errorf("warning lacks %q; logs:\n%s", want, logs)
-		}
+	// The count assumption is recorded on the instance, naming the data
+	// source and the value assumed, for the assumed_count caveat.
+	if want := "data.aws_availability_zones.available.names = [eu-west-1a, eu-west-1b, eu-west-1c]"; nat.AssumedCount != want {
+		t.Errorf("AssumedCount = %q, want %q", nat.AssumedCount, want)
+	}
+	// The caveat says it where the number is; the log stays quiet.
+	if strings.Contains(logs, "aws_nat_gateway.nat") {
+		t.Errorf("unexpected warning for the count; logs:\n%s", logs)
 	}
 }
 
@@ -91,7 +93,7 @@ func TestPlaceholderTracedThroughLocalsAndModules(t *testing.T) {
 		  azs    = local.azs
 		}
 	`)
-	got, logs := parseWithLogs(t, dir)
+	got, _ := parseWithLogs(t, dir)
 	if len(got) != 2 {
 		t.Fatalf("got %d subnets, want 2", len(got))
 	}
@@ -99,8 +101,8 @@ func TestPlaceholderTracedThroughLocalsAndModules(t *testing.T) {
 	if !slices.Contains(s.Unresolved, "availability_zone") || slices.Contains(s.Unresolved, "cidr_block") {
 		t.Errorf("unresolved = %v; want availability_zone (from each.key) only", s.Unresolved)
 	}
-	if !strings.Contains(logs, "module.vpc.aws_subnet.private") {
-		t.Errorf("no for_each warning for module.vpc.aws_subnet.private; logs:\n%s", logs)
+	if !strings.Contains(s.AssumedCount, "data.aws_availability_zones.available.names") {
+		t.Errorf("AssumedCount = %q; the for_each rests on the zones placeholder", s.AssumedCount)
 	}
 }
 
@@ -129,13 +131,18 @@ func TestRegionAndIdentityPlaceholders(t *testing.T) {
 		  machine_type = "e2-small"
 		}
 	`)
-	got, logs := parseWithLogs(t, dir)
+	got, _ := parseWithLogs(t, dir)
 	if len(got) != 4 {
 		t.Fatalf("got %v; want syd[0], acct[0], vm[0], vm[1]", names(got))
 	}
-	for _, want := range []string{"data.aws_region.current.name", "data.aws_caller_identity.me.account_id", "data.google_client_config.cfg.region"} {
-		if !strings.Contains(logs, want) {
-			t.Errorf("no warning mentions %s; logs:\n%s", want, logs)
+	by := byName(got)
+	for name, want := range map[string]string{
+		"syd[0]":  "data.aws_region.current.name = ap-southeast-2",
+		"acct[0]": "data.aws_caller_identity.me.account_id = ",
+		"vm[1]":   "data.google_client_config.cfg.region = europe-west4",
+	} {
+		if !strings.HasPrefix(by[name].AssumedCount, want) {
+			t.Errorf("%s: AssumedCount = %q, want it to start with %q", name, by[name].AssumedCount, want)
 		}
 	}
 }
@@ -167,5 +174,87 @@ func TestDataLiteralsBeatPlaceholders(t *testing.T) {
 	}
 	if len(got) != 1 {
 		t.Errorf("got %v; aws_ami has no placeholder, so y is still omitted", names(got))
+	}
+}
+
+// A count over the placeholder zones records the assumption on every
+// instance, for the calculator's assumed_count caveat; a literal count in
+// the same configuration records none.
+func TestAssumedCountRecordedOnInstances(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	write(t, dir, "main.tf", `
+		provider "aws" { region = "us-east-1" }
+		data "aws_availability_zones" "available" {}
+		resource "aws_nat_gateway" "nat" {
+		  count = length(data.aws_availability_zones.available.names)
+		}
+		resource "aws_eip" "nat" {
+		  for_each = toset(data.aws_availability_zones.available.names)
+		  domain   = "vpc"
+		}
+		resource "aws_instance" "web" {
+		  count         = 2
+		  instance_type = "t3.micro"
+		}
+		resource "aws_instance" "one" {
+		  instance_type = "t3.micro"
+		}
+	`)
+	got, _ := parseWithLogs(t, dir)
+	want := "data.aws_availability_zones.available.names = [us-east-1a, us-east-1b, us-east-1c]"
+	by := byName(got)
+	for _, n := range []string{"nat[0]", "nat[1]", "nat[2]", `nat["us-east-1b"]`} {
+		if got := by[n].AssumedCount; got != want {
+			t.Errorf("%s: AssumedCount = %q, want %q", n, got, want)
+		}
+	}
+	for _, n := range []string{"web[0]", "web[1]", "one"} {
+		r, ok := by[n]
+		if !ok {
+			t.Fatalf("%s missing; got %v", n, names(got))
+		}
+		if got := r.AssumedCount; got != "" {
+			t.Errorf("%s: AssumedCount = %q; a literal count assumes nothing", n, got)
+		}
+	}
+}
+
+// A module-level count over a placeholder makes every resource in the
+// module an assumption, even one with no count of its own.
+func TestAssumedCountPropagatesFromModuleCount(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	mod := filepath.Join(dir, "zone")
+	if err := os.Mkdir(mod, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	write(t, mod, "main.tf", `
+		variable "az" {}
+		resource "aws_nat_gateway" "this" {}
+	`)
+	write(t, dir, "main.tf", `
+		data "aws_availability_zones" "available" {}
+		module "zone" {
+		  source = "./zone"
+		  count  = length(data.aws_availability_zones.available.names)
+		  az     = data.aws_availability_zones.available.names[count.index]
+		}
+		module "fixed" {
+		  source = "./zone"
+		  count  = 1
+		  az     = "us-east-1a"
+		}
+	`)
+	got, _ := parseWithLogs(t, dir)
+	by := byName(got)
+	if len(got) != 4 {
+		t.Fatalf("got %v; want three zone instances and one fixed", names(got))
+	}
+	if a := by["module.zone[2].this"].AssumedCount; !strings.Contains(a, "data.aws_availability_zones.available.names = [us-east-1a") {
+		t.Errorf("module.zone[2].this AssumedCount = %q", a)
+	}
+	if r, ok := by["module.fixed[0].this"]; !ok || r.AssumedCount != "" {
+		t.Errorf("module.fixed[0].this present=%v AssumedCount=%q; want present, empty", ok, r.AssumedCount)
 	}
 }

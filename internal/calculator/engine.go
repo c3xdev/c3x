@@ -219,7 +219,7 @@ func (e *Engine) costFor(ctx context.Context, r domain.Resource) (domain.Cost, s
 		MonthlySubtotal: subtotal.Round(2),
 		Currency:        e.currency,
 		Action:          r.Action,
-		ResourceCaveats: unresolvedCaveats(r, e.reads.of(def)),
+		ResourceCaveats: append(assumedCountCaveat(r, subtotal), unresolvedCaveats(r, e.reads.of(def))...),
 	}, skipReason, nil
 }
 

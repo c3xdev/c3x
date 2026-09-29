@@ -1,6 +1,7 @@
 package terraform
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"sort"
@@ -24,7 +25,8 @@ import (
 //     current region, account and project), a placeholder with a
 //     plausible value. Placeholders are marked (see placeholderMark), so
 //     every value computed from one is traceable: a resource whose count
-//     or for_each depends on a placeholder is logged as a warning, and an
+//     or for_each depends on a placeholder carries an assumed_count
+//     caveat (see domain.Resource.AssumedCount), and an
 //     attribute computed from one is reported unresolved, as it was before
 //     placeholders existed.
 //
@@ -212,17 +214,42 @@ func withPlaceholders(v cty.Value, deps []placeholderMark) cty.Value {
 	return v
 }
 
-// warnPlaceholders reports that how many instances of address exist
-// (what: "count", "for_each") rests on placeholder data source values.
-func warnPlaceholders(logger *slog.Logger, what, address string, deps []placeholderMark) {
-	assumed := make([]string, len(deps))
+// describePlaceholders renders the placeholders a value was computed
+// from, for the user: "data.aws_availability_zones.available.names =
+// [us-east-1a, us-east-1b, us-east-1c]". Empty when there are none.
+func describePlaceholders(deps []placeholderMark) string {
+	parts := make([]string, len(deps))
 	for i, d := range deps {
-		assumed[i] = d.Ref + " = " + d.Assumed
+		parts[i] = d.Ref + " = " + d.Assumed
 	}
-	logger.Warn(what+" depends on a data source c3x cannot query; it assumed a placeholder value, "+
-		"so the number of instances priced may differ from what Terraform would create "+
-		"(price a plan JSON for exact results)",
-		"resource", address, "assumed", strings.Join(assumed, "; "))
+	return strings.Join(parts, "; ")
+}
+
+// joinAssumed combines the assumptions of an enclosing module instance
+// and of the resource's own count / for_each, dropping duplicates.
+func joinAssumed(outer, inner string) string {
+	switch {
+	case outer == "", outer == inner:
+		return inner
+	case inner == "":
+		return outer
+	}
+	return outer + "; " + inner
+}
+
+// logPlaceholders reports that how many instances of address exist
+// (what: "count", "for_each") rests on placeholder data source values,
+// described by assumed (see describePlaceholders). For a resource or
+// module count / for_each it is a debug line: the assumption reaches the
+// output as an assumed_count caveat on every priced instance, which says
+// the same thing where the number is. A dynamic block has no caveat of
+// its own, so it stays a warning.
+func logPlaceholders(logger *slog.Logger, level slog.Level, what, address, assumed string) {
+	logger.Log(context.Background(), level,
+		what+" depends on a data source c3x cannot query; it assumed a placeholder value, "+
+			"so the number of instances priced may differ from what Terraform would create "+
+			"(price a plan JSON for exact results)",
+		"resource", address, "assumed", assumed)
 }
 
 func orDefault(s, fallback string) string {

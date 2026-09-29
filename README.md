@@ -148,7 +148,9 @@ exit non-zero, so a pull request that blows the budget fails the build.
 A directory is evaluated statically, with no cloud credentials. That is
 convenient, but values Terraform only knows at plan time are estimated:
 data sources, module outputs computed from them, and some counts. Those
-lines are marked `unresolved_attribute`. The plan has the real values:
+lines are marked `unresolved_attribute`, and a resource whose count or
+for_each rests on a data source (one NAT gateway per availability zone)
+is marked `assumed_count`. The plan has the real values:
 
 ```yaml
 - run: terraform plan -out=tfplan && terraform show -json tfplan > plan.json
@@ -195,6 +197,7 @@ comment:
 | `no_price` | The lookup matched nothing, so a non-free resource shows $0 |
 | `usage_not_provided` | A usage-driven cost (requests, GB processed, LCUs) is $0 because no usage was given; supply it with `--usage` |
 | `unresolved_attribute` | An attribute the price depends on could not be evaluated statically, so a default was used; a plan JSON input avoids this |
+| `assumed_count` | The resource's count or for_each (or its module's) is computed from a data source c3x cannot query, such as `data.aws_availability_zones`, so the number of instances rests on a placeholder (three zones in the provider's region); the caveat names the value assumed, and a plan JSON input gives the exact count |
 | `stale_price` | The pricing API was unreachable, so a cached price past its freshness window was used |
 
 `--strict` makes any of these fail the run with exit code 3, distinct

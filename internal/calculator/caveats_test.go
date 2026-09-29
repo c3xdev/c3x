@@ -153,3 +153,42 @@ func TestUnresolvedAttributeReportedOnlyWhenPriceDependsOnIt(t *testing.T) {
 		t.Errorf("detail = %q", c.ResourceCaveats[0].Detail)
 	}
 }
+
+// An instance count assumed from a data source placeholder is a resource
+// caveat naming the assumption, but only on a resource that costs
+// something, and never on one whose count assumed nothing.
+func TestAssumedCountCaveat(t *testing.T) {
+	t.Parallel()
+	const assumed = "data.aws_availability_zones.available.names = [us-east-1a, us-east-1b, us-east-1c]"
+	priced := scripted{decimal.RequireFromString("0.045"), domain.PriceSourceLive}
+
+	c := estimateWith(t, priced, domain.Resource{
+		Ref:          domain.Reference{Kind: "aws_nat_gateway", Name: "nat[0]"},
+		Attributes:   map[string]any{},
+		AssumedCount: assumed,
+	})
+	if n := codes(c)[domain.CaveatAssumedCount]; n != 1 {
+		t.Fatalf("want 1 assumed_count caveat, got %v", c.Caveats())
+	}
+	want := "instance count assumes " + assumed + "; price a plan JSON for exact counts"
+	if c.ResourceCaveats[0].Detail != want {
+		t.Errorf("detail = %q, want %q", c.ResourceCaveats[0].Detail, want)
+	}
+
+	free := estimateWith(t, scripted{decimal.Zero, domain.PriceSourceLive}, domain.Resource{
+		Ref:          domain.Reference{Kind: "aws_vpc", Name: "main[0]"},
+		Attributes:   map[string]any{"cidr_block": "10.0.0.0/16"},
+		AssumedCount: assumed,
+	})
+	if n := codes(free)[domain.CaveatAssumedCount]; n != 0 {
+		t.Errorf("a free resource got an assumed_count caveat: %v", free.Caveats())
+	}
+
+	literal := estimateWith(t, priced, domain.Resource{
+		Ref:        domain.Reference{Kind: "aws_nat_gateway", Name: "nat[0]"},
+		Attributes: map[string]any{},
+	})
+	if n := codes(literal)[domain.CaveatAssumedCount]; n != 0 {
+		t.Errorf("a resource with no assumed count got the caveat: %v", literal.Caveats())
+	}
+}

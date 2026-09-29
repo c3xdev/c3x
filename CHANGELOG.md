@@ -6,6 +6,20 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `assumed_count` caveat. When a resource's `count` or `for_each`, or
+  that of the module it sits in, is computed from a data source c3x
+  gives a placeholder (`data.aws_availability_zones` is three zones in
+  the provider's region), each priced instance now carries a caveat
+  naming the value assumed: "instance count assumes
+  data.aws_availability_zones.available.names = [us-east-1a, us-east-1b,
+  us-east-1c]; price a plan JSON for exact counts". It shows in every
+  output format and the PR comment, counts toward `caveat_count`, and
+  fails `--strict` (exit 3). Free resources don't get it. The stderr
+  warning that used to say this is now a debug line; a `dynamic` block
+  whose for_each rests on a placeholder still warns.
+
 ## [0.3.16] - 2026-09-29
 
 ### Fixed

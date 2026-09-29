@@ -31,6 +31,10 @@ const (
 	// CaveatUnresolved: an attribute the price depends on could not be
 	// evaluated statically, so a catalog default was used for it.
 	CaveatUnresolved = "unresolved_attribute"
+	// CaveatAssumedCount: how many instances of the resource exist was
+	// computed from a data source placeholder (the availability zones of
+	// a region, say), so the instance count is an assumption.
+	CaveatAssumedCount = "assumed_count"
 	// CaveatStub: priced with the offline stub, not a real price.
 	CaveatStub = "offline_stub"
 	// CaveatStalePrice: the pricing API was unreachable, so a cached

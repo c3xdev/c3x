@@ -252,6 +252,9 @@ func (m moduleExpander) expandInstance(
 		resources: child.resources,
 		regions:   childRegions,
 		logger:    logger,
+		// A module instance that exists because of a placeholder
+		// count / for_each makes every resource under it a guess too.
+		assumedCount: joinAssumed(parent.assumedCount, inst.assumed),
 	}
 	if err := emitResources(env, child.sources, childPrefix, m.out); err != nil {
 		return err

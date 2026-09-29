@@ -103,6 +103,14 @@ type Resource struct {
 	// reports it rather than pricing silently. Only the HCL parser fills
 	// this: in plan JSON every value is already resolved.
 	Unresolved []string
+	// AssumedCount is set when this instance exists because a count or
+	// for_each (its own, or an enclosing module's) was computed from a
+	// data source c3x cannot query and gave a placeholder value. It
+	// describes the assumption, e.g. "data.aws_availability_zones.
+	// available.names = [us-east-1a, us-east-1b, us-east-1c]"; the
+	// calculator reports it as an assumed_count caveat. Only the HCL
+	// parser fills this: a plan JSON has the real instances.
+	AssumedCount string
 }
 
 // PlanAction describes what Terraform intends to do with a resource.

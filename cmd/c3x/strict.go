@@ -16,7 +16,7 @@ var errStrictCaveats = errors.New("strict: estimate has caveats")
 
 const strictHelp = "fail with exit code 3 when any part of the estimate rests on an assumption: a price quoted " +
 	"from another region, a lookup that matched nothing, usage not provided, an attribute that could not be evaluated, " +
-	"or a stale cached price. The caveats are always shown; this makes them fail the run"
+	"an instance count assumed from a data source, or a stale cached price. The caveats are always shown; this makes them fail the run"
 
 // enforceStrict prints a one-line summary per caveat kind and returns
 // errStrictCaveats when strict is set and there is anything to report.
