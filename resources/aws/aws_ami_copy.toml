@@ -1,0 +1,28 @@
+kind         = "aws_ami_copy"
+display_name = "AWS AMI Copy"
+provider     = "aws"
+
+# An AMI itself is free. The copy creates EBS snapshots in the
+# destination region, and those bill per GB-month at the standard
+# snapshot rate ($0.05/GB-month in us-east-1).
+
+[mappings.snapshot_storage]
+service        = "AmazonEC2"
+product_family = "Storage Snapshot"
+attribute_filters = [
+  { key = "usagetype", const = "EBS:SnapshotUsage" },
+]
+
+[[dimensions]]
+id       = "snapshot_storage"
+label    = "Copied snapshot storage"
+unit     = "GB-month"
+when     = 'sum_field(ebs_block_device, "volume_size") > 0'
+quantity = 'sum_field(ebs_block_device, "volume_size")'
+rate     = 'price("snapshot_storage")'
+
+[fixture]
+attributes = { ebs_block_device = [{ volume_size = 8 }] }
+expected_monthly_cost = 0.4
+tolerance = 0.05
+last_verified = "2026-09-29"

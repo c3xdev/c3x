@@ -1,0 +1,30 @@
+kind         = "aws_ec2_transit_gateway_peering_attachment"
+display_name = "AWS Transit Gateway Peering Attachment"
+provider     = "aws"
+
+# Every Transit Gateway attachment type (VPC, VPN, Connect, DirectConnect,
+# Peering) shares usagetype TransitGateway-Hours at $0.05/hour under
+# service AmazonVPC. Data processed bills on the parent
+# aws_ec2_transit_gateway resource.
+# The accepter side of a cross-account peering is free: one attachment,
+# one charge.
+
+[mappings.attachment_hours]
+service        = "AmazonVPC"
+product_family = ""
+attribute_filters = [
+  { key = "usagetype", const = "USE1-TransitGateway-Hours" },
+]
+
+[[dimensions]]
+id       = "attachment_hours"
+label    = "TGW peering attachment"
+unit     = "hours"
+quantity = "monthly_hours()"
+rate     = 'price("attachment_hours")'
+
+[fixture]
+attributes = {}
+expected_monthly_cost = 36.5
+tolerance = 0.05
+last_verified = "2026-09-29"

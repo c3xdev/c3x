@@ -1,0 +1,103 @@
+kind         = "aws_keyspaces_table"
+display_name = "AWS Keyspaces Table"
+provider     = "aws"
+
+# Keyspaces (Cassandra) bills under offer code AmazonMCS, with the same
+# shape as DynamoDB: on-demand request units or provisioned capacity
+# units, plus storage and optional PITR backup storage.
+# Probed us-east-1 2026-09-29: 9 SKUs, group MCS-ReadUnits/MCS-WriteUnits.
+
+[mappings.read_request_units]
+service        = "AmazonMCS"
+product_family = "PayPerRequest Throughput"
+attribute_filters = [
+  { key = "group", const = "MCS-ReadUnits" },
+]
+
+[mappings.write_request_units]
+service        = "AmazonMCS"
+product_family = "PayPerRequest Throughput"
+attribute_filters = [
+  { key = "group", const = "MCS-WriteUnits" },
+]
+
+[mappings.provisioned_read]
+service        = "AmazonMCS"
+product_family = "Provisioned IOPS"
+attribute_filters = [
+  { key = "group", const = "MCS-ReadUnits" },
+]
+
+[mappings.provisioned_write]
+service        = "AmazonMCS"
+product_family = "Provisioned IOPS"
+attribute_filters = [
+  { key = "group", const = "MCS-WriteUnits" },
+]
+
+[mappings.storage]
+service        = "AmazonMCS"
+product_family = "Database Storage"
+attribute_filters = [
+  { key = "usagetype", const = "TimedStorage-ByteHrs" },
+]
+
+[mappings.pitr]
+service        = "AmazonMCS"
+product_family = "Database Storage"
+attribute_filters = [
+  { key = "usagetype", const = "USE1-TimedPITRStorage-ByteHrs" },
+]
+
+[[dimensions]]
+id       = "read_request_units"
+label    = "Read request units"
+unit     = "request units"
+when     = 'default(capacity_specification_throughput_mode, "PAY_PER_REQUEST") == "PAY_PER_REQUEST"'
+quantity = "default(monthly_read_request_units, 0)"
+rate     = 'price("read_request_units")'
+
+[[dimensions]]
+id       = "write_request_units"
+label    = "Write request units"
+unit     = "request units"
+when     = 'default(capacity_specification_throughput_mode, "PAY_PER_REQUEST") == "PAY_PER_REQUEST"'
+quantity = "default(monthly_write_request_units, 0)"
+rate     = 'price("write_request_units")'
+
+[[dimensions]]
+id       = "read_capacity"
+label    = "Provisioned read capacity"
+unit     = "RCU-hours"
+when     = 'default(capacity_specification_throughput_mode, "PAY_PER_REQUEST") == "PROVISIONED"'
+quantity = "default(capacity_specification_read_capacity_units, 1) * monthly_hours()"
+rate     = 'price("provisioned_read")'
+
+[[dimensions]]
+id       = "write_capacity"
+label    = "Provisioned write capacity"
+unit     = "WCU-hours"
+when     = 'default(capacity_specification_throughput_mode, "PAY_PER_REQUEST") == "PROVISIONED"'
+quantity = "default(capacity_specification_write_capacity_units, 1) * monthly_hours()"
+rate     = 'price("provisioned_write")'
+
+[[dimensions]]
+id       = "storage"
+label    = "Data storage"
+unit     = "GB-month"
+quantity = "default(storage_gb, 0)"
+rate     = 'price("storage")'
+
+[[dimensions]]
+id       = "pitr_backup"
+label    = "Point-in-time recovery storage"
+unit     = "GB-month"
+when     = 'default(point_in_time_recovery_status, "DISABLED") == "ENABLED" && default(storage_gb, 0) > 0'
+quantity = "default(storage_gb, 0)"
+rate     = 'price("pitr")'
+
+[fixture]
+attributes = { capacity_specification_throughput_mode = "PROVISIONED", capacity_specification_read_capacity_units = 10, capacity_specification_write_capacity_units = 10, storage_gb = 100 }
+expected_monthly_cost = 30.694
+tolerance = 0.05
+last_verified = "2026-09-29"

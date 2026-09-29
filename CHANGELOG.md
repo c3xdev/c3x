@@ -6,6 +6,19 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Catalog: `aws_keyspaces_table`, `aws_s3tables_table_bucket`,
+  `aws_cloudfront_function`, `aws_ec2_transit_gateway_peering_attachment`
+  and `aws_ami_copy` are priced, and 17 more AWS kinds are recognised as
+  free. Contributed by @juan-vg in c3x-pricing-api#71.
+
+### Fixed
+
+- Transit gateways were never priced: the catalog entry was keyed on
+  `aws_transit_gateway`, which is not a Terraform resource type. It is
+  now `aws_ec2_transit_gateway`.
+
 ## [0.3.19] - 2026-09-29
 
 ### Changed

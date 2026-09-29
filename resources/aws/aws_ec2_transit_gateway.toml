@@ -1,4 +1,4 @@
-kind         = "aws_transit_gateway"
+kind         = "aws_ec2_transit_gateway"
 display_name = "AWS Transit Gateway"
 provider     = "aws"
 

@@ -1,0 +1,86 @@
+kind         = "aws_s3tables_table_bucket"
+display_name = "AWS S3 Table Bucket"
+provider     = "aws"
+
+# S3 Tables bills under offer code AmazonS3 with a Tables- usagetype
+# family and an empty productFamily (probed us-east-1 2026-09-29).
+# Storage, requests, and the automatic maintenance charges (object
+# monitoring and compaction) all bill on the table bucket.
+# Rates are the first storage tier; the price picker takes the highest
+# non-zero match, which is the first (most expensive) tier.
+
+[mappings.storage]
+service        = "AmazonS3"
+product_family = ""
+attribute_filters = [
+  { key = "usagetype", const = "Tables-TimedStorage-ByteHrs" },
+]
+
+[mappings.tier_1_requests]
+service        = "AmazonS3"
+product_family = ""
+attribute_filters = [
+  { key = "group", const = "S3-API-Tables-Tier1" },
+]
+
+[mappings.tier_2_requests]
+service        = "AmazonS3"
+product_family = ""
+attribute_filters = [
+  { key = "group", const = "S3-API-Tables-Tier2" },
+]
+
+[mappings.monitored_objects]
+service        = "AmazonS3"
+product_family = ""
+attribute_filters = [
+  { key = "usagetype", const = "Tables-MonitoredObjects" },
+]
+
+[mappings.compaction]
+service        = "AmazonS3"
+product_family = ""
+attribute_filters = [
+  { key = "usagetype", const = "Tables-ProcessedBytes" },
+]
+
+[[dimensions]]
+id       = "storage"
+label    = "Table storage"
+unit     = "GB-month"
+quantity = "default(storage_gb, 0)"
+rate     = 'price("storage")'
+
+[[dimensions]]
+id       = "tier_1_requests"
+label    = "PUT, COPY, POST, LIST requests"
+unit     = "requests"
+quantity = "default(monthly_tier_1_requests, 0)"
+rate     = 'price("tier_1_requests")'
+
+[[dimensions]]
+id       = "tier_2_requests"
+label    = "GET and all other requests"
+unit     = "requests"
+quantity = "default(monthly_tier_2_requests, 0)"
+rate     = 'price("tier_2_requests")'
+
+[[dimensions]]
+id       = "monitored_objects"
+label    = "Object monitoring"
+unit     = "objects"
+quantity = "default(monthly_monitored_objects, 0)"
+rate     = 'price("monitored_objects")'
+
+[[dimensions]]
+id       = "compaction"
+label    = "Compaction data processed"
+unit     = "GB"
+quantity = "default(monthly_compacted_gb, 0)"
+rate     = 'price("compaction")'
+
+[fixture]
+attributes = { storage_gb = 100, monthly_tier_1_requests = 100_000, monthly_tier_2_requests = 1_000_000, monthly_monitored_objects = 100_000, monthly_compacted_gb = 100 }
+expected_monthly_cost = 6.55
+tolerance = 0.05
+last_verified = "2026-09-29"

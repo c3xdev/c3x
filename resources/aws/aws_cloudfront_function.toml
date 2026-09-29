@@ -1,0 +1,30 @@
+kind         = "aws_cloudfront_function"
+display_name = "AWS CloudFront Function"
+provider     = "aws"
+
+# CloudFront Functions bill per execution, at one global rate (the SKU
+# carries location "Any", so the mapping pins region = "global").
+# $0.10 per 1,000,000 executions after the first 2,000,000 free.
+# The free tier is a $0 price dimension on the same SKU; the price
+# picker skips zeros and returns the paid rate.
+
+[mappings.executions]
+service        = "AmazonCloudFront"
+product_family = "Request"
+region         = "global"
+attribute_filters = [
+  { key = "usagetype", const = "Executions-CloudFrontFunctions" },
+]
+
+[[dimensions]]
+id       = "executions"
+label    = "Function executions"
+unit     = "executions"
+quantity = "default(monthly_invocations, 0)"
+rate     = 'price("executions")'
+
+[fixture]
+attributes = { monthly_invocations = 10_000_000 }
+expected_monthly_cost = 1
+tolerance = 0.05
+last_verified = "2026-09-29"

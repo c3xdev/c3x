@@ -10,7 +10,7 @@ Status meaning:
   See `docs/upstream-gaps.md` for the per-resource explanation.
 - **FREE** — no per-resource charge (parent-billed, structural, IAM).
 
-## AWS (625 resources)
+## AWS (646 resources)
 
 | Kind | Status | Display name |
 |---|---|---|
@@ -26,6 +26,7 @@ Status meaning:
 | `aws_alb_listener_rule` | FREE | aws_alb_listener_rule |
 | `aws_alb_target_group` | FREE | aws_alb_target_group |
 | `aws_alb_target_group_attachment` | FREE | aws_alb_target_group_attachment |
+| `aws_ami_copy` | LIVE | AWS AMI Copy |
 | `aws_ami_launch_permission` | FREE | aws_ami_launch_permission |
 | `aws_amplify_app` | LIVE | AWS Amplify Hosting App |
 | `aws_amplify_backend_environment` | FREE | aws_amplify_backend_environment |
@@ -113,8 +114,10 @@ Status meaning:
 | `aws_batch_job_definition` | FREE | aws_batch_job_definition |
 | `aws_batch_job_queue` | FREE | aws_batch_job_queue |
 | `aws_batch_scheduling_policy` | FREE | aws_batch_scheduling_policy |
+| `aws_bcmdataexports_export` | FREE | aws_bcmdataexports_export |
 | `aws_chatbot_slack_channel_configuration` | FREE | AWS Chatbot Slack Channel Configuration |
 | `aws_cloudformation_export` | FREE | aws_cloudformation_export |
+| `aws_cloudformation_stack_set` | FREE | aws_cloudformation_stack_set |
 | `aws_cloudformation_stack_set_instance` | FREE | aws_cloudformation_stack_set_instance |
 | `aws_cloudformation_type` | FREE | aws_cloudformation_type |
 | `aws_cloudfront_cache_policy` | FREE | aws_cloudfront_cache_policy |
@@ -122,6 +125,7 @@ Status meaning:
 | `aws_cloudfront_distribution` | LIVE | AWS CloudFront Distribution |
 | `aws_cloudfront_field_level_encryption_config` | FREE | aws_cloudfront_field_level_encryption_config |
 | `aws_cloudfront_field_level_encryption_profile` | FREE | aws_cloudfront_field_level_encryption_profile |
+| `aws_cloudfront_function` | LIVE | AWS CloudFront Function |
 | `aws_cloudfront_key_group` | FREE | aws_cloudfront_key_group |
 | `aws_cloudfront_key_value_store` | FREE | aws_cloudfront_key_value_store |
 | `aws_cloudfront_monitoring_subscription` | FREE | aws_cloudfront_monitoring_subscription |
@@ -137,6 +141,7 @@ Status meaning:
 | `aws_cloudwatch_dashboard` | STATIC | AWS CloudWatch Dashboard |
 | `aws_cloudwatch_event_api_destination` | FREE | aws_cloudwatch_event_api_destination |
 | `aws_cloudwatch_event_archive` | FREE | aws_cloudwatch_event_archive |
+| `aws_cloudwatch_event_bus` | FREE | aws_cloudwatch_event_bus |
 | `aws_cloudwatch_event_bus_policy` | FREE | aws_cloudwatch_event_bus_policy |
 | `aws_cloudwatch_event_connection` | FREE | aws_cloudwatch_event_connection |
 | `aws_cloudwatch_event_endpoint` | FREE | aws_cloudwatch_event_endpoint |
@@ -201,6 +206,7 @@ Status meaning:
 | `aws_datasync_location_smb` | FREE | aws_datasync_location_smb |
 | `aws_datasync_task` | FREE | aws_datasync_task |
 | `aws_dax_cluster` | LIVE | AWS DAX Cluster |
+| `aws_db_event_subscription` | FREE | aws_db_event_subscription |
 | `aws_db_instance` | LIVE | AWS RDS Instance |
 | `aws_db_option_group` | FREE | AWS Db Option Group |
 | `aws_db_parameter_group` | FREE | AWS Db Parameter Group |
@@ -253,17 +259,22 @@ Status meaning:
 | `aws_ec2_serial_console_access` | FREE | aws_ec2_serial_console_access |
 | `aws_ec2_subnet_cidr_reservation` | FREE | aws_ec2_subnet_cidr_reservation |
 | `aws_ec2_tag` | FREE | aws_ec2_tag |
+| `aws_ec2_transit_gateway` | LIVE | AWS Transit Gateway |
+| `aws_ec2_transit_gateway_peering_attachment` | LIVE | AWS Transit Gateway Peering Attachment |
+| `aws_ec2_transit_gateway_peering_attachment_accepter` | FREE | aws_ec2_transit_gateway_peering_attachment_accepter |
 | `aws_ec2_transit_gateway_route` | FREE | aws_ec2_transit_gateway_route |
 | `aws_ec2_transit_gateway_route_table` | FREE | aws_ec2_transit_gateway_route_table |
 | `aws_ec2_transit_gateway_route_table_association` | FREE | aws_ec2_transit_gateway_route_table_association |
 | `aws_ec2_transit_gateway_route_table_propagation` | FREE | aws_ec2_transit_gateway_route_table_propagation |
 | `aws_ec2_transit_gateway_vpc_attachment` | STATIC | AWS Transit Gateway VPC Attachment |
+| `aws_ec2_transit_gateway_vpc_attachment_accepter` | FREE | aws_ec2_transit_gateway_vpc_attachment_accepter |
 | `aws_ecr_lifecycle_policy` | FREE | aws_ecr_lifecycle_policy |
 | `aws_ecr_pull_through_cache_rule` | FREE | aws_ecr_pull_through_cache_rule |
 | `aws_ecr_registry_policy` | FREE | aws_ecr_registry_policy |
 | `aws_ecr_registry_scanning_configuration` | FREE | aws_ecr_registry_scanning_configuration |
 | `aws_ecr_replication_configuration` | FREE | aws_ecr_replication_configuration |
 | `aws_ecr_repository` | LIVE | AWS ECR Repository |
+| `aws_ecr_repository_creation_template` | FREE | aws_ecr_repository_creation_template |
 | `aws_ecr_repository_policy` | FREE | aws_ecr_repository_policy |
 | `aws_ecrpublic_repository` | FREE | aws_ecrpublic_repository |
 | `aws_ecrpublic_repository_policy` | FREE | aws_ecrpublic_repository_policy |
@@ -306,6 +317,8 @@ Status meaning:
 | `aws_glacier_vault` | LIVE | AWS S3 Glacier Vault |
 | `aws_glacier_vault_lock` | FREE | aws_glacier_vault_lock |
 | `aws_globalaccelerator_accelerator` | STATIC | AWS Global Accelerator |
+| `aws_globalaccelerator_endpoint_group` | FREE | aws_globalaccelerator_endpoint_group |
+| `aws_globalaccelerator_listener` | FREE | aws_globalaccelerator_listener |
 | `aws_glue_catalog_database` | FREE | AWS Glue Data Catalog Database |
 | `aws_glue_catalog_table` | FREE | aws_glue_catalog_table |
 | `aws_glue_classifier` | FREE | aws_glue_classifier |
@@ -378,6 +391,8 @@ Status meaning:
 | `aws_iot_topic_rule` | FREE | aws_iot_topic_rule |
 | `aws_kendra_index` | LIVE | AWS Kendra Index |
 | `aws_key_pair` | FREE | aws_key_pair |
+| `aws_keyspaces_keyspace` | FREE | aws_keyspaces_keyspace |
+| `aws_keyspaces_table` | LIVE | AWS Keyspaces Table |
 | `aws_kinesis_firehose_delivery_stream` | LIVE | AWS Kinesis Data Firehose |
 | `aws_kinesis_resource_policy` | FREE | aws_kinesis_resource_policy |
 | `aws_kinesis_stream` | LIVE | AWS Kinesis Data Stream |
@@ -397,6 +412,7 @@ Status meaning:
 | `aws_lambda_function` | LIVE | AWS Lambda Function |
 | `aws_lambda_function_event_invoke_config` | FREE | aws_lambda_function_event_invoke_config |
 | `aws_lambda_function_url` | FREE | AWS Lambda Function Url |
+| `aws_lambda_invocation` | FREE | aws_lambda_invocation |
 | `aws_lambda_layer_version` | FREE | AWS Lambda Layer Version |
 | `aws_lambda_layer_version_permission` | FREE | aws_lambda_layer_version_permission |
 | `aws_lambda_permission` | FREE | AWS Lambda Permission |
@@ -458,6 +474,7 @@ Status meaning:
 | `aws_ram_sharing_with_organization` | FREE | aws_ram_sharing_with_organization |
 | `aws_rds_cluster` | LIVE | AWS Aurora Cluster |
 | `aws_rds_cluster_instance` | LIVE | AWS Aurora Cluster Instance |
+| `aws_rds_cluster_parameter_group` | FREE | aws_rds_cluster_parameter_group |
 | `aws_redshift_cluster` | LIVE | AWS Redshift Cluster |
 | `aws_redshift_parameter_group` | FREE | AWS Redshift Parameter Group |
 | `aws_redshift_resource_policy` | FREE | aws_redshift_resource_policy |
@@ -511,6 +528,9 @@ Status meaning:
 | `aws_s3_object` | FREE | AWS S3 Object |
 | `aws_s3control_access_point_policy` | FREE | aws_s3control_access_point_policy |
 | `aws_s3control_bucket_policy` | FREE | aws_s3control_bucket_policy |
+| `aws_s3tables_namespace` | FREE | aws_s3tables_namespace |
+| `aws_s3tables_table_bucket` | LIVE | AWS S3 Table Bucket |
+| `aws_s3tables_table_policy` | FREE | aws_s3tables_table_policy |
 | `aws_sagemaker_endpoint` | STATIC | AWS SageMaker Endpoint |
 | `aws_sagemaker_notebook_instance` | LIVE | AWS SageMaker Notebook Instance |
 | `aws_scheduler_schedule` | FREE | aws_scheduler_schedule |
@@ -546,6 +566,7 @@ Status meaning:
 | `aws_ses_domain_mail_from` | FREE | aws_ses_domain_mail_from |
 | `aws_ses_email_identity` | FREE | aws_ses_email_identity |
 | `aws_ses_event_destination` | FREE | aws_ses_event_destination |
+| `aws_ses_identity_notification_topic` | FREE | aws_ses_identity_notification_topic |
 | `aws_ses_identity_policy` | FREE | aws_ses_identity_policy |
 | `aws_ses_receipt_filter` | FREE | aws_ses_receipt_filter |
 | `aws_ses_receipt_rule` | FREE | aws_ses_receipt_rule |
@@ -596,7 +617,6 @@ Status meaning:
 | `aws_transfer_tag` | FREE | aws_transfer_tag |
 | `aws_transfer_user` | FREE | aws_transfer_user |
 | `aws_transfer_workflow` | FREE | aws_transfer_workflow |
-| `aws_transit_gateway` | LIVE | AWS Transit Gateway |
 | `aws_volume_attachment` | FREE | aws_volume_attachment |
 | `aws_vpc` | FREE | AWS Vpc |
 | `aws_vpc_dhcp_options` | FREE | aws_vpc_dhcp_options |
@@ -605,6 +625,7 @@ Status meaning:
 | `aws_vpc_endpoint_connection_accepter` | FREE | aws_vpc_endpoint_connection_accepter |
 | `aws_vpc_endpoint_connection_notification` | FREE | aws_vpc_endpoint_connection_notification |
 | `aws_vpc_endpoint_policy` | FREE | aws_vpc_endpoint_policy |
+| `aws_vpc_endpoint_private_dns` | FREE | aws_vpc_endpoint_private_dns |
 | `aws_vpc_endpoint_route_table_association` | FREE | aws_vpc_endpoint_route_table_association |
 | `aws_vpc_endpoint_security_group_association` | FREE | aws_vpc_endpoint_security_group_association |
 | `aws_vpc_endpoint_service` | FREE | aws_vpc_endpoint_service |
@@ -640,7 +661,7 @@ Status meaning:
 | `aws_workspaces_workspace` | LIVE | AWS WorkSpaces Desktop |
 | `aws_xray_group` | LIVE | AWS X-Ray Group |
 
-**AWS totals:** 90 LIVE · 20 STATIC · 515 FREE
+**AWS totals:** 95 LIVE · 20 STATIC · 531 FREE
 
 ## AZURE (409 resources)
 
@@ -1373,4 +1394,4 @@ Status meaning:
 
 ---
 
-**Grand total: 1340 resources.** 188 LIVE · 85 STATIC · 1067 FREE.
+**Grand total: 1361 resources.** 193 LIVE · 85 STATIC · 1083 FREE.
