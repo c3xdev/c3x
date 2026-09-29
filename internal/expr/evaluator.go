@@ -2,6 +2,9 @@ package expr
 
 import (
 	"fmt"
+	"math"
+	"strconv"
+	"strings"
 
 	"github.com/expr-lang/expr"
 	"github.com/expr-lang/expr/vm"
@@ -117,6 +120,13 @@ func RunNumber(p Program, env map[string]any) (float64, error) {
 			return 1, nil
 		}
 		return 0, nil
+	case string:
+		// CloudFormation accepts strings for numeric properties
+		// (`AllocatedStorage: "250"`), and a Terraform variable typed
+		// string can carry a number the same way.
+		if f, err := strconv.ParseFloat(strings.TrimSpace(t), 64); err == nil && !math.IsNaN(f) && !math.IsInf(f, 0) {
+			return f, nil
+		}
 	}
 	return 0, fmt.Errorf("expression %q: expected number, got %T", p.source, v)
 }

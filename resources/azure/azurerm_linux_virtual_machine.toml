@@ -2,18 +2,21 @@ kind         = "azurerm_linux_virtual_machine"
 display_name = "Azure Linux Virtual Machine"
 provider     = "azure"
 
-# Match the canonical "regular" pricing for Linux VMs by filtering against
-# the meterName that has no Spot/Low Priority suffix. Note: the upstream
-# returns both Linux and Windows variants for a given skuName — without a
-# productName filter we may pick the first match. In practice Linux is
-# the first hit, but a richer rule (productName containing the family
-# suffix vs " Windows") would be more robust. Tracked in CATALOG_STATUS.
+# The VM size (Standard_B2s, Standard_D2s_v5) is the Retail Prices API's
+# armSkuName. skuName is not: Azure spells it "Standard_D2s_v5" for some
+# series but "B2s", "B2s v2" or "D2 v3" for most others, so filtering on
+# skuName matched nothing for most sizes. armSkuName also matches the
+# size's Spot and Low Priority meters; those are always cheaper, and the
+# engine quotes the highest matching price, so the pay-as-you-go rate is
+# the one that comes back. `os` (derived by the pricing API from
+# productName) separates Linux from Windows rates and excludes the
+# Cloud Services products that reuse the same armSkuName.
 
 [mappings.compute]
 service        = "Virtual Machines"
 product_family = "Compute"
 attribute_filters = [
-  { key = "skuName", expr = 'default(size, "Standard_D2s_v5")' },
+  { key = "armSkuName", expr = 'default(size, "Standard_D2s_v5")' },
   { key = "os", const = "Linux" },
 ]
 

@@ -154,7 +154,7 @@ func (e *Engine) costFor(ctx context.Context, r domain.Resource) (domain.Cost, s
 
 	for _, dim := range def.Dimensions {
 		rec := &lineRecorder{}
-		env := expr.EnvFor(r, rec.wrap(lookup), dim.Constants)
+		env := withRegion(expr.EnvFor(r, rec.wrap(lookup), dim.Constants), region)
 
 		// `when` predicate (optional).
 		if dim.When != "" {
@@ -261,12 +261,13 @@ func (e *Engine) buildQuery(
 	m catalog.PriceMapping,
 	region string,
 ) (pricing.Query, error) {
+	resourceRegion := region
 	if m.Region != "" {
 		region = m.Region
 	}
 	filters := make([]pricing.KV, 0, len(m.AttributeFilters))
 	for _, af := range m.AttributeFilters {
-		value, err := resolveFilter(af, r, e.programs, def.Kind)
+		value, err := resolveFilter(af, r, resourceRegion, e.programs, def.Kind)
 		if err != nil {
 			return pricing.Query{}, err
 		}
@@ -293,6 +294,7 @@ func (e *Engine) buildQuery(
 func resolveFilter(
 	af catalog.AttributeFilter,
 	r domain.Resource,
+	region string,
 	cache *programCache,
 	kind string,
 ) (string, error) {
@@ -310,8 +312,24 @@ func resolveFilter(
 	if err != nil {
 		return "", err
 	}
-	env := expr.EnvFor(r, nil, nil)
+	env := withRegion(expr.EnvFor(r, nil, nil), region)
 	return expr.RunString(prog, env)
+}
+
+// withRegion exposes the region the resource is priced in as `region`
+// when the resource does not set that attribute itself, so a catalog
+// expression can depend on it (a SKU named after its location, such as
+// Cloud SQL's "vCPU in EMEA") whether the region came from the
+// resource, its provider block, or the configured default. A resource's
+// own `region` attribute is left as written.
+func withRegion(env map[string]any, region string) map[string]any {
+	if region == "" {
+		return env
+	}
+	if v, ok := env["region"]; !ok || v == nil || v == "" {
+		env["region"] = region
+	}
+	return env
 }
 
 func invokesPrice(rate string) bool {

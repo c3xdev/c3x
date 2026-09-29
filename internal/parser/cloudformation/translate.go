@@ -69,8 +69,9 @@ var propertyMap = map[string]map[string]string{
 	"aws_instance": {
 		"InstanceType": "instance_type",
 		"ImageId":      "ami",
-		// BlockDeviceMappings gets special handling in extractProperties
-		// because it's an array of objects rather than a scalar.
+		// BlockDeviceMappings is a list of objects rather than a
+		// scalar; translateBlockDevices maps it onto the Terraform
+		// root_block_device / ebs_block_device shape.
 	},
 	"aws_ebs_volume": {
 		"Size":       "size",
@@ -105,9 +106,11 @@ var propertyMap = map[string]map[string]string{
 		"NumCacheNodes": "num_cache_nodes",
 	},
 	"aws_lambda_function": {
-		"MemorySize":   "memory_size",
-		"FunctionName": "function_name",
-		"Runtime":      "runtime",
+		"MemorySize":            "memory_size",
+		"FunctionName":          "function_name",
+		"Runtime":               "runtime",
+		"Architectures":         "architectures",
+		"EphemeralStorage.Size": "ephemeral_storage_size",
 	},
 	"aws_redshift_cluster": {
 		"NodeType":      "node_type",
@@ -150,7 +153,72 @@ func translateProps(kind string, cfn map[string]any) map[string]any {
 		// can still pick up an attribute we didn't formally rewrite.
 		out[cfnKey] = val
 	}
+	if kind == "aws_instance" {
+		translateBlockDevices(out)
+	}
 	return out
+}
+
+// rootDeviceNames are the device names EC2 AMIs use for the root
+// volume: /dev/xvda on Amazon Linux and most HVM images, /dev/sda1 on
+// Ubuntu, Windows and older AMIs.
+var rootDeviceNames = map[string]bool{
+	"/dev/xvda": true, "xvda": true,
+	"/dev/sda1": true, "sda1": true,
+	"/dev/sda": true, "sda": true,
+	"/dev/nvme0n1": true,
+}
+
+// translateBlockDevices rewrites an instance's CloudFormation
+// BlockDeviceMappings into the Terraform aws_instance shape the catalog
+// prices: the mapping on the AMI's root device name becomes
+// `root_block_device`, every other EBS mapping an `ebs_block_device`
+// entry. Instance-store (VirtualName) and suppressed (NoDevice)
+// mappings carry no EBS volume and are skipped.
+func translateBlockDevices(attrs map[string]any) {
+	mappings, ok := attrs["BlockDeviceMappings"].([]any)
+	if !ok {
+		return
+	}
+	var extra []any
+	for _, m := range mappings {
+		bdm, ok := m.(map[string]any)
+		if !ok {
+			continue
+		}
+		ebs, ok := bdm["Ebs"].(map[string]any)
+		if !ok {
+			continue
+		}
+		if _, suppressed := bdm["NoDevice"]; suppressed {
+			continue
+		}
+		device, _ := bdm["DeviceName"].(string)
+		vol := map[string]any{}
+		if device != "" {
+			vol["device_name"] = device
+		}
+		for cfnKey, tfKey := range map[string]string{
+			"VolumeSize": "volume_size",
+			"VolumeType": "volume_type",
+			"Iops":       "iops",
+			"Throughput": "throughput",
+		} {
+			if v, ok := ebs[cfnKey]; ok && v != nil {
+				vol[tfKey] = v
+			}
+		}
+		_, haveRoot := attrs["root_block_device"]
+		if rootDeviceNames[device] && !haveRoot {
+			delete(vol, "device_name")
+			attrs["root_block_device"] = vol
+			continue
+		}
+		extra = append(extra, vol)
+	}
+	if len(extra) > 0 {
+		attrs["ebs_block_device"] = extra
+	}
 }
 
 // flattenNested expands `{ "ClusterConfig": { "InstanceType": "x" } }`

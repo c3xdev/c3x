@@ -2,32 +2,24 @@ kind         = "azurerm_windows_virtual_machine"
 display_name = "Azure Windows Virtual Machine"
 provider     = "azure"
 
-# Azure's catalogue surfaces Linux and Windows variants of the same SKU
-# under different `productName` values (e.g. "Virtual Machines Dsv5 Series"
-# vs "Virtual Machines Dsv5 Series Windows"). The skuName attribute alone
-# is identical between the two, so without a productName filter we'd pick
-# whichever the upstream returns first — historically Linux, producing a
-# silently-wrong Windows estimate.
-#
-# Today's compromise: hard-code productName for the Dsv5 family because
-# that's the default the test fixture uses and the most common general-
-# purpose SKU. Other families (Ev5, NCv3, M-series, …) currently fall
-# back to the Linux-first match. Tracked in CATALOG_STATUS.md as the
-# "Windows OS dispatch" item; a richer pick()-driven mapping or a
-# client-side productName regex (when the upstream gains regex support)
-# is the long-term fix.
+# The VM size is the Retail Prices API's armSkuName (see
+# azurerm_linux_virtual_machine.toml for why not skuName). Linux and
+# Windows rates share it and differ by productName ("... Series" vs
+# "... Series Windows"); the pricing API derives `os` from that, so the
+# os filter picks the Windows rate for any series. The mapping keeps its
+# historical compute_dsv5 name.
 
 [mappings.compute_dsv5]
 service        = "Virtual Machines"
 product_family = "Compute"
 attribute_filters = [
-  { key = "skuName", expr = 'default(size, "Standard_D2s_v5")' },
+  { key = "armSkuName", expr = 'default(size, "Standard_D2s_v5")' },
   { key = "os",      const = "Windows" },
 ]
 
 [[dimensions]]
 id       = "compute_hours"
-label    = "Virtual machine (Windows, Dsv5)"
+label    = "Virtual machine (Windows)"
 unit     = "hours"
 quantity = "monthly_hours()"
 rate     = 'price("compute_dsv5")'

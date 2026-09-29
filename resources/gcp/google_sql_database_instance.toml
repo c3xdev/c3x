@@ -12,18 +12,51 @@ provider     = "gcp"
 #
 # Engine prefix maps database_version (POSTGRES_15 → PostgreSQL,
 # MYSQL_8_0 → MySQL, SQLSERVER → SQL Server).
+#
+# Location suffix: the SKU descriptions end in the location they are sold
+# in, and that name is per region, not per continent: "vCPU in Americas"
+# is us-central1/us-east1/us-west1, but us-east4 is "in Northern
+# Virginia", europe-west1 "in EMEA", europe-west3 "in Frankfurt",
+# asia-southeast1 "in Singapore". The `loc` table maps each region the
+# pricing data carries to its suffix (taken from the Cloud Billing
+# catalog descriptions); a region missing from it falls back to
+# "Americas", which prices at the us-central1 rate with a caveat.
+# `region` is the resource's own attribute, or the region it is priced in.
 
 [mappings.vcpu]
 service        = "Cloud SQL"
 product_family = "ApplicationServices"
 attribute_filters = [
   { key = "description", expr = '''
+      let loc = {
+        "africa-south1": "Johannesburg", "asia-east1": "APAC",
+        "asia-east2": "Hong Kong", "asia-northeast1": "Japan",
+        "asia-northeast2": "Osaka", "asia-northeast3": "Seoul",
+        "asia-south1": "Mumbai", "asia-south2": "Delhi",
+        "asia-southeast1": "Singapore", "asia-southeast2": "Jakarta",
+        "asia-southeast3": "Bangkok", "australia-southeast1": "Sydney",
+        "australia-southeast2": "Melbourne", "europe-central2": "Warsaw",
+        "europe-north1": "Finland", "europe-north2": "Stockholm",
+        "europe-southwest1": "Madrid", "europe-west1": "EMEA",
+        "europe-west10": "Berlin", "europe-west12": "Turin",
+        "europe-west2": "London", "europe-west3": "Frankfurt",
+        "europe-west4": "Netherlands", "europe-west6": "Zurich",
+        "europe-west8": "Milan", "europe-west9": "Paris",
+        "me-central1": "Doha", "me-central2": "Dammam", "me-west1": "Israel",
+        "northamerica-northeast1": "Montreal",
+        "northamerica-northeast2": "Toronto", "northamerica-south1": "Mexico",
+        "southamerica-east1": "Sao Paulo", "southamerica-west1": "Santiago",
+        "us-east4": "Northern Virginia", "us-east5": "Columbus",
+        "us-east7": "Day0 (Alabama)", "us-south1": "Dallas",
+        "us-west2": "Los Angeles", "us-west3": "Salt Lake City",
+        "us-west4": "Las Vegas", "us-west8": "Phoenix"
+      }[default(region, "us-central1")] ?? "Americas";
       "Cloud SQL for " +
       (default(database_version, "POSTGRES_15") startsWith "MYSQL" ? "MySQL" :
        default(database_version, "POSTGRES_15") startsWith "SQLSERVER" ? "SQL Server" : "PostgreSQL") +
       ": " +
       (default(default(settings_availability_type, availability_type), "ZONAL") == "REGIONAL" ? "Regional" : "Zonal") +
-      " - vCPU in Americas"
+      " - vCPU in " + loc
   ''' },
 ]
 
@@ -32,12 +65,35 @@ service        = "Cloud SQL"
 product_family = "ApplicationServices"
 attribute_filters = [
   { key = "description", expr = '''
+      let loc = {
+        "africa-south1": "Johannesburg", "asia-east1": "APAC",
+        "asia-east2": "Hong Kong", "asia-northeast1": "Japan",
+        "asia-northeast2": "Osaka", "asia-northeast3": "Seoul",
+        "asia-south1": "Mumbai", "asia-south2": "Delhi",
+        "asia-southeast1": "Singapore", "asia-southeast2": "Jakarta",
+        "asia-southeast3": "Bangkok", "australia-southeast1": "Sydney",
+        "australia-southeast2": "Melbourne", "europe-central2": "Warsaw",
+        "europe-north1": "Finland", "europe-north2": "Stockholm",
+        "europe-southwest1": "Madrid", "europe-west1": "EMEA",
+        "europe-west10": "Berlin", "europe-west12": "Turin",
+        "europe-west2": "London", "europe-west3": "Frankfurt",
+        "europe-west4": "Netherlands", "europe-west6": "Zurich",
+        "europe-west8": "Milan", "europe-west9": "Paris",
+        "me-central1": "Doha", "me-central2": "Dammam", "me-west1": "Israel",
+        "northamerica-northeast1": "Montreal",
+        "northamerica-northeast2": "Toronto", "northamerica-south1": "Mexico",
+        "southamerica-east1": "Sao Paulo", "southamerica-west1": "Santiago",
+        "us-east4": "Northern Virginia", "us-east5": "Columbus",
+        "us-east7": "Day0 (Alabama)", "us-south1": "Dallas",
+        "us-west2": "Los Angeles", "us-west3": "Salt Lake City",
+        "us-west4": "Las Vegas", "us-west8": "Phoenix"
+      }[default(region, "us-central1")] ?? "Americas";
       "Cloud SQL for " +
       (default(database_version, "POSTGRES_15") startsWith "MYSQL" ? "MySQL" :
        default(database_version, "POSTGRES_15") startsWith "SQLSERVER" ? "SQL Server" : "PostgreSQL") +
       ": " +
       (default(default(settings_availability_type, availability_type), "ZONAL") == "REGIONAL" ? "Regional" : "Zonal") +
-      " - RAM in Americas"
+      " - RAM in " + loc
   ''' },
 ]
 
@@ -45,14 +101,64 @@ attribute_filters = [
 service        = "Cloud SQL"
 product_family = "ApplicationServices"
 attribute_filters = [
-  { key = "description", const = "Cloud SQL for PostgreSQL: Zonal - Micro instance in Americas" },
+  { key = "description", expr = '''
+      let loc = {
+        "africa-south1": "Johannesburg", "asia-east1": "APAC",
+        "asia-east2": "Hong Kong", "asia-northeast1": "Japan",
+        "asia-northeast2": "Osaka", "asia-northeast3": "Seoul",
+        "asia-south1": "Mumbai", "asia-south2": "Delhi",
+        "asia-southeast1": "Singapore", "asia-southeast2": "Jakarta",
+        "asia-southeast3": "Bangkok", "australia-southeast1": "Sydney",
+        "australia-southeast2": "Melbourne", "europe-central2": "Warsaw",
+        "europe-north1": "Finland", "europe-north2": "Stockholm",
+        "europe-southwest1": "Madrid", "europe-west1": "EMEA",
+        "europe-west10": "Berlin", "europe-west12": "Turin",
+        "europe-west2": "London", "europe-west3": "Frankfurt",
+        "europe-west4": "Netherlands", "europe-west6": "Zurich",
+        "europe-west8": "Milan", "europe-west9": "Paris",
+        "me-central1": "Doha", "me-central2": "Dammam", "me-west1": "Israel",
+        "northamerica-northeast1": "Montreal",
+        "northamerica-northeast2": "Toronto", "northamerica-south1": "Mexico",
+        "southamerica-east1": "Sao Paulo", "southamerica-west1": "Santiago",
+        "us-east4": "Northern Virginia", "us-east5": "Columbus",
+        "us-east7": "Day0 (Alabama)", "us-south1": "Dallas",
+        "us-west2": "Los Angeles", "us-west3": "Salt Lake City",
+        "us-west4": "Las Vegas", "us-west8": "Phoenix"
+      }[default(region, "us-central1")] ?? "Americas";
+      "Cloud SQL for PostgreSQL: Zonal - Micro instance in " + loc
+  ''' },
 ]
 
 [mappings.small]
 service        = "Cloud SQL"
 product_family = "ApplicationServices"
 attribute_filters = [
-  { key = "description", const = "Cloud SQL for PostgreSQL: Zonal - Small instance in Americas" },
+  { key = "description", expr = '''
+      let loc = {
+        "africa-south1": "Johannesburg", "asia-east1": "APAC",
+        "asia-east2": "Hong Kong", "asia-northeast1": "Japan",
+        "asia-northeast2": "Osaka", "asia-northeast3": "Seoul",
+        "asia-south1": "Mumbai", "asia-south2": "Delhi",
+        "asia-southeast1": "Singapore", "asia-southeast2": "Jakarta",
+        "asia-southeast3": "Bangkok", "australia-southeast1": "Sydney",
+        "australia-southeast2": "Melbourne", "europe-central2": "Warsaw",
+        "europe-north1": "Finland", "europe-north2": "Stockholm",
+        "europe-southwest1": "Madrid", "europe-west1": "EMEA",
+        "europe-west10": "Berlin", "europe-west12": "Turin",
+        "europe-west2": "London", "europe-west3": "Frankfurt",
+        "europe-west4": "Netherlands", "europe-west6": "Zurich",
+        "europe-west8": "Milan", "europe-west9": "Paris",
+        "me-central1": "Doha", "me-central2": "Dammam", "me-west1": "Israel",
+        "northamerica-northeast1": "Montreal",
+        "northamerica-northeast2": "Toronto", "northamerica-south1": "Mexico",
+        "southamerica-east1": "Sao Paulo", "southamerica-west1": "Santiago",
+        "us-east4": "Northern Virginia", "us-east5": "Columbus",
+        "us-east7": "Day0 (Alabama)", "us-south1": "Dallas",
+        "us-west2": "Los Angeles", "us-west3": "Salt Lake City",
+        "us-west4": "Las Vegas", "us-west8": "Phoenix"
+      }[default(region, "us-central1")] ?? "Americas";
+      "Cloud SQL for PostgreSQL: Zonal - Small instance in " + loc
+  ''' },
 ]
 
 [mappings.storage]
@@ -60,12 +166,35 @@ service        = "Cloud SQL"
 product_family = "ApplicationServices"
 attribute_filters = [
   { key = "description", expr = '''
+      let loc = {
+        "africa-south1": "Johannesburg", "asia-east1": "APAC",
+        "asia-east2": "Hong Kong", "asia-northeast1": "Japan",
+        "asia-northeast2": "Osaka", "asia-northeast3": "Seoul",
+        "asia-south1": "Mumbai", "asia-south2": "Delhi",
+        "asia-southeast1": "Singapore", "asia-southeast2": "Jakarta",
+        "asia-southeast3": "Bangkok", "australia-southeast1": "Sydney",
+        "australia-southeast2": "Melbourne", "europe-central2": "Warsaw",
+        "europe-north1": "Finland", "europe-north2": "Stockholm",
+        "europe-southwest1": "Madrid", "europe-west1": "EMEA",
+        "europe-west10": "Berlin", "europe-west12": "Turin",
+        "europe-west2": "London", "europe-west3": "Frankfurt",
+        "europe-west4": "Netherlands", "europe-west6": "Zurich",
+        "europe-west8": "Milan", "europe-west9": "Paris",
+        "me-central1": "Doha", "me-central2": "Dammam", "me-west1": "Israel",
+        "northamerica-northeast1": "Montreal",
+        "northamerica-northeast2": "Toronto", "northamerica-south1": "Mexico",
+        "southamerica-east1": "Sao Paulo", "southamerica-west1": "Santiago",
+        "us-east4": "Northern Virginia", "us-east5": "Columbus",
+        "us-east7": "Day0 (Alabama)", "us-south1": "Dallas",
+        "us-west2": "Los Angeles", "us-west3": "Salt Lake City",
+        "us-west4": "Las Vegas", "us-west8": "Phoenix"
+      }[default(region, "us-central1")] ?? "Americas";
       "Cloud SQL for " +
       (default(database_version, "POSTGRES_15") startsWith "MYSQL" ? "MySQL" :
        default(database_version, "POSTGRES_15") startsWith "SQLSERVER" ? "SQL Server" : "PostgreSQL") +
       ": " +
       (default(default(settings_availability_type, availability_type), "ZONAL") == "REGIONAL" ? "Regional" : "Zonal") +
-      " - Standard storage in Americas"
+      " - Standard storage in " + loc
   ''' },
 ]
 

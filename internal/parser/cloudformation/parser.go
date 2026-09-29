@@ -76,7 +76,7 @@ func ParseBytes(raw []byte, originPath string, opts Options) ([]domain.Resource,
 				"logical_id", logicalID, "type", res.Type)
 			continue
 		}
-		resolved, ok := resolve(res.Properties, sc).(map[string]any)
+		resolved, ok := coerceScalars(resolve(res.Properties, sc)).(map[string]any)
 		if !ok {
 			resolved = map[string]any{}
 		}
@@ -102,9 +102,10 @@ func ParseBytes(raw []byte, originPath string, opts Options) ([]domain.Resource,
 // bind every field — the goformation library does, at the cost of
 // hundreds of generated files, and we don't need that depth.
 type template struct {
-	Parameters map[string]parameterDef              `yaml:"Parameters" json:"Parameters"`
-	Mappings   map[string]map[string]map[string]any `yaml:"Mappings" json:"Mappings"`
-	Resources  map[string]resourceDef               `yaml:"Resources" json:"Resources"`
+	FormatVersion any                                  `yaml:"AWSTemplateFormatVersion" json:"AWSTemplateFormatVersion"`
+	Parameters    map[string]parameterDef              `yaml:"Parameters" json:"Parameters"`
+	Mappings      map[string]map[string]map[string]any `yaml:"Mappings" json:"Mappings"`
+	Resources     map[string]resourceDef               `yaml:"Resources" json:"Resources"`
 }
 
 type parameterDef struct {
@@ -271,4 +272,25 @@ func nonEmpty(s, fallback string) string {
 		return fallback
 	}
 	return s
+}
+
+// IsTemplate reports whether raw is a CloudFormation template: a
+// document with a non-empty Resources section that either declares
+// AWSTemplateFormatVersion or has at least one resource of an AWS::
+// type. Used to pick templates out of a directory, where YAML and JSON
+// files can be anything (usage files, CI config, Kubernetes manifests).
+func IsTemplate(raw []byte) bool {
+	t, err := decodeTemplate(raw, "")
+	if err != nil || len(t.Resources) == 0 {
+		return false
+	}
+	if t.FormatVersion != nil {
+		return true
+	}
+	for _, r := range t.Resources {
+		if strings.HasPrefix(r.Type, "AWS::") {
+			return true
+		}
+	}
+	return false
 }

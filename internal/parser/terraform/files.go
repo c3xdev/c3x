@@ -98,3 +98,10 @@ func splitOverrides(paths []string) (primary, overrides []string) {
 	}
 	return primary, overrides
 }
+
+// HasConfigFiles reports whether dir holds any Terraform or OpenTofu
+// configuration file (.tf, .tf.json, .tofu, .tofu.json).
+func HasConfigFiles(dir string) bool {
+	files, err := configFiles(dir)
+	return err == nil && len(files) > 0
+}

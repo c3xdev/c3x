@@ -57,7 +57,11 @@ type Options struct {
 // Parse auto-detects the input type and returns the parsed resources.
 //
 // Detection rules:
-//   - directory                    → Terraform .tf / OpenTofu .tofu files
+//   - directory                    → Terraform .tf / OpenTofu .tofu files;
+//     a directory with none of those but
+//     CloudFormation templates
+//     (.yaml/.yml/.json/.template) → those
+//     templates
 //   - .tf / .tofu / .hcl           → single Terraform or OpenTofu file
 //   - .json                        → Terraform plan JSON (Terraform shape
 //     detected by `resource_changes` key
@@ -106,6 +110,15 @@ func parseRaw(path string, opts Options) ([]domain.Resource, error) {
 				AllowFileFunctions: opts.AllowFileFunctions,
 				Untrusted:          opts.Untrusted,
 			})
+		}
+		if !terraform.HasConfigFiles(path) {
+			templates, err := cloudFormationTemplates(path)
+			if err != nil {
+				return nil, err
+			}
+			if len(templates) > 0 {
+				return parseTemplates(templates, opts)
+			}
 		}
 		return terraform.ParseDirectory(path, toTerraformOptions(opts))
 	}
@@ -257,4 +270,59 @@ func isCFNJSON(path string) bool {
 		}
 	}
 	return false
+}
+
+// templateExtensions are the file suffixes a directory scan considers
+// as CloudFormation templates. Each candidate is still sniffed with
+// [cloudformation.IsTemplate], so a usage file or CI config sitting
+// next to the template is not mistaken for one.
+var templateExtensions = []string{".yaml", ".yml", ".json", ".template"}
+
+// cloudFormationTemplates lists the CloudFormation templates directly
+// inside dir (not in subdirectories, matching how a Terraform directory
+// is read), in lexical order.
+func cloudFormationTemplates(dir string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, fmt.Errorf("reading %s: %w", dir, err)
+	}
+	var out []string
+	for _, e := range entries {
+		if e.IsDir() || !hasTemplateExtension(e.Name()) {
+			continue
+		}
+		p := filepath.Join(dir, e.Name())
+		raw, err := os.ReadFile(p)
+		if err != nil {
+			return nil, fmt.Errorf("reading %s: %w", p, err)
+		}
+		if cloudformation.IsTemplate(raw) {
+			out = append(out, p)
+		}
+	}
+	return out, nil
+}
+
+func hasTemplateExtension(name string) bool {
+	lower := strings.ToLower(name)
+	for _, ext := range templateExtensions {
+		if strings.HasSuffix(lower, ext) {
+			return true
+		}
+	}
+	return false
+}
+
+// parseTemplates parses each CloudFormation template and returns their
+// resources together, as one project.
+func parseTemplates(paths []string, opts Options) ([]domain.Resource, error) {
+	var out []domain.Resource
+	for _, p := range paths {
+		res, err := cloudformation.ParseFile(p, toCFNOptions(opts))
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, res...)
+	}
+	return out, nil
 }

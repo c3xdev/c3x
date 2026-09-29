@@ -6,7 +6,7 @@ provider     = "azure"
 service        = "Virtual Machines"
 product_family = "Compute"
 attribute_filters = [
-  { key = "skuName", expr = 'default(sku_name, "Standard_D2s_v5")' },
+  { key = "armSkuName", expr = 'default(sku_name, "Standard_D2s_v5")' },
   { key = "os", const = "Linux" },
 ]
 

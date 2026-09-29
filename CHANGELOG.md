@@ -6,6 +6,41 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- CloudFormation: numbers and booleans written as strings, which
+  CloudFormation accepts (`AllocatedStorage: "250"`, `MultiAZ: "true"`,
+  a `Type: Number` parameter, a `--var` override), no longer fail the
+  estimate with "expected number, got string" or "Call using string as
+  type bool". The parser converts strings that read back identically
+  ("250", "16.4", "true"); "8.0" or "007" keep their spelling. A
+  quantity expression that yields a numeric string also evaluates as
+  that number.
+- CloudFormation: `--path` pointing at a directory that holds templates
+  and no `.tf`/`.tofu` files estimates those templates (`.yaml`, `.yml`,
+  `.json`, `.template` files with a `Resources` section that declares
+  `AWSTemplateFormatVersion` or `AWS::` types). It failed with "no .tf,
+  .tf.json, .tofu or .tofu.json files found". Directories with Terraform
+  files are read as before.
+- CloudFormation: EC2 `BlockDeviceMappings` EBS volumes are priced. The
+  mapping on the root device name (`/dev/xvda`, `/dev/sda1`) becomes the
+  root volume and the others additional EBS volumes, as for Terraform's
+  `root_block_device` / `ebs_block_device`. Lambda `Architectures` and
+  `EphemeralStorage.Size` are read too.
+- `aws_lambda_function` with `architectures = ["arm64"]` is priced at the
+  Arm (Graviton) duration rate, $0.0000133334 per GB-second in us-east-1
+  instead of the x86 $0.0000166667; provisioned concurrency likewise.
+- Azure virtual machines, scale sets, AKS node pools and Batch pools look
+  the size up by `armSkuName`. B-series sizes such as Standard_B2s and
+  Standard_B2s_v2, and most other series outside Dsv5/Esv5-style names,
+  had no price.
+- `google_sql_database_instance` is priced at its region's rates. Only
+  the "in Americas" SKUs were asked for, so other regions (europe-west3,
+  asia-southeast1, us-east4, ...) were quoted us-central1 prices with a
+  region-fallback caveat. Catalog expressions can now read the region a
+  resource is priced in as `region` when the resource does not set that
+  attribute itself.
+
 ## [0.3.15] - 2026-09-29
 
 ### Fixed

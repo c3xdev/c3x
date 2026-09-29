@@ -145,3 +145,34 @@ func TestCompileEmptyFails(t *testing.T) {
 		t.Errorf("expected error on empty expression")
 	}
 }
+
+// A quantity expression that resolves to a numeric string (CloudFormation
+// accepts `AllocatedStorage: "250"`) evaluates as that number instead of
+// failing the whole estimate; a non-numeric string still errors.
+func TestRunNumberParsesNumericStrings(t *testing.T) {
+	t.Parallel()
+
+	env := c3xexpr.EnvFor(domain.Resource{Attributes: map[string]any{
+		"allocated_storage": "250",
+		"padded":            " 12.5 ",
+		"engine":            "postgres",
+		"nan":               "NaN",
+	}}, nil, nil)
+	for src, want := range map[string]float64{
+		`default(allocated_storage, 20)`: 250,
+		`padded`:                         12.5,
+	} {
+		got, err := c3xexpr.RunNumber(mustCompile(t, src), env)
+		if err != nil {
+			t.Fatalf("%s: %v", src, err)
+		}
+		if got != want {
+			t.Errorf("%s = %v, want %v", src, got, want)
+		}
+	}
+	for _, src := range []string{`engine`, `nan`} {
+		if _, err := c3xexpr.RunNumber(mustCompile(t, src), env); err == nil {
+			t.Errorf("%s: want an error for a non-numeric string", src)
+		}
+	}
+}

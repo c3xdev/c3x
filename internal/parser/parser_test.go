@@ -63,6 +63,68 @@ func TestParseDirectoryDispatchesToTerraform(t *testing.T) {
 	}
 }
 
+// A directory with CloudFormation templates and no Terraform files is
+// estimated from its templates; the usage file and other YAML next to
+// them are not mistaken for templates.
+func TestParseDirectoryOfCloudFormationTemplates(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "template.yaml"), `
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  Web:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: m5.xlarge
+`)
+	writeFile(t, filepath.Join(dir, "storage.json"),
+		`{"Resources":{"Bucket":{"Type":"AWS::S3::Bucket","Properties":{"BucketName":"x"}}}}`)
+	writeFile(t, filepath.Join(dir, "c3x-usage.yml"), "version: 0.1\nresource_usage: {}\n")
+	writeFile(t, filepath.Join(dir, "buildspec.yml"), "version: 0.2\nphases: {}\n")
+
+	got, err := parser.Parse(dir, parser.Options{Region: "eu-west-1"})
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	kinds := map[string]bool{}
+	for _, r := range got {
+		kinds[r.Ref.Label()] = true
+	}
+	if len(got) != 2 || !kinds["aws_instance.Web"] || !kinds["aws_s3_bucket.Bucket"] {
+		t.Fatalf("resources = %v, want aws_instance.Web and aws_s3_bucket.Bucket", kinds)
+	}
+}
+
+// Terraform files win: a directory holding both is a Terraform
+// directory, as before, and its YAML is not parsed as CloudFormation.
+func TestParseDirectoryPrefersTerraformOverTemplates(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "main.tf"), `
+		resource "aws_instance" "web" {
+		  instance_type = "m5.xlarge"
+		}
+	`)
+	writeFile(t, filepath.Join(dir, "template.yaml"),
+		"Resources:\n  Bucket:\n    Type: AWS::S3::Bucket\n")
+	got, err := parser.Parse(dir, parser.Options{})
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if len(got) != 1 || got[0].Ref.Kind != "aws_instance" {
+		t.Fatalf("expected only the Terraform aws_instance, got %+v", got)
+	}
+}
+
+func TestParseDirectoryWithNoConfigurationStillErrors(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "c3x-usage.yml"), "version: 0.1\n")
+	if _, err := parser.Parse(dir, parser.Options{}); err == nil {
+		t.Fatal("expected an error for a directory with no configuration")
+	}
+}
+
 func TestParseTFFileDispatchesToTerraform(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()

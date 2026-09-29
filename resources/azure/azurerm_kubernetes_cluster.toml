@@ -57,7 +57,7 @@ rate     = 'price("premium_lts")'
 service        = "Virtual Machines"
 product_family = "Compute"
 attribute_filters = [
-  { key = "skuName", expr = 'default(default_node_pool_vm_size, "Standard_D2s_v5")' },
+  { key = "armSkuName", expr = 'default(default_node_pool_vm_size, "Standard_D2s_v5")' },
   { key = "os", const = "Linux" },
 ]
 
