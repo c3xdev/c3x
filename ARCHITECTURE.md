@@ -57,7 +57,7 @@ spelunking the code first.
 | `internal/parser` | Input → resources | Sniffs format from path/extension, dispatches to a backend. Backends produce `[]domain.Resource`. |
 | `internal/parser/terraform` | HCL pipeline | Full `vars → tfvars → CLI vars → locals (fixed-point) → data placeholders → resources → modules` resolution using `hashicorp/hcl/v2` + `zclconf/go-cty/cty`. |
 | `internal/parser/cloudformation` | CFN → resources | YAML/JSON with short-form intrinsic-tag rewriting (`!Ref`, `!Sub`, `!Join`, `!GetAtt`, `!FindInMap`). |
-| `internal/parser/plan` | Terraform plan JSON | Reads `terraform show -json` output (post-apply values). |
+| `internal/parser/plan` | Terraform plan and state JSON | Reads `terraform show -json` output: a plan (post-apply values) or a state (what exists, with real identifiers). |
 | `internal/parser/terragrunt` | Terragrunt → terraform | `terraform.source`, `inputs`, `locals`, `find_in_parent_folders()` resolution; delegates to terraform parser. |
 | `internal/catalog` | Resource definitions | Embedded TOMLs at `resources/<provider>/<kind>.toml` parsed once into a `*Registry`. Each definition has mappings, dimensions, and a snapshot fixture. |
 | `internal/expr` | Expression DSL | Wraps `expr-lang/expr` with the c3x stdlib (`default`, `pick`, `monthly_hours`, `price`, `replace`, …). Compiled programs are cached in `internal/calculator/programCache`. |
@@ -66,6 +66,8 @@ spelunking the code first.
 | `internal/recommend` | Cost optimizations | Per-resource and tree (cross-resource) rules. Engine re-estimates proposed alternatives and reports savings. |
 | `internal/render` | Estimates → strings | One renderer per output format. Pure functions of `domain.Estimate` + `Format`. |
 | `internal/usage` | Usage YAML | Loads `c3x-usage.yml` and merges its attributes into parsed resources. |
+| `internal/usagesync` | Usage from cloud metrics | `c3x usage sync`: finds the resources to look up (real names from Terraform state), runs the lookups with per-resource failure, and writes the generated `c3x-usage.synced.yml`. Provider-neutral behind a `Source` interface; never touches prices. Only `cmd/c3x` imports it. |
+| `internal/usagesync/aws` | AWS metric source | The only package that imports the AWS SDK (`config`, `cloudwatch`). Read-only CloudWatch calls. |
 | `internal/whatif` | CLI overrides | Parses `--what-if kind.name.attr=value` syntax. |
 | `internal/comment` | Forge integrations | GitHub PR comment poster with marker-based update-in-place. Interface seam for GitLab/Bitbucket/Azure DevOps. |
 | `internal/config` | User config | 5-layer resolution: defaults → file → env → CLI → run-time. |

@@ -84,6 +84,28 @@ linters:
               desc: pricing must not depend on expr
             - pkg: github.com/c3xdev/c3x/internal/calculator
               desc: pricing must not depend on calculator
+        usagesync-callers:
+          files:
+            - '**/internal/**'
+            - '!**/internal/usagesync/**'
+          deny:
+            - pkg: github.com/c3xdev/c3x/internal/usagesync
+              desc: only cmd/c3x may import usagesync
+        usagesync:
+          files:
+            - '**/internal/usagesync/**'
+          deny:
+            - pkg: github.com/c3xdev/c3x/internal/pricing
+              desc: usagesync fetches quantities, never prices
+            - pkg: github.com/c3xdev/c3x/internal/calculator
+              desc: usagesync must not depend on calculator
+        aws-sdk:
+          files:
+            - '**'
+            - '!**/internal/usagesync/aws/**'
+          deny:
+            - pkg: github.com/aws/aws-sdk-go-v2
+              desc: the AWS SDK is imported only in internal/usagesync/aws
     gocritic:
       disabled-checks:
         - hugeParam

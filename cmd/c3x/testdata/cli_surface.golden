@@ -18,4 +18,6 @@ c3x pricing where: --cache-path
 c3x recommend: --cache-path --format --no-cache --offline --path --pricing-endpoint --pricing-token --region --usage --var --var-file --what-if
 c3x supported-resources: --format --provider --status
 c3x top: --cache-path --format --limit --no-cache --offline --path --pricing-endpoint --pricing-token --region --var --var-file
+c3x usage: 
+c3x usage sync: --days --out --path --provider --region --state --strict --var --var-file
 c3x version: 

@@ -12,6 +12,7 @@ package main
 //   2. pricing endpoint reachable (HTTP 200 to a probe query)
 //   3. cache directory writable (creates + deletes a probe file)
 //   4. config resolves (verifies the user's resolved-config is parseable)
+//   5. AWS credentials resolve — only when a synced usage file is configured
 
 import (
 	"context"
@@ -26,6 +27,7 @@ import (
 	"github.com/c3xdev/c3x/internal/catalog"
 	"github.com/c3xdev/c3x/internal/config"
 	"github.com/c3xdev/c3x/internal/pricing"
+	awsusage "github.com/c3xdev/c3x/internal/usagesync/aws"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +42,9 @@ non-zero if any check fails so the command is usable as a CI gate.
   catalog    — embedded TOMLs parse and validate
   endpoint   — pricing.c3x.dev responds to a probe query
   cache      — local cache directory is writable
-  config     — user config resolves without errors`,
+  config     — user config resolves without errors
+  usage sync — AWS credentials resolve; only checked when a synced usage
+               file is configured (synced_usage_path) or present`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			results := runDoctorChecks(cmd.Context())
 			anyFailed := false
@@ -85,12 +89,48 @@ func (r checkResult) Render() string {
 }
 
 func runDoctorChecks(ctx context.Context) []checkResult {
-	return []checkResult{
+	results := []checkResult{
 		checkCatalog(),
 		checkEndpoint(ctx),
 		checkCache(),
 		checkConfig(),
 	}
+	if r, ok := checkUsageSync(ctx); ok {
+		results = append(results, r)
+	}
+	return results
+}
+
+// checkAWSCredentials is a variable so tests need no AWS configuration.
+var checkAWSCredentials = awsusage.Check
+
+// checkUsageSync reports whether `c3x usage sync` could run. It returns
+// ok=false, and so adds no row, unless usage sync is in use here: the
+// project has a synced usage file configured or on disk. Everyone else
+// has no use for AWS credentials and is not asked about them.
+func checkUsageSync(ctx context.Context) (checkResult, bool) {
+	resolved, err := config.Resolve(".", nil)
+	if err != nil || resolved.SyncedUsagePath == "" {
+		return checkResult{}, false
+	}
+	id, err := checkAWSCredentials(ctx)
+	if err != nil {
+		return checkResult{
+			Name:   "usage sync",
+			OK:     false,
+			Detail: err.Error(),
+			Hint:   "set AWS_PROFILE or AWS_ACCESS_KEY_ID, or run `aws sso login`; usage sync only reads CloudWatch",
+		}, true
+	}
+	region := id.Region
+	if region == "" {
+		region = "no default region (each resource's own, or --region)"
+	}
+	return checkResult{
+		Name:   "usage sync",
+		OK:     true,
+		Detail: fmt.Sprintf("AWS credentials from %s; %s", id.CredentialSource, region),
+	}, true
 }
 
 func checkCatalog() checkResult {

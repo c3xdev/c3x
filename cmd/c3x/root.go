@@ -45,6 +45,7 @@ func newRootCmd() *cobra.Command {
 		newRecommendCmd(),
 		newCommentCmd(),
 		newPricingCmd(),
+		newUsageCmd(),
 		newVersionCmd(),
 		newSupportedResourcesCmd(),
 		newDoctorCmd(),

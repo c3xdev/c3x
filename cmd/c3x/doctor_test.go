@@ -2,8 +2,14 @@ package main
 
 import (
 	"bytes"
+	"context"
+	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	awsusage "github.com/c3xdev/c3x/internal/usagesync/aws"
 )
 
 // TestDoctorCatalogCheckPasses validates the catalog check
@@ -63,5 +69,46 @@ func TestDoctorCommandSucceedsOnHappyPath(t *testing.T) {
 	err := cmd.Execute()
 	if err != nil {
 		t.Skipf("doctor failed (likely offline test env): %v\n%s", err, out.String())
+	}
+}
+
+// Doctor asks about AWS credentials only where usage sync is in use.
+func TestDoctorUsageSyncCheckIsAbsentUntilConfigured(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Chdir(t.TempDir())
+	called := false
+	old := checkAWSCredentials
+	checkAWSCredentials = func(context.Context) (awsusage.Identity, error) { called = true; return awsusage.Identity{}, nil }
+	t.Cleanup(func() { checkAWSCredentials = old })
+
+	if _, ok := checkUsageSync(context.Background()); ok || called {
+		t.Fatalf("the check ran with no synced usage file (ok=%v called=%v)", ok, called)
+	}
+}
+
+func TestDoctorUsageSyncCheckReportsCredentials(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	dir := t.TempDir()
+	t.Chdir(dir)
+	if err := os.WriteFile(filepath.Join(dir, "c3x-usage.synced.yml"), []byte("version: \"0.1\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	old := checkAWSCredentials
+	t.Cleanup(func() { checkAWSCredentials = old })
+
+	checkAWSCredentials = func(context.Context) (awsusage.Identity, error) {
+		return awsusage.Identity{Region: "eu-west-1", CredentialSource: "SharedConfigCredentials"}, nil
+	}
+	r, ok := checkUsageSync(context.Background())
+	if !ok || !r.OK || !strings.Contains(r.Detail, "SharedConfigCredentials") || !strings.Contains(r.Detail, "eu-west-1") {
+		t.Errorf("ok result = %+v (ok=%v)", r, ok)
+	}
+
+	checkAWSCredentials = func(context.Context) (awsusage.Identity, error) {
+		return awsusage.Identity{}, errors.New("no AWS credentials: nothing found")
+	}
+	r, ok = checkUsageSync(context.Background())
+	if !ok || r.OK || r.Hint == "" || !strings.Contains(r.Detail, "no AWS credentials") {
+		t.Errorf("failing result = %+v (ok=%v)", r, ok)
 	}
 }

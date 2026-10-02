@@ -8,13 +8,24 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `c3x usage sync` fills `c3x-usage.synced.yml` from your AWS account's
+  metrics, so usage-driven lines are no longer $0 for lack of a hand-written
+  usage file. It is separate from `c3x pricing sync`, which fetches prices;
+  this fetches quantities. The first resource is S3 storage
+  (`standard_storage_gb`, from CloudWatch `BucketSizeBytes`); S3 requests,
+  Lambda, NAT, CloudFront and GCP follow (ROADMAP K). Real bucket names come
+  from `--state` (`terraform show -json`), else a literal in configuration;
+  anything unresolved is skipped and listed, never guessed. Only this
+  command uses cloud credentials, read-only, and it refuses to run in
+  untrusted-input mode. It writes only the generated file and never touches
+  your hand-written one. `c3x doctor` checks AWS credentials once a synced
+  file is in use. (#97, design in #99)
 - Usage: a second, generated usage file. `synced_usage_path` in
   `.c3x.toml` (or `C3X_SYNCED_USAGE_PATH`; default `c3x-usage.synced.yml`
   next to `.c3x.toml` when that file exists) is applied under the
   hand-written `usage_path`, which wins per resource and per key. Extra
   top-level keys in the file (`synced`, `series`, `errors`) are ignored, so
-  older versions read it too. Groundwork for `c3x usage sync` (#97); no
-  command writes the file yet.
+  older versions read it too.
 - Parser: `parser.ParseState` reads a Terraform state document
   (`terraform show -json` with no plan argument), so resources carry the
   identifiers state records, such as a bucket's real name. It is the
