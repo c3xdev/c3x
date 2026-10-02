@@ -205,7 +205,9 @@ never reads or writes your hand-written `usage_path` file, so a re-sync
 cannot overwrite an edit of yours. Pricing commands read both, and yours
 wins per resource and per key (see Configuration). Values it cannot
 establish are skipped and listed, in the output and under `errors:` in the
-file; `--strict` makes that an error exit.
+file; `--strict` makes that an error exit. A run that measures nothing at
+all (no credentials, no `--state`, a missing permission) fails and leaves
+the existing file as it was, rather than replacing it with an empty one.
 
 Today: **AWS S3 bucket storage** (`standard_storage_gb`, from CloudWatch's
 daily `BucketSizeBytes`). It needs `cloudwatch:GetMetricData`, which AWS

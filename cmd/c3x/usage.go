@@ -56,7 +56,8 @@ This is not 'c3x pricing sync', which warms the local cache of prices
 (rates). usage sync measures quantities: GB stored, requests served.
 
 The generated file is replaced whole on every run and is never edited by
-hand. Your hand-written usage file (usage_path) is never read or written
+hand. A run that measures nothing at all (no credentials, no --state, a
+missing permission) fails and leaves the existing file as it was. Your hand-written usage file (usage_path) is never read or written
 here, and wins over the generated one per resource and per key.
 
 Only this command uses cloud credentials, and only to make read-only
@@ -129,20 +130,31 @@ per metric requested, a small amount for a project's buckets.`,
 			if err != nil {
 				return fmt.Errorf("sync: %w", err)
 			}
+
+			w := cmd.OutOrStdout()
+			skipped := func() {
+				for _, addr := range sortedErrorKeys(snap.Errors) {
+					fmt.Fprintf(w, "  skipped %s: %s\n", addr, snap.Errors[addr])
+				}
+			}
+			// A run that tried and measured nothing (no credentials, no
+			// --state, a missing permission) must not replace a good file
+			// with an empty one.
+			if len(snap.ResourceUsage) == 0 && len(targets)+len(problems) > 0 {
+				skipped()
+				return fmt.Errorf("no resource could be synced; %s was not changed", outPath)
+			}
 			if err := snap.Write(outPath); err != nil {
 				return err
 			}
 
-			w := cmd.OutOrStdout()
 			if len(targets)+len(problems) == 0 {
 				fmt.Fprintf(w, "No resources of a supported kind (%s) found in %s.\n",
 					strings.Join(supportedKinds(source), ", "), path)
 			}
 			fmt.Fprintf(w, "Synced %d resource(s) from %s over %d days → %s\n",
 				len(snap.ResourceUsage), source.Provider(), days, outPath)
-			for _, addr := range sortedErrorKeys(snap.Errors) {
-				fmt.Fprintf(w, "  skipped %s: %s\n", addr, snap.Errors[addr])
-			}
+			skipped()
 			if n := len(snap.Errors); n > 0 && strict {
 				return fmt.Errorf("%d resource(s) could not be synced (--strict)", n)
 			}

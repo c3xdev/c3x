@@ -225,3 +225,57 @@ func TestUsageSyncRejectsAnUnsupportedProviderAndBadDays(t *testing.T) {
 		t.Errorf("days err = %v", err)
 	}
 }
+
+// A run that measured nothing must not replace a good snapshot with an
+// empty one: no credentials, a forgotten --state or a missing permission
+// would otherwise silently erase the data.
+func TestUsageSyncKeepsTheExistingSnapshotWhenNothingWasMeasured(t *testing.T) {
+	dir := writeBucketProject(t)
+	synced := filepath.Join(dir, "c3x-usage.synced.yml")
+	writeProjectFile(t, dir, "c3x-usage.synced.yml", syncedBucket)
+	want := fileHash(t, synced)
+
+	// Every lookup fails.
+	useFakeSource(t, &fakeUsageSource{fail: map[string]error{"acme-data": errors.New("no credentials")}})
+	out, err := runCLI(t, "usage", "sync")
+	if err == nil || !strings.Contains(err.Error(), "no resource could be synced") {
+		t.Fatalf("err = %v, want a failure\n%s", err, out)
+	}
+	if !strings.Contains(out, "skipped aws_s3_bucket.data: no credentials") {
+		t.Errorf("the reason was not shown:\n%s", out)
+	}
+	if fileHash(t, synced) != want {
+		t.Error("the existing snapshot was replaced")
+	}
+
+	// Nothing could even be looked up: the name is not a literal and there
+	// is no --state.
+	writeProjectFile(t, dir, "main.tf", `
+		provider "aws" { region = "us-east-1" }
+		resource "aws_s3_bucket" "data" { bucket_prefix = "logs-" }
+	`)
+	out, err = runCLI(t, "usage", "sync")
+	if err == nil || !strings.Contains(out, "pass --state") {
+		t.Fatalf("err = %v, want a failure naming --state\n%s", err, out)
+	}
+	if fileHash(t, synced) != want {
+		t.Error("the existing snapshot was replaced")
+	}
+}
+
+// A project with no resource of a supported kind is a legitimate empty
+// result, and the snapshot reflects it.
+func TestUsageSyncWritesAnEmptySnapshotWhenThereIsNothingToLookUp(t *testing.T) {
+	dir := writeBucketProject(t)
+	writeProjectFile(t, dir, "main.tf", `resource "aws_vpc" "v" { cidr_block = "10.0.0.0/16" }`+"\n")
+	writeProjectFile(t, dir, "c3x-usage.synced.yml", syncedBucket)
+	useFakeSource(t, &fakeUsageSource{})
+
+	if out, err := runCLI(t, "usage", "sync"); err != nil {
+		t.Fatalf("usage sync: %v\n%s", err, out)
+	}
+	raw, _ := os.ReadFile(filepath.Join(dir, "c3x-usage.synced.yml"))
+	if strings.Contains(string(raw), "acme-data") || !strings.Contains(string(raw), "resource_usage: {}") {
+		t.Errorf("the snapshot should now be empty:\n%s", raw)
+	}
+}
