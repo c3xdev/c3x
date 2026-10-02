@@ -6,6 +6,7 @@ package plan
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -195,6 +196,43 @@ func ParseBaselineBytes(raw []byte, logger *slog.Logger) ([]domain.Resource, boo
 	return out, hasBaseline, nil
 }
 
+// ParseStateFile reads a Terraform state document (`terraform show -json`
+// with no plan argument) and returns the resources it records.
+func ParseStateFile(path string, logger *slog.Logger) ([]domain.Resource, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", path, err)
+	}
+	return ParseStateBytes(raw, logger)
+}
+
+// ParseStateBytes parses an in-memory state document. Its resources carry
+// the real identifiers (a bucket's name, a function's ARN) rather than the
+// expressions in configuration, which is why usage sync reads it. The
+// module tree has the same shape as a plan's planned_values, so it is
+// walked by [collectPlanned]. A state records no intent, so Action stays
+// unset. An empty state (no `values`) yields no resources; a plan is
+// rejected, since silently returning nothing for it would hide a wrong file.
+func ParseStateBytes(raw []byte, logger *slog.Logger) ([]domain.Resource, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	var doc planFile
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		return nil, fmt.Errorf("decode state: %w", err)
+	}
+	if doc.Values == nil {
+		if doc.PlannedValues != nil || len(doc.ResourceChanges) > 0 {
+			return nil, errors.New("this is a plan, not a state: use `terraform show -json` without a plan file")
+		}
+		return nil, nil
+	}
+	var out []domain.Resource
+	collectPlanned(doc.Values.RootModule, defaultRegion(doc.Configuration), nil, &out)
+	logger.Debug("state parsed", "resources", len(out))
+	return out, nil
+}
+
 // collectPlanned walks a planned_values module tree, appending every
 // managed resource. Data sources and null child-module entries (which
 // untrusted plan JSON can contain) are skipped rather than dereferenced.
@@ -353,6 +391,9 @@ func defaultRegion(cfg *configuration) string {
 // planFile mirrors the fields we care about from `terraform show -json`.
 // Anything not declared here is ignored at decode time.
 type planFile struct {
+	// Values is the top-level `values` of a state document; a plan has
+	// planned_values instead.
+	Values          *plannedValues   `json:"values"`
 	PlannedValues   *plannedValues   `json:"planned_values"`
 	ResourceChanges []resourceChange `json:"resource_changes"`
 	Configuration   *configuration   `json:"configuration"`

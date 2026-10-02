@@ -216,6 +216,23 @@ func ParsePostApply(path string, opts Options) ([]domain.Resource, error) {
 	return Parse(path, opts)
 }
 
+// ParseState returns the resources recorded in a Terraform state document
+// (`terraform show -json` with no plan argument), with the same
+// enrichment as [Parse]. Resources carry real identifiers and the region
+// the provider reported, which is what usage sync maps metrics onto.
+func ParseState(path string, opts Options) ([]domain.Resource, error) {
+	if opts.Logger == nil {
+		opts.Logger = slog.Default()
+	}
+	out, err := plan.ParseStateFile(path, opts.Logger)
+	if err != nil {
+		return nil, err
+	}
+	applyInheritance(out)
+	applyResourceRegions(out)
+	return out, nil
+}
+
 func toTerraformOptions(o Options) terraform.Options {
 	return terraform.Options{
 		VarFiles: o.VarFiles,
