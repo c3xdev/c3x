@@ -302,7 +302,7 @@ resource_usage:
 	}
 	cmd := &cobra.Command{}
 	cmd.SetErr(&bytes.Buffer{})
-	if err := applyUsageAndWhatIf(cmd, resources, usagePath,
+	if err := applyUsageAndWhatIf(cmd, resources, usageFiles{Hand: usagePath},
 		[]string{"aws_lambda_function.fn.memory_size=512"}); err != nil {
 		t.Fatal(err)
 	}

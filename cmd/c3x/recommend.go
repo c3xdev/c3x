@@ -89,7 +89,7 @@ non-prod, GCP pd-standard → pd-balanced.`,
 			if err != nil {
 				return fmt.Errorf("parsing %s: %w", path, err)
 			}
-			if err := applyUsageAndWhatIf(cmd, parsed, resolved.UsagePath, whatIfs); err != nil {
+			if err := applyUsageAndWhatIf(cmd, parsed, usageFilesOf(resolved), whatIfs); err != nil {
 				return err
 			}
 

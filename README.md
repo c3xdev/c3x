@@ -37,7 +37,7 @@ requests from forks. In that mode c3x fetches no remote modules, reads no
 files, keeps local modules inside the scanned directory, and ignores
 anything in the repository's `.c3x.toml` that could redirect pricing,
 credentials or file access (only region, currency, format, budgets and an
-in-project usage file are honoured). Every parse is also bounded — at most
+in-project usage files are honoured). Every parse is also bounded — at most
 10,000 instances per resource, 200,000 resources, 5,000 module expansions
 and two minutes — so a hostile configuration fails fast instead of
 exhausting the machine. Those limits are checked between resources and
@@ -291,6 +291,7 @@ format = "markdown"
 budget = 1000.0              # same as --budget; --budget 0 overrides it
 budget_delta = 50.0          # same as --budget-delta on c3x diff
 usage_path = "c3x-usage.yml" # relative to this file; used by every command
+synced_usage_path = "c3x-usage.synced.yml" # generated usage; see below
 
 [pricing]
 endpoint = "https://pricing.c3x.dev/graphql"
@@ -299,6 +300,15 @@ endpoint = "https://pricing.c3x.dev/graphql"
 The other keys are `currency`, `offline`, `no_cache`, `cache_path`,
 `no_remote_modules`, and `pricing.token` (keep that one out of the
 repository). c3x warns about any key it doesn't recognise.
+
+Usage can come from two files. `usage_path` is the one you write.
+`synced_usage_path` is a generated snapshot (`c3x-usage.synced.yml`, picked
+up automatically when it sits next to `.c3x.toml`) with the same schema,
+which you never edit by hand. Every command that prices reads both, and
+your file wins per resource and per key: a value you write is never
+replaced by a generated one, and a generated value fills in what you
+leave out. A value measured for one resource beats a `defaults:` entry
+for its whole kind.
 
 Self-hosting the pricing API? Point `pricing.endpoint` at it and set
 `C3X_PRICING_TOKEN` if it runs with `API_KEY` enabled. See

@@ -8,6 +8,13 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Usage: a second, generated usage file. `synced_usage_path` in
+  `.c3x.toml` (or `C3X_SYNCED_USAGE_PATH`; default `c3x-usage.synced.yml`
+  next to `.c3x.toml` when that file exists) is applied under the
+  hand-written `usage_path`, which wins per resource and per key. Extra
+  top-level keys in the file (`synced`, `series`, `errors`) are ignored, so
+  older versions read it too. Groundwork for `c3x usage sync` (#97); no
+  command writes the file yet.
 - Parser: `parser.ParseState` reads a Terraform state document
   (`terraform show -json` with no plan argument), so resources carry the
   identifiers state records, such as a bucket's real name. It is the

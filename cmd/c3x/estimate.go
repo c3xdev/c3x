@@ -125,7 +125,7 @@ precedence matches Terraform's: defaults < auto.tfvars < --var-file <
 			}
 
 			_ = projectDir // resolved.* already carries the project config
-			return runEstimate(cmd, path, resolved, varFiles, vars, resolved.UsagePath, whatIfs, saveBaseline, resolved.Budget, showSkipped, showDelta, strict)
+			return runEstimate(cmd, path, resolved, varFiles, vars, usageFilesOf(resolved), whatIfs, saveBaseline, resolved.Budget, showSkipped, showDelta, strict)
 		},
 	}
 
@@ -183,7 +183,7 @@ func runEstimate(
 	resolved config.Resolved,
 	varFiles []string,
 	rawVars []string,
-	usagePath string,
+	usageFiles usageFiles,
 	whatIfs []string,
 	saveBaseline string,
 	budget float64,
@@ -200,7 +200,7 @@ func runEstimate(
 		return fmt.Errorf("parsing %s: %w", rawPath, err)
 	}
 
-	if err := applyUsageAndWhatIf(cmd, parsed, usagePath, whatIfs); err != nil {
+	if err := applyUsageAndWhatIf(cmd, parsed, usageFiles, whatIfs); err != nil {
 		return err
 	}
 
@@ -329,8 +329,8 @@ var errBudgetExceeded = fmt.Errorf("budget exceeded")
 // hook used by estimate / diff / recommend. Usage file applies first
 // (runtime quantities), then --what-if overrides (CLI wins).
 // Unmatched entries in either log a warning to stderr.
-func applyUsageAndWhatIf(cmd *cobra.Command, resources []domain.Resource, usagePath string, whatIfs []string) error {
-	if err := applyUsage(cmd.ErrOrStderr(), resources, usagePath); err != nil {
+func applyUsageAndWhatIf(cmd *cobra.Command, resources []domain.Resource, files usageFiles, whatIfs []string) error {
+	if err := applyUsage(cmd.ErrOrStderr(), resources, files); err != nil {
 		return err
 	}
 	if len(whatIfs) > 0 {
@@ -356,23 +356,45 @@ func applyUsageAndWhatIf(cmd *cobra.Command, resources []domain.Resource, usageP
 	return nil
 }
 
-// applyUsage loads the usage file at usagePath, if any, onto resources.
-// Every command that prices resources applies it, so the two sides of a
+// usageFiles are the usage files a run reads: the hand-written one and the
+// one `c3x usage sync` generated. Either may be empty.
+type usageFiles struct {
+	Hand   string
+	Synced string
+}
+
+func usageFilesOf(r config.Resolved) usageFiles {
+	return usageFiles{Hand: r.UsagePath, Synced: r.SyncedUsagePath}
+}
+
+// applyUsage loads the usage files, if any, onto resources. The
+// hand-written file wins per resource and per key over the synced one.
+// Every command that prices resources applies them, so the two sides of a
 // diff or PR comment are computed with the same usage as the estimate
 // that produced the baseline.
-func applyUsage(stderr io.Writer, resources []domain.Resource, usagePath string) error {
-	if usagePath == "" {
+func applyUsage(stderr io.Writer, resources []domain.Resource, files usageFiles) error {
+	if files.Hand == "" && files.Synced == "" {
 		return nil
 	}
-	f, err := usage.Load(usagePath)
+	hand, err := usage.Load(files.Hand)
 	if err != nil {
 		return fmt.Errorf("usage file: %w", err)
 	}
-	rep := usage.ApplyWithReport(resources, f)
+	synced, err := usage.Load(files.Synced)
+	if err != nil {
+		return fmt.Errorf("synced usage file: %w", err)
+	}
+	rep := usage.ApplyLayered(resources, synced, hand)
 	if len(rep.Unmatched) > 0 {
 		fmt.Fprintf(stderr,
 			"c3x: warning: %d usage entries did not match any resource (%v)\n",
 			len(rep.Unmatched), rep.Unmatched)
+	}
+	if len(rep.UnmatchedSynced) > 0 {
+		fmt.Fprintf(stderr,
+			"c3x: warning: %d synced usage entries did not match any resource (%v); "+
+				"re-run `c3x usage sync` if resources were renamed or removed\n",
+			len(rep.UnmatchedSynced), rep.UnmatchedSynced)
 	}
 	for _, old := range sortedKeys(rep.Legacy) {
 		fmt.Fprintf(stderr,

@@ -217,7 +217,7 @@ func computeCurrent(
 	if err != nil {
 		return domain.Estimate{}, fmt.Errorf("parsing %s: %w", rawPath, err)
 	}
-	if err := applyUsage(os.Stderr, parsed, resolved.UsagePath); err != nil {
+	if err := applyUsage(os.Stderr, parsed, usageFilesOf(resolved)); err != nil {
 		return domain.Estimate{}, err
 	}
 	engine, closeFn, err := buildPricingEngine(ctx, resolved)
@@ -260,11 +260,11 @@ func computePlanAware(
 		return domain.Estimate{}, nil, fmt.Errorf("parsing plan baseline %s: %w", rawPath, err)
 	}
 	// Both sides get the same usage, so it cancels out of the delta.
-	if err := applyUsage(os.Stderr, after, resolved.UsagePath); err != nil {
+	if err := applyUsage(os.Stderr, after, usageFilesOf(resolved)); err != nil {
 		return domain.Estimate{}, nil, err
 	}
 	if hasBaseline {
-		if err := applyUsage(io.Discard, before, resolved.UsagePath); err != nil {
+		if err := applyUsage(io.Discard, before, usageFilesOf(resolved)); err != nil {
 			return domain.Estimate{}, nil, err
 		}
 	}

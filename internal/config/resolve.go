@@ -39,6 +39,7 @@ func Resolve(projectDir string, flags map[string]any) (Resolved, error) {
 	v.SetDefault("no_cache", d.NoCache)
 	v.SetDefault("cache_path", d.CachePath)
 	v.SetDefault("usage_path", d.UsagePath)
+	v.SetDefault("synced_usage_path", d.SyncedUsagePath)
 	v.SetDefault("budget", d.Budget)
 	v.SetDefault("budget_delta", d.BudgetDelta)
 	v.SetDefault("pricing.endpoint", d.PricingEndpoint)
@@ -142,13 +143,32 @@ func Resolve(projectDir string, flags map[string]any) (Resolved, error) {
 		NoCache:            v.GetBool("no_cache"),
 		CachePath:          v.GetString("cache_path"),
 		UsagePath:          v.GetString("usage_path"),
+		SyncedUsagePath:    v.GetString("synced_usage_path"),
 		Budget:             v.GetFloat64("budget"),
 		BudgetDelta:        v.GetFloat64("budget_delta"),
+	}
+	if out.SyncedUsagePath == "" {
+		out.SyncedUsagePath = defaultSyncedUsagePath(projectDir)
 	}
 	if err := out.Validate(); err != nil {
 		return Resolved{}, err
 	}
 	return out, nil
+}
+
+// DefaultSyncedUsageFile is the name `c3x usage sync` writes, and the one
+// looked for in the project directory when synced_usage_path is unset.
+const DefaultSyncedUsageFile = "c3x-usage.synced.yml"
+
+// defaultSyncedUsagePath returns the default snapshot in projectDir if it
+// is there. A symlink is not followed: in a pull request it could point
+// anywhere, and a parse error would quote the target.
+func defaultSyncedUsagePath(projectDir string) string {
+	p := filepath.Join(projectDir, DefaultSyncedUsageFile)
+	if info, err := os.Lstat(p); err != nil || !info.Mode().IsRegular() {
+		return ""
+	}
+	return p
 }
 
 // ErrNoProjectDir is returned by helpers that need a project directory
@@ -161,6 +181,7 @@ var ErrNoProjectDir = errors.New("project directory is empty")
 var projectSafeKeys = map[string]bool{
 	"region": true, "currency": true, "format": true,
 	"budget": true, "budget_delta": true, "no_cache": true, "usage_path": true,
+	"synced_usage_path": true,
 }
 
 // knownKeys is every setting c3x reads from a config file. Anything else
@@ -169,7 +190,8 @@ var projectSafeKeys = map[string]bool{
 var knownKeys = map[string]bool{
 	"region": true, "currency": true, "format": true,
 	"budget": true, "budget_delta": true, "no_cache": true, "usage_path": true,
-	"offline": true, "no_remote_modules": true, "allow_file_functions": true,
+	"synced_usage_path": true,
+	"offline":           true, "no_remote_modules": true, "allow_file_functions": true,
 	"cache_path": true, "pricing.endpoint": true, "pricing.token": true,
 }
 
@@ -181,10 +203,10 @@ var knownKeys = map[string]bool{
 // limited to projectSafeKeys, because a pull request from a fork can
 // edit it: pricing.endpoint would send the pricing token and every price
 // lookup to a server of the attacker's choosing (and could fake prices
-// to pass a budget gate), cache_path points c3x at an arbitrary path, and offline swaps real prices for stubs. usage_path is
-// kept only when it stays inside the project, since a parse error on an
-// arbitrary file would quote its contents. no_remote_modules may only be
-// turned on, never off.
+// to pass a budget gate), cache_path points c3x at an arbitrary path, and offline swaps real prices for stubs. usage_path and
+// synced_usage_path are kept only when they stay inside the project, since
+// a parse error on an arbitrary file would quote its contents.
+// no_remote_modules may only be turned on, never off.
 func projectSettings(pv *viper.Viper, projectDir string, untrusted bool) (map[string]any, []string) {
 	out := map[string]any{}
 	var ignored []string
@@ -195,7 +217,7 @@ func projectSettings(pv *viper.Viper, projectDir string, untrusted bool) (map[st
 			switch key {
 			case "no_remote_modules":
 				keep = pv.GetBool(key)
-			case "usage_path":
+			case "usage_path", "synced_usage_path":
 				keep = insideDir(projectDir, pv.GetString(key))
 			default:
 				keep = projectSafeKeys[key]
@@ -207,7 +229,7 @@ func projectSettings(pv *viper.Viper, projectDir string, untrusted bool) (map[st
 		}
 		// The file sits in the project, so its relative paths are relative
 		// to the project, not to wherever c3x was started.
-		if p, ok := val.(string); ok && key == "usage_path" && p != "" && !filepath.IsAbs(p) {
+		if p, ok := val.(string); ok && (key == "usage_path" || key == "synced_usage_path") && p != "" && !filepath.IsAbs(p) {
 			val = filepath.Join(projectDir, p)
 		}
 		setNested(out, strings.Split(key, "."), val)
