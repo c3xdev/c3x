@@ -81,9 +81,19 @@ homebrew_casks:
       owner: c3xdev
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_RELEASE_TOKEN }}"
-    homepage: https://c3x.dev
-    description: "Cloud cost estimation for Terraform & CloudFormation. No API key, no SaaS."
+    homepage: https://c3x.dev/
+    description: "Cloud cost estimation for Terraform, OpenTofu and CloudFormation"
     license: Apache-2.0
+    # Homebrew quarantines what a cask downloads, and Gatekeeper kills a
+    # quarantined binary that is not notarized: `c3x` exited 137 on launch.
+    # The binary is ad-hoc signed only, so drop the quarantine flag.
+    # postflight_steps, not hooks (which emit the deprecated postflight).
+    custom_block: |
+      postflight_steps do
+        on_macos do
+          run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "c3x"], chdir: ".", writable_paths: ["c3x"]
+        end
+      end
 
 # Docker images: dockers_v2 builds the multi-arch manifest natively
 # (no per-arch image + manifest stitching needed). Published to both

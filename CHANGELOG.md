@@ -6,6 +6,13 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Homebrew: the cask now clears the quarantine flag after install. Homebrew
+  quarantines what a cask downloads, and macOS killed the un-notarized
+  binary on launch (exit 137), so `brew install c3xdev/tap/c3x` gave a c3x
+  that would not start. The published cask was fixed for 0.3.20 directly.
+
 ## [0.3.20] - 2026-10-16
 
 ### Security
