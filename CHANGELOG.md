@@ -6,6 +6,15 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.20] - 2026-10-16
+
+### Security
+
+- Release binaries are built with Go 1.27.2 (0.3.19 used 1.27.1, which has
+  `net/http`, `crypto/tls` and HTTP/2 vulnerabilities), and
+  `golang.org/x/text` is v0.39.0: v0.38.0 could loop forever on invalid
+  input reachable from HCL templates in Terragrunt files (GO-2026-5970).
+
 ### Added
 
 - `c3x usage sync` fills `c3x-usage.synced.yml` from your AWS account's
