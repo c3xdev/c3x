@@ -12,7 +12,8 @@ import (
 
 // moduleEnv is everything the expressions of one module instance are
 // evaluated against: its variables, locals, data placeholders, the
-// literal attributes of its resources, and its provider regions.
+// literal attributes of its resources, the outputs of the modules it
+// calls, and its provider regions.
 type moduleEnv struct {
 	scope  evalScope
 	vars   map[string]cty.Value
@@ -21,8 +22,11 @@ type moduleEnv struct {
 	// resources exposes the statically known attributes of the module's
 	// resources as <type>.<name>.<attr>; see collectLiteralResources.
 	resources map[string]cty.Value
-	regions   providerRegions
-	logger    *slog.Logger
+	// modules holds the outputs of the module calls resolved so far, by
+	// call name, exposed as module.<name>.<output>; see resolveCalls.
+	modules map[string]cty.Value
+	regions providerRegions
+	logger  *slog.Logger
 	// assumedCount is set when this module instance exists because of a
 	// module-level count / for_each computed from a data source
 	// placeholder; every resource under it inherits it (see
@@ -34,6 +38,7 @@ type moduleEnv struct {
 // per-instance scopes (count, each).
 func (e moduleEnv) evalContext(extras map[string]cty.Value) *hcl.EvalContext {
 	ctx := e.scope.evalContext(asObject(e.vars), asObject(e.locals), e.data, extras)
+	ctx.Variables["module"] = asObject(e.modules)
 	for k, v := range e.resources {
 		if _, taken := ctx.Variables[k]; !taken {
 			ctx.Variables[k] = v
@@ -100,6 +105,8 @@ func emitOne(
 // suffix ("", "[0]", `["a"]`) and the count / each scope it evaluates in.
 type instance struct {
 	suffix string
+	// key is the for_each key, which addresses the instance's outputs.
+	key    string
 	extras map[string]cty.Value
 	// assumed describes the data source placeholders the count /
 	// for_each was computed from; empty when it rests on none.
@@ -171,6 +178,7 @@ func expandInstances(env moduleEnv, body *hclsyntax.Body, srcPath, address strin
 			// from each.key / each.value are reported unresolved.
 			out[i] = instance{
 				suffix:  fmt.Sprintf("[%q]", p.Key),
+				key:     p.Key,
 				assumed: assumed,
 				extras: map[string]cty.Value{
 					"each": cty.ObjectVal(map[string]cty.Value{

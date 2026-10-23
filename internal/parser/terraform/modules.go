@@ -52,20 +52,47 @@ func loadInitModules(baseDir string, logger *slog.Logger) map[string]string {
 	return out
 }
 
-// moduleExpander carries what stays fixed while expanding a module tree.
+// moduleExpander carries what stays fixed while resolving a module tree.
 type moduleExpander struct {
 	initModules map[string]string
 	offline     bool
 	logger      *slog.Logger
-	out         *[]domain.Resource
 }
 
-// expandModules walks every `module "X" { ... }` block and recursively
-// parses each module's source directory, threading parent inputs in as
-// the child's variables and prefixing emitted Resources with the
-// `module.X.` path.
+// moduleNode is one module instance: the scope its expressions evaluate
+// in, its configuration, the address prefix of its resources (empty for
+// the root, `module.x[0].` below it), and the module instances it calls,
+// in source order.
+type moduleNode struct {
+	env      moduleEnv
+	sources  []sourceFile
+	prefix   string
+	children []*moduleNode
+}
+
+// emit appends the resources of n and of every module instance under it.
+func (n *moduleNode) emit(out *[]domain.Resource) error {
+	if err := emitResources(n.env, n.sources, n.prefix, out); err != nil {
+		return err
+	}
+	for _, c := range n.children {
+		if err := c.emit(out); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// resolveCalls resolves every `module "X" { ... }` block of n: it parses
+// each module's source directory, threading n's values in as the child's
+// variables, recurses into the child's own module calls, and evaluates
+// the child's `output` blocks. Each call's outputs are added to n's scope
+// as module.X, and n's locals are resolved again, before the next call is
+// resolved, so a module input, a local or a resource of n can read
+// another module's outputs. Calls are resolved in dependency order (see
+// callOrder); n's locals are resolved a final time once all are done.
 //
-// A module block with count or for_each is expanded once per instance,
+// A module block with count or for_each is resolved once per instance,
 // with count.index / each.key / each.value in scope for its inputs, and
 // its resources are addressed module.X[0]. / module.X["a"]., as Terraform
 // addresses them. Every instance counts against the parse budget.
@@ -74,95 +101,152 @@ type moduleExpander struct {
 // the manifest produced by `terraform init`. Sources we can't resolve
 // (no manifest entry) log a loud warning and are skipped — the rest of
 // the config still produces a useful estimate.
-func (m moduleExpander) expandModules(
-	env moduleEnv,
-	baseDir string,
-	sources []sourceFile,
-	namePrefix string,
-	keyPrefix string,
-	depth int,
-) error {
-	logger := m.logger
-	if depth >= MaxModuleDepth {
-		logger.Warn("module nesting exceeded MaxModuleDepth; truncating expansion. "+
+func (m moduleExpander) resolveCalls(n *moduleNode, baseDir, keyPrefix string, depth int) error {
+	calls := moduleBlocks(n.sources)
+	if len(calls) > 0 && depth >= MaxModuleDepth {
+		m.logger.Warn("module nesting exceeded MaxModuleDepth; truncating expansion. "+
 			"likely a self-referential `module \"x\" { source = \".\" }`",
 			"depth", depth, "max", MaxModuleDepth)
-		return nil
+		calls = nil
 	}
-	parentCtx := env.evalContext(nil)
+	order, localsReadModules := callOrder(calls, n.sources)
+	byCall := make([][]*moduleNode, len(calls))
+	for _, i := range order {
+		nodes, outputs, ok, err := m.resolveCall(n, calls[i], baseDir, keyPrefix, depth)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			continue
+		}
+		byCall[i] = nodes
+		if n.env.modules == nil {
+			n.env.modules = map[string]cty.Value{}
+		}
+		n.env.modules[calls[i].Labels[0]] = outputs
+		if localsReadModules {
+			n.env.locals = resolveLocals(n.env.scope, n.sources, n.env.vars, n.env.data, asObject(n.env.modules), nil)
+		}
+	}
+	n.env.locals = resolveLocals(n.env.scope, n.sources, n.env.vars, n.env.data, asObject(n.env.modules), m.logger)
+	for _, nodes := range byCall {
+		n.children = append(n.children, nodes...)
+	}
+	return nil
+}
 
+// moduleBlocks lists the module calls of a configuration.
+func moduleBlocks(sources []sourceFile) []*moduleCall {
+	var out []*moduleCall
 	for _, src := range sources {
 		for _, block := range src.Body.Blocks {
-			if block.Type != "module" || len(block.Labels) == 0 {
-				continue
-			}
-			modName := block.Labels[0]
-			address := namePrefix + "module." + modName
-
-			instances, ok := expandInstances(env, block.Body, src.Path, address)
-			if !ok {
-				continue
-			}
-			if err := env.scope.budget.moduleCall(address, len(instances)); err != nil {
-				return err
-			}
-			if len(instances) == 0 {
-				continue
-			}
-
-			source, ok := readModuleSource(block.Body, parentCtx)
-			if !ok {
-				continue
-			}
-			version := readModuleVersion(block.Body, parentCtx)
-
-			// The init manifest keys modules by name, never by instance.
-			manifestKey := modName
-			if keyPrefix != "" {
-				manifestKey = keyPrefix + "." + modName
-			}
-
-			childDir, ok := resolveModuleSource(source, version, baseDir, manifestKey, m.initModules, modName, m.offline, logger)
-			if !ok {
-				continue
-			}
-			if info, err := os.Stat(childDir); err != nil || !info.IsDir() {
-				logger.Warn("module source path is not a directory; skipping",
-					"module", modName, "dir", childDir)
-				continue
-			}
-			// Untrusted input may not pull configuration from outside its own
-			// tree: on a server, source = "../other-upload" (or a committed
-			// .terraform/modules/modules.json pointing there) would fold
-			// another user's infrastructure into this estimate. Terraform
-			// allows ../ sources, so trusted parses keep doing the same.
-			if env.scope.untrusted && !env.scope.containsDir(childDir) {
-				logger.Warn("untrusted input: module source is outside the project directory; skipping",
-					"module", modName, "dir", childDir)
-				continue
-			}
-
-			childSources, err := loadConfigDir(childDir, logger)
-			if err != nil {
-				return fmt.Errorf("module %s: %w", modName, err)
-			}
-			child := moduleSource{
-				dir:       childDir,
-				sources:   childSources,
-				types:     collectVariableTypes(childSources),
-				resources: collectLiteralResources(childSources),
-			}
-			for _, inst := range instances {
-				if err := m.expandInstance(
-					env, block, child, inst,
-					address+inst.suffix+".", manifestKey, depth,
-				); err != nil {
-					return err
-				}
+			if block.Type == "module" && len(block.Labels) > 0 {
+				out = append(out, &moduleCall{Block: block, path: src.Path})
 			}
 		}
 	}
-	return nil
+	return out
+}
+
+// moduleCall is a module block and the file it is in.
+type moduleCall struct {
+	*hclsyntax.Block
+	path string
+}
+
+// resolveCall resolves one module call into its instances, and returns
+// the value module.<name> takes in the caller: the outputs object, a
+// tuple of them under count, or an object keyed by each.key under
+// for_each. ok is false when the call is skipped.
+func (m moduleExpander) resolveCall(
+	parent *moduleNode,
+	block *moduleCall,
+	baseDir, keyPrefix string,
+	depth int,
+) (nodes []*moduleNode, outputs cty.Value, ok bool, err error) {
+	logger := m.logger
+	env := parent.env
+	modName := block.Labels[0]
+	address := parent.prefix + "module." + modName
+
+	instances, ok := expandInstances(env, block.Body, block.path, address)
+	if !ok {
+		return nil, cty.NilVal, false, nil
+	}
+	if err := env.scope.budget.moduleCall(address, len(instances)); err != nil {
+		return nil, cty.NilVal, false, err
+	}
+	_, counted := block.Body.Attributes["count"]
+	_, keyed := block.Body.Attributes["for_each"]
+	if len(instances) == 0 {
+		if counted {
+			return nil, cty.EmptyTupleVal, true, nil
+		}
+		return nil, cty.EmptyObjectVal, true, nil
+	}
+
+	parentCtx := env.evalContext(nil)
+	source, ok := readModuleSource(block.Body, parentCtx)
+	if !ok {
+		return nil, cty.NilVal, false, nil
+	}
+	version := readModuleVersion(block.Body, parentCtx)
+
+	// The init manifest keys modules by name, never by instance.
+	manifestKey := modName
+	if keyPrefix != "" {
+		manifestKey = keyPrefix + "." + modName
+	}
+
+	childDir, ok := resolveModuleSource(source, version, baseDir, manifestKey, m.initModules, modName, m.offline, logger)
+	if !ok {
+		return nil, cty.NilVal, false, nil
+	}
+	if info, err := os.Stat(childDir); err != nil || !info.IsDir() {
+		logger.Warn("module source path is not a directory; skipping",
+			"module", modName, "dir", childDir)
+		return nil, cty.NilVal, false, nil
+	}
+	// Untrusted input may not pull configuration from outside its own
+	// tree: on a server, source = "../other-upload" (or a committed
+	// .terraform/modules/modules.json pointing there) would fold
+	// another user's infrastructure into this estimate. Terraform
+	// allows ../ sources, so trusted parses keep doing the same.
+	if env.scope.untrusted && !env.scope.containsDir(childDir) {
+		logger.Warn("untrusted input: module source is outside the project directory; skipping",
+			"module", modName, "dir", childDir)
+		return nil, cty.NilVal, false, nil
+	}
+
+	childSources, err := loadConfigDir(childDir, logger)
+	if err != nil {
+		return nil, cty.NilVal, false, fmt.Errorf("module %s: %w", modName, err)
+	}
+	child := moduleSource{
+		dir:       childDir,
+		sources:   childSources,
+		types:     collectVariableTypes(childSources),
+		resources: collectLiteralResources(childSources),
+	}
+	var tuple []cty.Value
+	byKey := map[string]cty.Value{}
+	for _, inst := range instances {
+		node, err := m.resolveInstance(env, block.Block, child, inst, address+inst.suffix+".", manifestKey, depth)
+		if err != nil {
+			return nil, cty.NilVal, false, err
+		}
+		nodes = append(nodes, node)
+		out := moduleOutputs(node.env, child.sources)
+		tuple = append(tuple, out)
+		byKey[inst.key] = out
+	}
+	switch {
+	case counted:
+		return nodes, cty.TupleVal(tuple), true, nil
+	case keyed:
+		return nodes, cty.ObjectVal(byKey), true, nil
+	}
+	return nodes, tuple[0], true, nil
 }
 
 // moduleSource is a module's configuration, loaded once per module block
@@ -174,18 +258,18 @@ type moduleSource struct {
 	resources map[string]cty.Value
 }
 
-// expandInstance parses one instance of a module call: its inputs are
-// evaluated in the parent's scope plus the instance's count / each,
-// then the child's resources are emitted under childPrefix and its own
-// module calls recursed into.
-func (m moduleExpander) expandInstance(
+// resolveInstance resolves one instance of a module call: its inputs are
+// evaluated in the parent's scope plus the instance's count / each, then
+// the child's own module calls are resolved in turn. Its resources are
+// emitted later, under childPrefix (see moduleNode.emit).
+func (m moduleExpander) resolveInstance(
 	parent moduleEnv,
 	block *hclsyntax.Block,
 	child moduleSource,
 	inst instance,
 	childPrefix, manifestKey string,
 	depth int,
-) error {
+) (*moduleNode, error) {
 	logger := m.logger
 	modName := block.Labels[0]
 	instCtx := parent.evalContext(inst.extras)
@@ -210,10 +294,10 @@ func (m moduleExpander) expandInstance(
 
 	childVars, err := collectVariableDefaults(child.sources)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := applyAutoTfvars(child.dir, childVars); err != nil {
-		return err
+		return nil, err
 	}
 	for k, v := range childInputs {
 		childVars[k] = v
@@ -235,7 +319,7 @@ func (m moduleExpander) expandInstance(
 	)
 	childData := collectDataBlocks(child.sources, regionHints)
 	childScope := parent.scope.child(child.dir)
-	childLocals := resolveLocals(childScope, child.sources, childVars, childData, logger)
+	childLocals := resolveLocals(childScope, child.sources, childVars, childData, cty.EmptyObjectVal, nil)
 	if r := findDefaultRegion(child.sources, childVars, childLocals, childData, logger); r != "" {
 		childFallback = r
 	}
@@ -256,10 +340,11 @@ func (m moduleExpander) expandInstance(
 		// count / for_each makes every resource under it a guess too.
 		assumedCount: joinAssumed(parent.assumedCount, inst.assumed),
 	}
-	if err := emitResources(env, child.sources, childPrefix, m.out); err != nil {
-		return err
+	node := &moduleNode{env: env, sources: child.sources, prefix: childPrefix}
+	if err := m.resolveCalls(node, child.dir, manifestKey, depth+1); err != nil {
+		return nil, err
 	}
-	return m.expandModules(env, child.dir, child.sources, childPrefix, manifestKey, depth+1)
+	return node, nil
 }
 
 // readModuleSource evaluates a module block's `source = "..."` attribute

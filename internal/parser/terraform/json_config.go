@@ -26,7 +26,8 @@ import (
 // schemas. Translating keeps one AST type throughout and needs no schema:
 //
 //   - The top-level structure is fixed by the language (resource, data,
-//     module, provider, variable, locals), so it becomes native blocks.
+//     module, provider, variable, locals, output), so it becomes native
+//     blocks.
 //   - Inside a resource, a JSON object or array of objects is written as
 //     an attribute: `root_block_device = { volume_size = 50 }`. That
 //     evaluates to exactly the attribute shape a literal nested block
@@ -41,9 +42,9 @@ import (
 //     references: a resource's `provider`, a module's `providers` map,
 //     a variable's `type`, and a dynamic block's `iterator`.
 //
-// Skipped, as irrelevant to cost: output, terraform, moved, import, check
-// and removed blocks, and depends_on, lifecycle, provisioner and
-// connection inside resources. Anything else this can't represent is
+// Skipped, as irrelevant to cost: terraform, moved, import, check and
+// removed blocks, everything in an output but its value, and depends_on,
+// lifecycle, provisioner and connection inside resources. Anything else this can't represent is
 // skipped with a warning naming the file and key, never silently.
 //
 // Diagnostics for a JSON file cite positions in the translated source,
@@ -144,7 +145,8 @@ const (
 	bodyResource bodyKind = iota // resource, data, and dynamic content
 	bodyModule
 	bodyVariable
-	bodyPlain // provider, locals: no special keys
+	bodyOutput // only value is kept
+	bodyPlain  // provider, locals: no special keys
 )
 
 func (t *jsonTranslator) skip(reason, key string) {
@@ -157,7 +159,7 @@ func (t *jsonTranslator) file(obj *jsonObject) {
 	for i, key := range obj.keys {
 		val := obj.vals[i]
 		switch key {
-		case "//", "output", "terraform", "moved", "import", "check", "removed":
+		case "//", "terraform", "moved", "import", "check", "removed":
 			// Comments, and blocks that declare nothing c3x prices.
 		case "resource", "data":
 			t.typedBlocks(key, val)
@@ -167,6 +169,8 @@ func (t *jsonTranslator) file(obj *jsonObject) {
 			t.namedBlocks(key, val, bodyPlain)
 		case "variable":
 			t.namedBlocks(key, val, bodyVariable)
+		case "output":
+			t.namedBlocks(key, val, bodyOutput)
 		case "locals":
 			t.forEachObject(key, val, func(o *jsonObject) {
 				t.b.WriteString("locals {\n")
@@ -211,7 +215,7 @@ func (t *jsonTranslator) typedBlocks(blockType string, val any) {
 	})
 }
 
-// namedBlocks writes module / provider / variable blocks: {"<name>": body},
+// namedBlocks writes module / provider / variable / output blocks: {"<name>": body},
 // where body may be an array (several provider configurations).
 func (t *jsonTranslator) namedBlocks(blockType string, val any, kind bodyKind) {
 	t.forEachObject(blockType, val, func(names *jsonObject) {
@@ -281,6 +285,10 @@ func (t *jsonTranslator) attributes(obj *jsonObject, kind bodyKind, where string
 				continue
 			case "providers":
 				t.providersMap(val, addr)
+				continue
+			}
+		case bodyOutput:
+			if key != "value" {
 				continue
 			}
 		case bodyVariable:

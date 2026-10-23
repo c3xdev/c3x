@@ -8,6 +8,16 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Module outputs are now evaluated (#116). An expression reading
+  `module.<name>.<output>` never resolved: a `count` or `for_each` built
+  from one dropped the block, and an attribute set from one was priced at
+  the catalog default. Each module call is now resolved before the
+  resources that read it, its `output` blocks are evaluated in its own
+  scope, and the values are in scope for module inputs, locals and
+  resources, including `module.x[0].out` under `count`,
+  `module.x["key"].out` under `for_each`, and outputs passed up through
+  nested modules. Outputs in `.tf.json` files are read too.
+
 - Homebrew: the cask now clears the quarantine flag after install. Homebrew
   quarantines what a cask downloads, and macOS killed the un-notarized
   binary on launch (exit 137), so `brew install c3xdev/tap/c3x` gave a c3x

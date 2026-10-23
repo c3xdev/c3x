@@ -16,14 +16,19 @@ import (
 // longest local→local reference chain. In practice that's < 5 and the
 // per-attribute work is cheap, so we don't bother with a smarter
 // dependency-graph topological sort.
-func resolveLocals(scope evalScope, sources []sourceFile, vars map[string]cty.Value, data cty.Value, logger *slog.Logger) map[string]cty.Value {
+//
+// modules is the module.<name> scope: the outputs of the module calls
+// resolved so far. Locals are resolved again as each call is resolved, so
+// a nil logger skips the warnings for those intermediate passes.
+func resolveLocals(scope evalScope, sources []sourceFile, vars map[string]cty.Value, data, modules cty.Value, logger *slog.Logger) map[string]cty.Value {
+	extras := map[string]cty.Value{"module": modules}
 	pending := collectLocalAttributes(sources)
 	resolved := map[string]cty.Value{}
 	for {
 		progressed := false
 		var still []localAttr
 		for _, la := range pending {
-			ctx := scope.evalContext(asObject(vars), asObject(resolved), data, nil)
+			ctx := scope.evalContext(asObject(vars), asObject(resolved), data, extras)
 			val, diags := la.Expr.Value(ctx)
 			if diags.HasErrors() {
 				still = append(still, la)
@@ -37,10 +42,13 @@ func resolveLocals(scope evalScope, sources []sourceFile, vars map[string]cty.Va
 			break
 		}
 	}
+	if logger == nil {
+		return resolved
+	}
 	// Whatever never resolved: report it if the cause is a function we
 	// don't implement, since every resource reading that local is affected.
 	for _, la := range pending {
-		_, diags := la.Expr.Value(scope.evalContext(asObject(vars), asObject(resolved), data, nil))
+		_, diags := la.Expr.Value(scope.evalContext(asObject(vars), asObject(resolved), data, extras))
 		warnUnknownFunctions(diags, logger, "local."+la.Name)
 	}
 	return resolved

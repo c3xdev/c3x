@@ -199,8 +199,10 @@ func parseSources(sources []sourceFile, baseDir string, opts Options) ([]domain.
 	regionHints := collectProviderRegions(sources, variables, nil, cty.EmptyObjectVal, "", logger)
 	data := collectDataBlocks(sources, regionHints)
 
-	// Stage 4: locals — fixed-point against (var, data).
-	locals := resolveLocals(scope, sources, variables, data, logger)
+	// Stage 4: locals — fixed-point against (var, data). Resolved quietly:
+	// stage 7 resolves them again once module outputs are known, and
+	// reports what still doesn't resolve then.
+	locals := resolveLocals(scope, sources, variables, data, cty.EmptyObjectVal, nil)
 
 	// Stage 5: provider regions (after vars/locals/data are populated so
 	// `provider "aws" { region = var.region }` resolves). Each resource is
@@ -219,19 +221,21 @@ func parseSources(sources []sourceFile, baseDir string, opts Options) ([]domain.
 		logger:    logger,
 	}
 
-	// Stage 6: walk resource blocks; each contributes one or more
-	// domain.Resource entries depending on count / for_each.
+	// Stage 6: resolve module calls recursively, so module outputs are in
+	// scope (module.<name>.<output>) before any resource is evaluated.
+	root := &moduleNode{env: env, sources: sources}
+	expander := moduleExpander{initModules: initModules, offline: opts.Offline, logger: logger}
+	if err := expander.resolveCalls(root, baseDir, "", 0); err != nil {
+		return nil, err
+	}
+
+	// Stage 7: walk resource blocks, root first and then each module
+	// instance; each block contributes one or more domain.Resource
+	// entries depending on count / for_each.
 	var resources []domain.Resource
-	if err := emitResources(env, sources, "", &resources); err != nil {
+	if err := root.emit(&resources); err != nil {
 		return nil, err
 	}
-
-	// Stage 7: recursively expand modules.
-	expander := moduleExpander{initModules: initModules, offline: opts.Offline, logger: logger, out: &resources}
-	if err := expander.expandModules(env, baseDir, sources, "", "", 0); err != nil {
-		return nil, err
-	}
-
 	return resources, nil
 }
 
