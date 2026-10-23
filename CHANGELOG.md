@@ -6,6 +6,16 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.21] - 2026-10-23
+
+### Security
+
+- Release binaries are built with Go 1.27.3, which fixes GO-2026-6809:
+  `crypto/x509` trusted compromised intermediate certificates when
+  verifying TLS connections (pricing API, module and catalog downloads).
+  CI and the release workflow now pin the exact Go version, so a runner's
+  cached older patch release can't be used.
+
 ### Fixed
 
 - Module outputs are now evaluated (#116). An expression reading
