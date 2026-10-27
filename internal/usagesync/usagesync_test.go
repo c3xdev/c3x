@@ -41,7 +41,7 @@ func (f *fakeSource) Collect(_ context.Context, t usagesync.Target, w usagesync.
 		panic("boom")
 	}
 	if err := f.errs[t.Address]; err != nil {
-		return usagesync.Result{}, err
+		return f.results[t.Address], err
 	}
 	return f.results[t.Address], nil
 }
@@ -179,6 +179,53 @@ func TestRun_FailureOfOneResourceDoesNotStopTheRest(t *testing.T) {
 	}
 	if snap.Synced.Provider != "fake" || snap.Synced.WindowDays != 30 || !snap.Synced.GeneratedAt.Equal(now) {
 		t.Errorf("synced = %+v", snap.Synced)
+	}
+}
+
+// One quantity failing must not throw away the quantities that were
+// measured. The failure is still recorded, so --strict can see it.
+func TestRun_PartialMeasurementKeepsTheValues(t *testing.T) {
+	t.Parallel()
+	src := &fakeSource{
+		results: map[string]usagesync.Result{
+			"aws_s3_bucket.data": {
+				Values:  map[string]float64{"standard_storage_gb": 12.5},
+				Series:  map[string]map[string]float64{"standard_storage_gb": {"2026-09": 12.5}},
+				Problem: "no S3 request metrics for this bucket",
+			},
+			"aws_s3_bucket.other": {
+				Values: map[string]float64{"standard_storage_gb": 4},
+				Series: map[string]map[string]float64{"standard_storage_gb": {"2026-09": 4}},
+			},
+		},
+		errs: map[string]error{"aws_s3_bucket.other": errors.New("request metrics: AccessDenied")},
+	}
+	snap, err := usagesync.Run(context.Background(), usagesync.Options{
+		Source: src,
+		Targets: []usagesync.Target{
+			{Address: "aws_s3_bucket.data"},
+			{Address: "aws_s3_bucket.other"},
+		},
+		WindowDays: 30,
+		Now:        time.Date(2026, 9, 30, 12, 0, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := snap.ResourceUsage["aws_s3_bucket.data"]["standard_storage_gb"]; got != 12.5 {
+		t.Errorf("data storage = %v, want 12.5 kept beside the request error", got)
+	}
+	if snap.Errors["aws_s3_bucket.data"] != "no S3 request metrics for this bucket" {
+		t.Errorf("data error = %q", snap.Errors["aws_s3_bucket.data"])
+	}
+	if snap.Series["aws_s3_bucket.data"]["standard_storage_gb"]["2026-09"] != 12.5 {
+		t.Errorf("series was dropped: %v", snap.Series["aws_s3_bucket.data"])
+	}
+	if got := snap.ResourceUsage["aws_s3_bucket.other"]["standard_storage_gb"]; got != 4.0 {
+		t.Errorf("other storage = %v, want 4 kept even though Collect returned an error", got)
+	}
+	if snap.Errors["aws_s3_bucket.other"] != "request metrics: AccessDenied" {
+		t.Errorf("other error = %q", snap.Errors["aws_s3_bucket.other"])
 	}
 }
 

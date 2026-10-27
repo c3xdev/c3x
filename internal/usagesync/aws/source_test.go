@@ -19,18 +19,62 @@ import (
 
 const gb = 1 << 30
 
+// cwPoint is one canned datapoint, looked up by metric name so a test
+// does not depend on query ids.
+type cwPoint struct {
+	at time.Time
+	v  float64
+}
+
 // fakeCW serves canned pages and records every request.
 type fakeCW struct {
 	pages []*cloudwatch.GetMetricDataOutput
 	err   error
 	calls []*cloudwatch.GetMetricDataInput
+
+	// valuesByMetric, when set, answers each query from its metric name
+	// instead of the page queue.
+	valuesByMetric map[string][]cwPoint
+	// byName, when set and valuesByMetric is not, is a page queue per
+	// first metric in the call. Used to test pagination.
+	byName map[string][]*cloudwatch.GetMetricDataOutput
+	// failMetric fails GetMetricData when the call's first metric is in it.
+	failMetric map[string]error
+
+	listPages []*cloudwatch.ListMetricsOutput
+	listErr   error
+	listCalls []*cloudwatch.ListMetricsInput
 }
 
 func (f *fakeCW) GetMetricData(_ context.Context, in *cloudwatch.GetMetricDataInput, _ ...func(*cloudwatch.Options)) (*cloudwatch.GetMetricDataOutput, error) {
 	copied := *in
 	f.calls = append(f.calls, &copied)
+	name := firstMetricName(in)
+	if err := f.failMetric[name]; err != nil {
+		return nil, err
+	}
 	if f.err != nil {
 		return nil, f.err
+	}
+	if f.valuesByMetric != nil {
+		out := &cloudwatch.GetMetricDataOutput{}
+		for _, q := range in.MetricDataQueries {
+			res := types.MetricDataResult{Id: q.Id}
+			for _, p := range f.valuesByMetric[metricName(q)] {
+				res.Timestamps = append(res.Timestamps, p.at)
+				res.Values = append(res.Values, p.v)
+			}
+			out.MetricDataResults = append(out.MetricDataResults, res)
+		}
+		return out, nil
+	}
+	if f.byName != nil {
+		q := f.byName[name]
+		if len(q) == 0 {
+			return &cloudwatch.GetMetricDataOutput{}, nil
+		}
+		f.byName[name] = q[1:]
+		return q[0], nil
 	}
 	if len(f.pages) == 0 {
 		return &cloudwatch.GetMetricDataOutput{}, nil
@@ -38,6 +82,34 @@ func (f *fakeCW) GetMetricData(_ context.Context, in *cloudwatch.GetMetricDataIn
 	page := f.pages[0]
 	f.pages = f.pages[1:]
 	return page, nil
+}
+
+func (f *fakeCW) ListMetrics(_ context.Context, in *cloudwatch.ListMetricsInput, _ ...func(*cloudwatch.Options)) (*cloudwatch.ListMetricsOutput, error) {
+	copied := *in
+	f.listCalls = append(f.listCalls, &copied)
+	if f.listErr != nil {
+		return nil, f.listErr
+	}
+	if len(f.listPages) == 0 {
+		return &cloudwatch.ListMetricsOutput{}, nil
+	}
+	page := f.listPages[0]
+	f.listPages = f.listPages[1:]
+	return page, nil
+}
+
+func firstMetricName(in *cloudwatch.GetMetricDataInput) string {
+	if in == nil || len(in.MetricDataQueries) == 0 {
+		return ""
+	}
+	return metricName(in.MetricDataQueries[0])
+}
+
+func metricName(q types.MetricDataQuery) string {
+	if q.MetricStat == nil || q.MetricStat.Metric == nil || q.MetricStat.Metric.MetricName == nil {
+		return ""
+	}
+	return *q.MetricStat.Metric.MetricName
 }
 
 func page(next string, at []time.Time, values []float64) *cloudwatch.GetMetricDataOutput {
@@ -175,8 +247,11 @@ func TestS3Storage_NoDatapointsIsAnExplainedError(t *testing.T) {
 	t.Parallel()
 	var regions []string
 	_, err := source(&fakeCW{}, &regions).Collect(context.Background(), bucket, window)
-	if err == nil || err.Error() != "no BucketSizeBytes datapoints in the window" {
+	if err == nil || !strings.Contains(err.Error(), "no BucketSizeBytes datapoints in the window") {
 		t.Errorf("err = %v", err)
+	}
+	if !strings.Contains(err.Error(), "no S3 request metrics") {
+		t.Errorf("err = %v, want the request failure too; storage failing must not hide it", err)
 	}
 }
 

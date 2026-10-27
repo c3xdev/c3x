@@ -37,6 +37,11 @@ type Result struct {
 	// Series holds the same quantities per calendar month ("2026-09"), so
 	// a trend can be fitted later.
 	Series map[string]map[string]float64
+	// Problem explains a quantity that could not be measured while others
+	// were. Run records it under errors and still keeps Values. A non-nil
+	// error from Collect means nothing was measured; Problem means the
+	// snapshot carries both usage and an error for that address.
+	Problem string
 }
 
 // Source measures usage for the resource kinds it supports. Calls must be

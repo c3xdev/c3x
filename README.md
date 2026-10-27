@@ -205,15 +205,26 @@ never reads or writes your hand-written `usage_path` file, so a re-sync
 cannot overwrite an edit of yours. Pricing commands read both, and yours
 wins per resource and per key (see Configuration). Values it cannot
 establish are skipped and listed, in the output and under `errors:` in the
-file; `--strict` makes that an error exit. A run that measures nothing at
-all (no credentials, no `--state`, a missing permission) fails and leaves
-the existing file as it was, rather than replacing it with an empty one.
+file; `--strict` makes that an error exit. A resource can be written in
+part: the output marks it `partial` and `errors` says which quantity is
+missing, and the quantities that were measured are in the file. A run
+that measures nothing at all (no credentials, no `--state`, a missing
+permission) fails and leaves the existing file as it was, rather than
+replacing it with an empty one.
 
-Today: **AWS S3 bucket storage** (`standard_storage_gb`, from CloudWatch's
-daily `BucketSizeBytes`). It needs `cloudwatch:GetMetricData`, which AWS
-bills per metric requested. The real bucket name comes from `--state`;
-without it a literal name in the configuration is used. S3 requests,
-Lambda, NAT gateway, CloudFront and GCP follow; see
+Today: **AWS S3**. Storage (`standard_storage_gb`) comes from CloudWatch's
+daily `BucketSizeBytes`, which every bucket publishes. Request counts
+come from CloudWatch request metrics, which exist only on a bucket with
+a request-metrics configuration: `monthly_tier_1_requests` is PUT, COPY,
+POST and LIST, and `monthly_tier_2_requests` is GET, SELECT and the rest.
+A bucket without that configuration, or with more than one, is listed
+under `errors` and not guessed, and its storage value is still written.
+The count is the window's total expressed per 30 days, so the default
+`--days 30` is the measured total. It needs `cloudwatch:GetMetricData`
+and `cloudwatch:ListMetrics`; GetMetricData is billed per metric
+requested. The real bucket name comes from `--state`; without it a
+literal name in the configuration is used. Lambda, NAT gateway,
+CloudFront and GCP follow; see
 [the design](docs/design/usage-sync.md) and ROADMAP section K.
 
 ## How much to trust a number

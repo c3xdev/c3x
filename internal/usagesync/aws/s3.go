@@ -3,7 +3,6 @@ package aws
 import (
 	"context"
 	"errors"
-	"math"
 
 	"github.com/c3xdev/c3x/internal/usagesync"
 )
@@ -19,12 +18,21 @@ const (
 	secondsPerDay = 24 * 60 * 60
 )
 
+// s3Bucket measures storage and request counts independently. Request
+// metrics exist only where a request-metrics configuration is present, so
+// they fail for most buckets; that failure must not drop storage, which
+// every bucket publishes.
+func (s *Source) s3Bucket(ctx context.Context, t usagesync.Target, w usagesync.Window) (usagesync.Result, error) {
+	storage, storageErr := s.s3Storage(ctx, t, w)
+	requests, requestsErr := s.s3Requests(ctx, t, w)
+	return mergeParts(
+		collected{res: storage, err: storageErr},
+		collected{res: requests, err: requestsErr},
+	)
+}
+
 // s3Storage reads the bucket's Standard storage size. CloudWatch publishes
-// BucketSizeBytes for every bucket once a day, with no configuration, which
-// is why storage is the first S3 quantity synced; request counts exist
-// only for buckets with a request-metrics configuration, which is opt-in
-// and billed, so they are not read here.
-//
+// BucketSizeBytes for every bucket once a day, with no configuration.
 // standard_storage_gb is the mean of the daily sizes in the window, the
 // quantity a GB-month price applies to. series holds the same mean per
 // calendar month (UTC).
@@ -70,5 +78,5 @@ func (s *Source) s3Storage(ctx context.Context, t usagesync.Target, w usagesync.
 // toGB converts bytes to GB, rounded to four decimals so a tiny bucket is
 // not reported as zero and a large one is not cluttered with noise.
 func toGB(bytes float64) float64 {
-	return math.Round(bytes/bytesPerGB*1e4) / 1e4
+	return round4(bytes / bytesPerGB)
 }

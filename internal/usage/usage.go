@@ -31,6 +31,13 @@
 // this same schema and may carry extra top-level keys (`synced`, `series`,
 // `errors`) that the loader ignores. [ApplyLayered] applies both, and the
 // hand-written file wins per resource address and per key.
+//
+// For an S3 bucket, sync fills `standard_storage_gb` from CloudWatch and,
+// when the bucket has one request-metrics configuration,
+// `monthly_tier_1_requests` and `monthly_tier_2_requests`. A bucket
+// without that configuration leaves the request keys unset and records
+// why under `errors`; it does not write a zero, and the storage value is
+// still there. A hand-written request count wins over either.
 package usage
 
 import (

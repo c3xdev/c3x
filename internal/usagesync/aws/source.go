@@ -16,10 +16,11 @@ import (
 	"github.com/c3xdev/c3x/internal/usagesync"
 )
 
-// CloudWatch is the one SDK call used. It is an interface so tests supply
-// canned answers and CI needs no credentials.
+// CloudWatch is the SDK surface used. It is an interface so tests supply
+// canned answers and CI needs no credentials. Both calls are read-only.
 type CloudWatch interface {
 	GetMetricData(ctx context.Context, in *cloudwatch.GetMetricDataInput, opts ...func(*cloudwatch.Options)) (*cloudwatch.GetMetricDataOutput, error)
+	ListMetrics(ctx context.Context, in *cloudwatch.ListMetricsInput, opts ...func(*cloudwatch.Options)) (*cloudwatch.ListMetricsOutput, error)
 }
 
 // Source implements [usagesync.Source] for AWS.
@@ -54,7 +55,7 @@ func (s *Source) Provider() string { return "aws" }
 // Emits implements [usagesync.Source].
 func (s *Source) Emits() map[string][]string {
 	return map[string][]string{
-		kindS3Bucket: {keyStandardStorageGB},
+		kindS3Bucket: {keyStandardStorageGB, keyMonthlyTier1Requests, keyMonthlyTier2Requests},
 	}
 }
 
@@ -62,7 +63,7 @@ func (s *Source) Emits() map[string][]string {
 func (s *Source) Collect(ctx context.Context, t usagesync.Target, w usagesync.Window) (usagesync.Result, error) {
 	switch t.Kind {
 	case kindS3Bucket:
-		return s.s3Storage(ctx, t, w)
+		return s.s3Bucket(ctx, t, w)
 	default:
 		return usagesync.Result{}, fmt.Errorf("usage sync does not support %s", t.Kind)
 	}

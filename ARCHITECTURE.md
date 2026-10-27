@@ -67,7 +67,7 @@ spelunking the code first.
 | `internal/render` | Estimates → strings | One renderer per output format. Pure functions of `domain.Estimate` + `Format`. |
 | `internal/usage` | Usage YAML | Loads `c3x-usage.yml` and merges its attributes into parsed resources. |
 | `internal/usagesync` | Usage from cloud metrics | `c3x usage sync`: finds the resources to look up (real names from Terraform state), runs the lookups with per-resource failure, and writes the generated `c3x-usage.synced.yml`. Provider-neutral behind a `Source` interface; never touches prices. Only `cmd/c3x` imports it. |
-| `internal/usagesync/aws` | AWS metric source | The only package that imports the AWS SDK (`config`, `cloudwatch`). Read-only CloudWatch calls. |
+| `internal/usagesync/aws` | AWS metric source | The only package that imports the AWS SDK (`config`, `cloudwatch`). Read-only `GetMetricData` and `ListMetrics` calls. |
 | `internal/whatif` | CLI overrides | Parses `--what-if kind.name.attr=value` syntax. |
 | `internal/comment` | Forge integrations | GitHub PR comment poster with marker-based update-in-place. Interface seam for GitLab/Bitbucket/Azure DevOps. |
 | `internal/config` | User config | 5-layer resolution: defaults → file → env → CLI → run-time. |

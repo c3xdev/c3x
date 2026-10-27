@@ -6,6 +6,16 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `c3x usage sync` measures S3 request counts (`monthly_tier_1_requests`
+  for PUT, COPY, POST and LIST, `monthly_tier_2_requests` for GET, SELECT
+  and the rest) from CloudWatch request metrics when a bucket has one
+  request-metrics configuration. A bucket without one, or with several,
+  is listed under `errors` and not guessed; its `standard_storage_gb` is
+  still written. The count is the window's total expressed per 30 days,
+  so the default `--days 30` is the measured total. (#97)
+
 ## [0.3.21] - 2026-10-23
 
 ### Security

@@ -18,7 +18,8 @@ import (
 type fakeUsageSource struct {
 	mu      sync.Mutex
 	gb      map[string]float64 // bucket name → GB
-	fail    map[string]error   // bucket name → error
+	fail    map[string]error   // bucket name → error, nothing measured
+	problem map[string]string  // bucket name → a quantity that failed
 	targets []usagesync.Target
 }
 
@@ -35,8 +36,9 @@ func (f *fakeUsageSource) Collect(_ context.Context, t usagesync.Target, _ usage
 		return usagesync.Result{}, err
 	}
 	return usagesync.Result{
-		Values: map[string]float64{"standard_storage_gb": f.gb[t.ID]},
-		Series: map[string]map[string]float64{"standard_storage_gb": {"2026-09": f.gb[t.ID]}},
+		Values:  map[string]float64{"standard_storage_gb": f.gb[t.ID]},
+		Series:  map[string]map[string]float64{"standard_storage_gb": {"2026-09": f.gb[t.ID]}},
+		Problem: f.problem[t.ID],
 	}, nil
 }
 
@@ -199,6 +201,36 @@ func TestUsageSyncPartialFailure(t *testing.T) {
 	}
 	if !strings.Contains(string(raw), "AccessDenied") {
 		t.Errorf("the error was not recorded in the snapshot:\n%s", raw)
+	}
+}
+
+// A quantity that cannot be measured is listed, and the quantities that
+// were measured are still written. --strict notices the gap.
+func TestUsageSyncKeepsMeasuredQuantitiesWhenAnotherFails(t *testing.T) {
+	dir := writeBucketProject(t)
+	useFakeSource(t, &fakeUsageSource{
+		gb:      map[string]float64{"acme-data": 7},
+		problem: map[string]string{"acme-data": "no S3 request metrics for this bucket"},
+	})
+
+	out, err := runCLI(t, "usage", "sync")
+	if err != nil {
+		t.Fatalf("usage sync: %v\n%s", err, out)
+	}
+	if !strings.Contains(out, "Synced 1 resource(s)") || !strings.Contains(out, "partial aws_s3_bucket.data: no S3 request metrics for this bucket") {
+		t.Errorf("output:\n%s", out)
+	}
+	raw, err := os.ReadFile(filepath.Join(dir, "c3x-usage.synced.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), "standard_storage_gb") || !strings.Contains(string(raw), "no S3 request metrics for this bucket") {
+		t.Errorf("snapshot:\n%s", raw)
+	}
+
+	out, err = runCLI(t, "usage", "sync", "--strict")
+	if err == nil || !strings.Contains(err.Error(), "1 resource(s) could not be synced") {
+		t.Fatalf("--strict err = %v\n%s", err, out)
 	}
 }
 

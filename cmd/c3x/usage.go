@@ -72,8 +72,14 @@ it a literal name in the configuration is used. A resource whose name or
 region cannot be established is skipped and listed, never guessed.
 
 AWS: S3 bucket storage (standard_storage_gb) from CloudWatch
-BucketSizeBytes. Needs cloudwatch:GetMetricData; GetMetricData is billed
-per metric requested, a small amount for a project's buckets.`,
+BucketSizeBytes, which every bucket publishes. S3 request counts
+(monthly_tier_1_requests for PUT, COPY, POST and LIST;
+monthly_tier_2_requests for GET, SELECT and the rest) from CloudWatch
+request metrics, and only for a bucket with a single request-metrics
+configuration. A bucket without one, or with several, is listed and its
+storage is still written; the counts are not guessed. Needs
+cloudwatch:GetMetricData and cloudwatch:ListMetrics. GetMetricData is
+billed per metric requested.`,
 		Example: `  terraform show -json > state.json
   c3x usage sync --state state.json
   c3x estimate`,
@@ -132,9 +138,17 @@ per metric requested, a small amount for a project's buckets.`,
 			}
 
 			w := cmd.OutOrStdout()
+			// "skipped" is a resource with nothing written. "partial" is one
+			// that has some quantities, with the error saying what is
+			// missing: a request failure must not look like the storage
+			// was skipped too.
 			skipped := func() {
 				for _, addr := range sortedErrorKeys(snap.Errors) {
-					fmt.Fprintf(w, "  skipped %s: %s\n", addr, snap.Errors[addr])
+					verb := "skipped"
+					if _, ok := snap.ResourceUsage[addr]; ok {
+						verb = "partial"
+					}
+					fmt.Fprintf(w, "  %s %s: %s\n", verb, addr, snap.Errors[addr])
 				}
 			}
 			// A run that tried and measured nothing (no credentials, no

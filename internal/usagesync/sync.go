@@ -22,8 +22,11 @@ type Options struct {
 }
 
 // Run measures every target and returns the snapshot. A failure for one
-// target is recorded under its address and does not stop the others. The
-// error is non-nil only when the context ended before the run did.
+// target is recorded under its address and does not stop the others. A
+// target that measured some quantities and failed others keeps the
+// quantities and records why the rest are missing under the same address,
+// so one quantity's failure cannot drop another. The error is non-nil
+// only when the context ended before the run did.
 func Run(ctx context.Context, opts Options) (Snapshot, error) {
 	now := opts.Now
 	if now.IsZero() {
@@ -63,10 +66,11 @@ func Run(ctx context.Context, opts Options) (Snapshot, error) {
 			for t := range jobs {
 				res, err := collect(ctx, opts.Source, t, win)
 				mu.Lock()
-				switch {
-				case err != nil:
-					snap.Errors[t.Address] = err.Error()
-				default:
+				// Values are kept even when err is set. A source that
+				// measured storage and failed requests returns the storage
+				// with the failure, and dropping the values would throw
+				// away a good measurement.
+				if len(res.Values) > 0 {
 					values := make(map[string]any, len(res.Values))
 					for k, v := range res.Values {
 						values[k] = v
@@ -75,6 +79,12 @@ func Run(ctx context.Context, opts Options) (Snapshot, error) {
 					if len(res.Series) > 0 {
 						snap.Series[t.Address] = res.Series
 					}
+				}
+				switch {
+				case err != nil:
+					snap.Errors[t.Address] = err.Error()
+				case res.Problem != "":
+					snap.Errors[t.Address] = res.Problem
 				}
 				mu.Unlock()
 			}
